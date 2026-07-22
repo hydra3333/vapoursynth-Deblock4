@@ -52,7 +52,7 @@ updating to vapoursynth APIv4/fmparallel a single DEBLOCK4.DLL containing
 
 Development order: `Deblock4` first, bit by bit. `Deblock4_qed` next. `Deblock4_qed_autoadjust` is last on the list; not in initial scope.
 
-All three filters are strictly 1-in/1-out. No frame reordering, no cross-frame cache/pin machinery (unlike CNR3). This simplifies the fmParallel story considerably: no frame-lifecycle/ownership complexity beyond the standard VapourSynth API4 per-frame contract.
+All three filters are strictly 1-in/1-out. No frame reordering, no cross-frame cache/pin machinery. This simplifies the fmParallel story considerably: no frame-lifecycle/ownership complexity beyond the standard VapourSynth API4 per-frame contract.
 
 ---
 
