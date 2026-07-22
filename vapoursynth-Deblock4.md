@@ -20,7 +20,7 @@ All three filters are strictly 1-in/1-out. No frame reordering, no cross-frame c
 "Old" but recently updated `VapourSynth-Deblock` source: <https://github.com/HolyWu/VapourSynth-Deblock> which has a c++ module with sse4 optimizations (but not using `Zig` `@Vector`).
 This will require analysis to derive and create the optimal (and safe) `Zig` `@Vector` implementation
 able to be to build 16/32 lane variants, since it probably only uses sse4-friendly loops. This analysis is also
-where the block/edge-grid-aware tail handling (see Decision 13a below) gets worked out against the actual old
+where the block/edge-grid-aware tail handling (see Decision 14 below) gets worked out against the actual old
 C++ structure, not just a generic array-tail case.
 
 `Deblock_qed` in <https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/blob/main/vsdenoise/deblock.py> but
@@ -611,7 +611,7 @@ YMM/AVX2 instructions
 
 and no accidental `AVX2` in baseline modules.
 
-## 13a. Edge/tail handling (adopted scheme)
+## 14. Edge/tail handling (adopted scheme)
 
 ### Decision
 
@@ -640,7 +640,7 @@ unnecessary complexity for SSE4.1/AVX2, and not supported cleanly by those instr
 
 ---
 
-## 14. Final agreed architecture
+## 15. Final agreed architecture
 
 ```
                    VapourSynth
