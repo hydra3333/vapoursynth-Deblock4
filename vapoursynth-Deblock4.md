@@ -1,3 +1,46 @@
+<h1 align="center">
+Deblock4
+
+![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-lightgrey)
+![License](https://img.shields.io/badge/license-GPL--2.0-blue)
+![Language](https://img.shields.io/badge/Zig-0.17.0--dev-F7A41D?logo=zig&logoColor=white)
+![Status](https://img.shields.io/badge/status-Under%20Development-orange) 
+</h1>    
+
+<!--
+Common Statuses
+![Status: Active](https://img.shields.io/badge/status-active-brightgreen)
+![Status: Active](https://img.shields.io/badge/status-active-brightgreen)
+![Status: Beta](https://img.shields.io/badge/status-beta-blue)
+![Status: Experimental](https://img.shields.io/badge/status-experimental-orange)
+![Status: Deprecated](https://img.shields.io/badge/status-deprecated-red)
+![Status: Inactive](https://img.shields.io/badge/status-inactive-lightgrey)
+![Status](https://img.shields.io/badge/status-Under%20Development-orange) 
+![Status: Released](https://img.shields.io/badge/status-Released-brightgreen)
+
+![Language](https://img.shields.io/badge/language-C%2B%2B-00599C?logo=c%2B%2B&logoColor=white)
+
+Common status labels
+active, maintained, stable
+alpha, beta, experimental
+deprecated, legacy, archived, inactive
+
+Typical named colors
+Greens: brightgreen, green, yellowgreen
+Yellows/Oranges: yellow, orange
+Reds: red, crimson, firebrick
+Blues/Purples: blue, navy, blueviolet
+Neutrals: lightgrey, grey/gray, black
+
+Semantic: 
+success (brightgreen), informational (blue), critical (red), inactive (lightgrey), important (orange) 
+
+How to craft your own
+https://img.shields.io/badge/<LABEL>-<MESSAGE>-<COLOR>
+Replace <LABEL>, <MESSAGE>, and <COLOR> with whatever text and named color you like. (Spaces become %20)
+-->
+
+
 # Deblock4 `Zig` Rewrite of `VapourSynth-Deblock` and more
 
 I am considering trying out `Zig` 0.17.0-dev using AIs to redevelop (with targets `sse4.1`, `avx2`, and a dispatcher)
@@ -13,11 +56,20 @@ All three filters are strictly 1-in/1-out. No frame reordering, no cross-frame c
 
 ---
 
+# License
+
+This project is distributed under the GNU GENERAL PUBLIC LICENSE Version 2 or later (GPL-2.0-or-later).
+
 # Draft Architecture Decisions (Draft Spec Basis)
 
 ## References
 
-"Old" but recently updated `VapourSynth-Deblock` source: <https://github.com/HolyWu/VapourSynth-Deblock> which has a c++ module with sse4 optimizations (but not using `Zig` `@Vector`).
+Copyright(c)2004 Manao as a function in MVTools v.0.9.6.2    
+Copyright(c)2006 Alexander Balakhnin aka Fizick - separate plugin, YUY2 support    
+HolyWu 2026 at https://github.com/HolyWu    
+
+"Old" but recently updated `VapourSynth-Deblock` source: <https://github.com/HolyWu/VapourSynth-Deblock> which
+has a c++ module with sse4 optimizations (but not using `Zig` `@Vector`).
 This will require analysis to derive and create the optimal (and safe) `Zig` `@Vector` implementation
 able to be to build 16/32 lane variants, since it probably only uses sse4-friendly loops. This analysis is also
 where the block/edge-grid-aware tail handling (see Decision 14 below) gets worked out against the actual old
@@ -45,6 +97,7 @@ Runtime SIMD dispatch prior art reviewed (see Decision 2 below):
   as the assumed baseline (no SSE4-only fallback). This is a legitimate alternative design but is
   NOT what we are doing - we want one self-contained DLL with internal runtime dispatch, since it
   does not depend on which VapourSynth core version/packaging is doing the loader-side selection.
+
 
 ## 1. SIMD strategy: explicit SIMD with `Zig` `@Vector`
 
