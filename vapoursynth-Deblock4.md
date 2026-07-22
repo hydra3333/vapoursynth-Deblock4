@@ -1,10 +1,10 @@
-# Deblock4 Zig Rewrite of `VapourSynth-Deblock` and more 
+# Deblock4 `Zig` Rewrite of `VapourSynth-Deblock` and more 
 
-I am considering trying out zig 0.17.0 using AIs to redevelop (with targets sse4, avx2, and a dispatcher)
+I am considering trying out `Zig` 0.17.0 using AIs to redevelop (with targets `sse4.1`, `avx2`, and a dispatcher)
 updating to vapoursynth APIv4/fmparallel a single DEBLOCK4.DLL containing    
-- Deblock4 - based on the up to date Deblock already sse4 at https://github.com/HolyWu/VapourSynth-Deblock)    
-- Deblock4_qed - based on the vsjetpack script Deblock_QED (ignoring interlacing, assuming field separated) in https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/blob/main/vsdenoise/deblock.py    
-- Deblock4_qed_autoadjust based on Deblock4_qed but auto recognising how blocky a frame is and applying "good" deblockling for that frame; parameters may change, to be decided later 
+- `Deblock4` - based on the up to date `Deblock` already sse4 at https://github.com/HolyWu/VapourSynth-Deblock    
+- `Deblock4_qed` - based on the vsjetpack script `Deblock_QED` (ignoring interlacing, assuming field separated) in https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/blob/main/vsdenoise/deblock.py    
+- `Deblock4_qed_autoadjust` based on `Deblock4_qed` but auto recognising how blocky a frame is and applying "good" deblockling for that frame; parameters may change, to be decided later 
 
 ---
 
@@ -12,21 +12,21 @@ updating to vapoursynth APIv4/fmparallel a single DEBLOCK4.DLL containing
 
 ## References
 
-"Old" but recently updated VapourSynth-Deblock source: https://github.com/HolyWu/VapourSynth-Deblock
-which has a c++ module with sse4 optimizations (but not using zig @Vector).
-This will require analysys to derive and create the optiomal (and safe) zig `@Vector` implementation
+"Old" but recently updated `VapourSynth-Deblock` source: https://github.com/HolyWu/VapourSynth-Deblock
+which has a c++ module with sse4 optimizations (but not using `Zig` `@Vector`).
+This will require analysys to derive and create the optiomal (and safe) `Zig` `@Vector` implementation
 able to be to build 16/32 lane variants, since it probably only uses sse4-friendly loops.
 
-Deblock_qed in https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/blob/main/vsdenoise/deblock.py but
+`Deblock_qed` in https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/blob/main/vsdenoise/deblock.py but
 we will ignore interlacing, assuming fields are separated.
 
-## 1. SIMD strategy: explicit SIMD with Zig `@Vector`
+## 1. SIMD strategy: explicit SIMD with `Zig` `@Vector`
 
 ### Decision
 
-Use Zig explicit vector types (`@Vector`) for all performance-critical Deblock4 pixel-processing kernels.
+Use `Zig` explicit vector types (`@Vector`) for all performance-critical Deblock4 pixel-processing kernels.
 
-Do **not** rely on LLVM auto-vectorization of scalar loops.
+Do **not** rely on `LLVM` auto-vectorization of scalar loops.
 
 ### Why
 
@@ -37,30 +37,30 @@ Do **not** rely on LLVM auto-vectorization of scalar loops.
   * memory access pattern,
   * edge/tail handling,
   * generated code inspection.
-* The existing Deblock4 SSE4.1 implementation is already SIMD-oriented, so the migration path is naturally "explicit SIMD → Zig vectors", not "scalar C++ → compiler magic".
-* Zig `@Vector` expresses SIMD intent directly in the intermediate representation.
-* The LLVM loop vectorizer status therefore becomes much less relevant.
+* The existing Deblock4 `SSE4.1` implementation is already SIMD-oriented, so the migration path is naturally "explicit SIMD → `Zig` vectors", not "scalar C++ → compiler magic".
+* `Zig` `@Vector` expresses SIMD intent directly in the intermediate representation.
+* The `LLVM` loop vectorizer status therefore becomes much less relevant.
 
 ### Why not
 
 Do not write:
 
-```zig
+```Zig
 for (...) {
     scalar_pixel_operation();
 }
 ```
 
-and expect Zig/LLVM to automatically produce AVX2 since zig currently has LLVM auto vectorization
+and expect `Zig`/`LLVM` to automatically produce `AVX2` since `Zig` currently has `LLVM` auto vectorization
 turned off for other compatibility reasons.
 
 Reasons:
 
-* Zig 0.16/0.17-era builds should not be assumed to auto-vectorize ordinary loops.
+* `Zig` 0.16/0.17-era builds should not be assumed to auto-vectorize ordinary loops.
 * Compiler heuristics can change between versions.
 * Small source changes can alter auto-vectorizer decisions.
 * For a video filter, predictable SIMD is preferred over heuristic SIMD.
-* zig currently has LLVM auto vectorization turned off for other compatibility reasons.
+* `Zig` currently has `LLVM` auto vectorization turned off for other compatibility reasons.
 
 ---
 
@@ -92,9 +92,9 @@ unsupported CPU
 
 * Allows one VapourSynth plugin to support:
 
-  * older SSE4.1 machines,
-  * modern AVX2 machines.
-* Avoids requiring AVX2 merely to load the DLL.
+  * older `SSE4.1` machines,
+  * modern `AVX2` machines.
+* Avoids requiring `AVX2` merely to load the DLL.
 * Gives deterministic behaviour.
 
 ### Why not
@@ -107,7 +107,7 @@ x86_64_v3
 
 because:
 
-* x86_64_v3 assumes AVX2-class hardware.
+* x86_64_v3 assumes `AVX2`-class hardware.
 * The compiler may legally emit AVX2/FMA/BMI instructions anywhere.
 * The plugin loader, registration code, or unrelated code could contain unsupported instructions before dispatch occurs.
 
@@ -117,26 +117,26 @@ because:
 
 ### Decision
 
-Separate SIMD implementations into independent Zig modules.
+Separate SIMD implementations into independent `Zig` modules.
 
 Final structure:
 
 ```
 src/
 
-    main.zig
-    dispatch.zig
-    cpu_detect.zig
-    deblock_common.zig
-    deblock_sse41.zig
-    deblock_avx2.zig
+    main.Zig`
+    dispatch.Zig`
+    cpu_detect.Zig`
+    deblock_common.Zig`
+    deblock_sse41.Zig`
+    deblock_avx2.Zig`
 ```
 
 ---
 
 ## 4. Module responsibilities
 
-### `main.zig`
+### `main.Zig`
 
 #### Purpose
 
@@ -158,7 +158,7 @@ generic x86-64
 #### Why
 
 * Must load on all supported CPUs.
-* Must not contain AVX2-only instructions.
+* Must not contain `AVX2`-only instructions.
 
 #### Why not
 
@@ -166,7 +166,7 @@ Not compiled as x86_64_v3 because it is before CPU dispatch.
 
 ---
 
-## 5. `dispatch.zig`
+## 5. `dispatch.Zig`
 
 ### Purpose
 
@@ -174,7 +174,7 @@ Runtime selection layer.
 
 Example concept:
 
-```zig
+```Zig
 if (cpu.has_avx2) {
     kernel = deblock_avx2;
 }
@@ -203,7 +203,7 @@ No SIMD-specific optimisation here.
 
 ---
 
-## 6. `cpu_detect.zig`
+## 6. `cpu_detect.Zig`
 
 ### Purpose
 
@@ -211,7 +211,7 @@ CPU feature detection.
 
 Checks:
 
-### SSE4.1
+### `SSE4.1`
 
 CPUID:
 
@@ -220,7 +220,7 @@ leaf 1
 ECX bit 19
 ```
 
-### AVX2
+### `AVX2`
 
 CPUID:
 
@@ -246,7 +246,7 @@ generic x86-64
 
 ---
 
-## 7. `deblock_common.zig`
+## 7. `deblock_common.Zig`
 
 ### Purpose
 
@@ -261,28 +261,28 @@ Contains:
 
 Concept:
 
-```zig
+```Zig
 fn deblock_kernel(comptime lanes: usize)
 ```
 
 Examples:
 
-```zig
+```Zig
 deblock_kernel(16);
 ```
 
 creates SSE-sized operations.
 
-```zig
+```Zig
 deblock_kernel(32);
 ```
 
-creates AVX2-sized operations.
+creates `AVX2`-sized operations.
 
 ### Why
 
 * Avoids maintaining two separate algorithms.
-* Keeps SSE4.1 and AVX2 behaviour identical.
+* Keeps `SSE4.1` and `AVX2` behaviour identical.
 * Lets the compiler specialise at compile time.
 
 ### Why not
@@ -304,15 +304,15 @@ Reasons:
 
 ---
 
-## 8. `deblock_sse41.zig`
+## 8. `deblock_sse41.Zig`
 
 ### Purpose
 
-SSE4.1 implementation wrapper.
+`SSE4.1` implementation wrapper.
 
 Example:
 
-```zig
+```Zig
 pub fn run_sse41(...)
 {
     deblock_kernel(16);
@@ -327,19 +327,19 @@ Conceptually:
 -march=sse4.1
 ```
 
-or Zig equivalent:
+or `Zig` equivalent:
 
 ```
 -Dcpu=sse4.1
 ```
 
-(actual build syntax to be confirmed when creating `build.zig`).
+(actual build syntax to be confirmed when creating `build.Zig`).
 
 
 ### Why
 
-* Provides fallback for non-AVX2 CPUs.
-* Matches existing Deblock4 SSE4.1 capability.
+* Provides fallback for non-`AVX2` CPUs.
+* Matches existing Deblock4 `SSE4.1` capability.
 
 ### Why not
 
@@ -347,20 +347,20 @@ Do not compile this as baseline generic x86-64.
 
 Reason:
 
-* We want guaranteed SSE4.1 instructions available.
+* We want guaranteed `SSE4.1` instructions available.
 * Allows better code generation.
 
 ---
 
-## 9. `deblock_avx2.zig`
+## 9. `deblock_avx2.Zig`
 
 ### Purpose
 
-AVX2 implementation wrapper.
+`AVX2` implementation wrapper.
 
 Example:
 
-```zig
+```Zig
 pub fn run_avx2(...)
 {
     deblock_kernel(32);
@@ -375,12 +375,12 @@ Preferred:
 x86_64_v3
 ```
 
-or equivalent Zig CPU target.
+or equivalent `Zig` CPU target.
 
 
 ### Why
 
-x86_64_v3 includes the AVX2-era instruction baseline:
+x86_64_v3 includes the `AVX2`-era instruction baseline:
 
 * AVX
 * AVX2
@@ -394,7 +394,7 @@ x86_64_v3 includes the AVX2-era instruction baseline:
 
 Advantages:
 
-* lets LLVM optimise with a richer CPU model,
+* lets `LLVM` optimise with a richer CPU model,
 * matches modern desktop CPUs,
 * includes Ryzen Zen 2 / 3900X class CPUs.
 
@@ -410,7 +410,7 @@ Only this module is allowed to assume those instructions.
 
 ### Decision
 
-Start with Zig `@Vector`.
+Start with `Zig` `@Vector`.
 
 Use explicit x86 intrinsics only when required.
 
@@ -443,13 +443,13 @@ Possible future use:
 
 ### Decision
 
-Use Zig's default-private model.
+Use `Zig`'s default-private model.
 
 Only intended entry points are `pub`.
 
 Example:
 
-```zig
+```Zig
 fn internal_helper()
 {
 }
@@ -470,11 +470,11 @@ pub fn run_avx2()
 
 ---
 
-## 12. LLVM/vectorizer position
+## 12. `LLVM`/vectorizer position
 
 ### Decision
 
-The project does not depend on LLVM Loop Vectorization.
+The project does not depend on `LLVM` Loop Vectorization.
 
 
 ### Why
@@ -482,7 +482,7 @@ The project does not depend on LLVM Loop Vectorization.
 The SIMD path is:
 
 ```
-Zig @Vector
+`Zig` @Vector
         |
         v
 LLVM vector IR
@@ -507,8 +507,8 @@ LLVM discovers SIMD
 
 Do not assume:
 
-* future LLVM versions,
-* Zig versions,
+* future `LLVM` versions,
+* `Zig` versions,
 * optimisation flags
 
 will always make scalar code fast.
@@ -528,9 +528,9 @@ Compare:
 ```
 old Deblock4
 vs
-new Zig SSE4.1
+new `Zig` SSE4.1
 vs
-new Zig AVX2
+new `Zig` AVX2
 ```
 
 on identical inputs.
@@ -539,8 +539,8 @@ on identical inputs.
 
 Test:
 
-* forced SSE4.1 path,
-* forced AVX2 path,
+* forced `SSE4.1` path,
+* forced `AVX2` path,
 * unsupported CPU path.
 
 ### Assembly inspection
@@ -553,13 +553,13 @@ SSE module:
 XMM/SSE4.1 instructions
 ```
 
-AVX2 module:
+`AVX2` module:
 
 ```
 YMM/AVX2 instructions
 ```
 
-and no accidental AVX2 in baseline modules.
+and no accidental `AVX2` in baseline modules.
 
 ---
 
@@ -569,16 +569,16 @@ and no accidental AVX2 in baseline modules.
                          VapourSynth
                               |
                               v
-                         main.zig
+                         main.Zig`
                               |
                               v
-                        dispatch.zig
+                        dispatch.Zig`
                               |
               +---------------+---------------+
               |                               |
               v                               v
 
-      deblock_sse41.zig              deblock_avx2.zig
+      deblock_sse41.Zig`              deblock_avx2.Zig`
 
       target SSE4.1                  target x86_64_v3
 
@@ -589,8 +589,8 @@ and no accidental AVX2 in baseline modules.
                               |
                               v
 
-                    deblock_common.zig
+                    deblock_common.Zig`
 ```
 
-This is the current draft design baseline for a Deblock4 Zig implementation.
+This is the current draft design baseline for a Deblock4 `Zig` implementation.
 
