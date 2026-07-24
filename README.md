@@ -2318,6 +2318,18 @@ If the candidate schedule is not demonstrably equal or better:
 
 This section replaces the former "Proposed README corrections" list, which instructed this document to amend itself and became self-referential once those amendments were applied.
 
+## Revision v1.1
+
+- Corrected backend architecture wording: capability detection is global and
+  once; backend resolution is per filter instance and once; no per-frame
+  capability test or backend-choice branch. (Charter G1.)
+- Corrected production scalar exposure: "scalar" is a production backend
+  value, not an optional development selector.
+- Removed x86_64_v3 as a permitted AVX2 object target. x86_64_v3 includes FMA,
+  which would permit floating-point contraction and break the required
+  scalar/SSE4.1/AVX2 float identity. (Charter F2, G3.)
+- Converted the document to US-ASCII. (Charter C-STY-01.)
+
 ## Revision 1.0
 
 - Promoted the document from draft revision 0.6 to the accepted design-specification baseline; this does not claim that a plugin binary has been released.
