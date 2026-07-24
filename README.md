@@ -440,7 +440,7 @@ The public custom-grid names are the shorter `luma_step_x`, `luma_step_y`, `chro
 
 A named `grid_mode` is a preset that expands to these primitive values and, where applicable, a midpoint policy. The primitives remain directly controllable through `grid_mode="custom"` for proof modes, expert use, and cases not covered by a named preset.
 
-The grid selection is required—there is no silent default. The token `grid_mode="auto"` is reserved for a future release but is rejected until automatic selection is implemented.
+The grid selection is required-there is no silent default. The token `grid_mode="auto"` is reserved for a future release but is rejected until automatic selection is implemented.
 
 Initial named modes are:
 
@@ -996,7 +996,7 @@ If Schedule B is not clearly equal or better, retain the verified HolyWu-equival
 
 ## 5.6 Schedule C is not in the initial implementation plan
 
-A macroblock-local H.264-style schedule—vertical edges of one macroblock followed by its horizontal edges, with macroblocks traversed in raster order—is a legitimate third schedule.
+A macroblock-local H.264-style schedule-vertical edges of one macroblock followed by its horizontal edges, with macroblocks traversed in raster order-is a legitimate third schedule.
 
 It is deliberately deferred because:
 
@@ -2651,13 +2651,13 @@ Evidence caution:
 
 The accepted design baseline is:
 
-> Deblock4 defines one canonical scalar-specified algorithm and requires byte-identical integer output, and targeted bit-identical floating-point output, from scalar, SSE4.1, and AVX2 backends. HolyWu remains the initial quality baseline but is not an absolute output oracle. SIMD is parameterised by backend register width—16 bytes for SSE4.1 and 32 bytes for AVX2—with lane counts derived from the actual element type. Luma and proper chroma use separate canonical formulas and footprint descriptors. Horizontal and vertical data movement may be backend-specific. Every candidate edge on the explicitly selected per-plane processing grid is processed when its complete filter-class footprint lies inside the plane; incomplete-footprint frame-edge candidates remain unchanged, while incomplete SIMD batches are still processed by smaller-vector or scalar cleanup. Deblock4 does not resize/pad/crop whole frames and does not rely on undocumented stride padding. The candidate canonical schedule is a deterministic whole-plane vertical pass followed by a horizontal pass; dependent luma edges retain canonical order, while independent same-orientation proper-chroma edges may be batched across edge positions without merging the two orientation passes. For field-separated MPEG-2 4:2:0, luma uses an 8-by-4 candidate grid with primary and midpoint classes, and chroma uses an 8-by-4 grid in chroma coordinates. Midpoint candidates select an immutable threshold set whose `alpha` and `beta` values were scaled once in `i64` at filter creation. The meaning-based `grid_mode` parameter is required; the `"auto"` token is reserved but rejected until automatic selection exists. Proper chroma is settled-by-design but must pass its quality corpus. Schedule A versus B, the default midpoint threshold scale, proper-chroma quality, actual AVX2 benefit, and the Zig build/detection mechanisms remain subject to their stated evidence gates. Float exceptional-value behaviour and the public parameter API are settled in this specification.
+> Deblock4 defines one canonical scalar-specified algorithm and requires byte-identical integer output, and targeted bit-identical floating-point output, from scalar, SSE4.1, and AVX2 backends. HolyWu remains the initial quality baseline but is not an absolute output oracle. SIMD is parameterised by backend register width-16 bytes for SSE4.1 and 32 bytes for AVX2-with lane counts derived from the actual element type. Luma and proper chroma use separate canonical formulas and footprint descriptors. Horizontal and vertical data movement may be backend-specific. Every candidate edge on the explicitly selected per-plane processing grid is processed when its complete filter-class footprint lies inside the plane; incomplete-footprint frame-edge candidates remain unchanged, while incomplete SIMD batches are still processed by smaller-vector or scalar cleanup. Deblock4 does not resize/pad/crop whole frames and does not rely on undocumented stride padding. The candidate canonical schedule is a deterministic whole-plane vertical pass followed by a horizontal pass; dependent luma edges retain canonical order, while independent same-orientation proper-chroma edges may be batched across edge positions without merging the two orientation passes. For field-separated MPEG-2 4:2:0, luma uses an 8-by-4 candidate grid with primary and midpoint classes, and chroma uses an 8-by-4 grid in chroma coordinates. Midpoint candidates select an immutable threshold set whose `alpha` and `beta` values were scaled once in `i64` at filter creation. The meaning-based `grid_mode` parameter is required; the `"auto"` token is reserved but rejected until automatic selection exists. Proper chroma is settled-by-design but must pass its quality corpus. Schedule A versus B, the default midpoint threshold scale, proper-chroma quality, actual AVX2 benefit, and the Zig build/detection mechanisms remain subject to their stated evidence gates. Float exceptional-value behaviour and the public parameter API are settled in this specification.
 
 # 20. Proposed development stages
 
 The initial Deblock4 implementation uses six broad stages. These are intentionally much coarser than the CNR3 proof sequence because Deblock4 is stateless, 1-in/1-out, and has no cross-frame cache, pin, eviction, or recovery machinery.
 
-## Stage 1 — Zig project scaffold and build/dispatch spikes
+## Stage 1 - Zig project scaffold and build/dispatch spikes
 
 - establish the Zig 0.16.0 project;
 - create `build.zig`, target-specific object builds, and one-DLL link;
@@ -2668,7 +2668,7 @@ The initial Deblock4 implementation uses six broad stages. These are intentional
 
 This spike does not block scalar algorithm work. Stage 2 may proceed if an exact build-system detail needs further investigation.
 
-## Stage 2 — Canonical scalar core and proof harness
+## Stage 2 - Canonical scalar core and proof harness
 
 - implement the final meaning-based parameter names, ranges, validation errors, and preset expansion;
 - implement threshold tables and immutable threshold sets;
@@ -2680,7 +2680,7 @@ This spike does not block scalar algorithm work. Stage 2 may proceed if an exact
 - include the future automatic-strength guards from section 4.4 in kernel signatures;
 - begin assembling the real/synthetic quality corpus.
 
-## Stage 3 — Scalar quality decisions
+## Stage 3 - Scalar quality decisions
 
 - compare Schedule A and Schedule B;
 - select one production schedule and remove the loser from production code;
@@ -2689,7 +2689,7 @@ This spike does not block scalar algorithm work. Stage 2 may proceed if an exact
 - test repeated application, directional bias, detail preservation, and chroma-dominant material;
 - freeze the scalar canonical algorithm before SIMD work.
 
-## Stage 4 — SSE4.1 backend
+## Stage 4 - SSE4.1 backend
 
 - implement 16-byte vector arithmetic;
 - implement orientation-specific loads/transposes/stores;
@@ -2697,7 +2697,7 @@ This spike does not block scalar algorithm work. Stage 2 may proceed if an exact
 - inspect assembly and reject scalarisation or accidental AVX;
 - benchmark against scalar.
 
-## Stage 5 — AVX2 backend
+## Stage 5 - AVX2 backend
 
 - implement 32-byte vector arithmetic and wider legal batches;
 - preserve all canonical dependency rules;
@@ -2705,7 +2705,7 @@ This spike does not block scalar algorithm work. Stage 2 may proceed if an exact
 - inspect widening/narrowing, transpose, target features, and `vzeroupper`;
 - benchmark actual AVX2 benefit without assuming a multiplier.
 
-## Stage 6 — VapourSynth integration and release readiness
+## Stage 6 - VapourSynth integration and release readiness
 
 - complete API4/fmParallel integration;
 - write and test the always-on audit frame properties from section 13.5;
@@ -2717,7 +2717,7 @@ This spike does not block scalar algorithm work. Stage 2 may proceed if an exact
 
 `Deblock4_qed` and `Deblock4_qed_autoadjust` remain later workstreams. They are not additional micro-stages of the initial Deblock4 implementation.
 
-# Appendix A — MPEG-2/H.262 transform blocks and separated-field processing grids
+# Appendix A - MPEG-2/H.262 transform blocks and separated-field processing grids
 
 ## A.1 Standards identity and scope
 
@@ -3035,7 +3035,7 @@ No spatial offset facility is part of the initial design.
 
 ---
 
-# Appendix B — BestSource, decoded MPEG-2 pixels, and grid-selection findings
+# Appendix B - BestSource, decoded MPEG-2 pixels, and grid-selection findings
 
 ## B.1 What reaches VapourSynth
 
