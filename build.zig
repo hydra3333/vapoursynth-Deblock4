@@ -115,6 +115,7 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/vapoursynth_header_probe.zig"),
             .target = target,
             .optimize = optimize,
+            .link_libc = true,
             .imports = &.{
                 .{
                     .name = "vapoursynth_api4",
@@ -122,6 +123,17 @@ pub fn build(b: *std.Build) void {
                 },
             },
         }),
+    });
+
+    // VSHelper4.h is header-only C helper code. Compile it through a stable
+    // bridge rather than translating its Windows CRT dependencies into Zig.
+    vs_header_probe.root_module.addIncludePath(
+        b.path("third_party/vapoursynth/include"),
+    );
+
+    vs_header_probe.root_module.addCSourceFile(.{
+        .file = b.path("src/vapoursynth_helper_bridge.c"),
+        .flags = &.{"-std=c11"},
     });
 
     b.installArtifact(vs_header_probe);
