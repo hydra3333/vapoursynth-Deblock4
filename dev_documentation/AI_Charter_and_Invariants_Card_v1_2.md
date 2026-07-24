@@ -48,13 +48,13 @@ Charter:
 
 Controlling specification:
     filename          README_Deblock4_Design_Spec_v1.1.md
-    internal revision Design specification revision: 1.1
+    internal revision Design specification revision: 1.1 or later prevailing version
 
 Repository:
-    <repository URL>
+    https://github.com/hydra3333/vapoursynth-Deblock4
 
 Branch:
-    <branch>
+    main
 
 Starting commit:
     <commit hash>
@@ -509,8 +509,10 @@ C-STY-01  US-ASCII ONLY, in all project artifacts without exception:
           not affect README presentation.
 
 C-STY-02  Comments are plentiful and human-readable. Explain WHY, especially
-          where an invariant is being honoured. A reader six months later
-          must be able to see that a loop bound is derived and not arbitrary.
+          where an invariant is being honoured. It is likely a human reader
+          may not know zig, so explanation and clarity are essential. A
+          reader six months later must be able to see that a loop bound is
+          derived and not arbitrary.
 
 C-STY-03  Name the invariant by its card reference at the ENFORCEMENT POINT,
           or at the narrow helper that centralises it, together with an
@@ -523,7 +525,7 @@ C-STY-04  Named constants, never magic numbers. This is not style preference
           here: B3 forbids literal radii and derived values outright.
 
 C-STY-05  Explicit over clever. This code will be read by memoryless sessions
-          that cannot infer intent from history.
+          and humans who may not or cannot infer intent from history.
 
 C-STY-06  Public API names state their actual effect. Inherited names are not
           preserved for familiarity when they mislead.
@@ -531,6 +533,10 @@ C-STY-06  Public API names state their actual effect. Inherited names are not
 C-STY-07  One module, one responsibility. Kernel modules contain arithmetic;
           drivers contain traversal; policy modules contain validation and
           preset expansion. Kernels do not read configuration.
+
+C-STY-08  All debug printing must strictly go to stderr and are immediately
+          flushed.
+
 ```
 
 ---
