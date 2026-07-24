@@ -1,4 +1,12 @@
 {
+    "zig.path": "zig",
+    "zig.zls.enabled": "on",
     "zig.zls.path": "zls",
-    "zig.path": "zig"
+    "zig.buildOnSaveProvider": "off",
+
+    "[zig]": {
+        "editor.defaultFormatter": "ziglang.vscode-zig",
+        "editor.formatOnSave": true,
+        "files.eol": "\n"
+    }
 }

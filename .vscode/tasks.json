@@ -1,0 +1,132 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Deblock4: Build Debug",
+            "type": "process",
+            "command": "zig",
+            "args": [
+                "build",
+                "--summary",
+                "all"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Deblock4: Compile Check",
+            "type": "process",
+            "command": "zig",
+            "args": [
+                "build",
+                "check",
+                "--summary",
+                "all"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Deblock4: Test Debug",
+            "type": "process",
+            "command": "zig",
+            "args": [
+                "build",
+                "test",
+                "--summary",
+                "all"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Deblock4: Build ReleaseSafe",
+            "type": "process",
+            "command": "zig",
+            "args": [
+                "build",
+                "-Doptimize=ReleaseSafe",
+                "--summary",
+                "all"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Deblock4: Build ReleaseFast",
+            "type": "process",
+            "command": "zig",
+            "args": [
+                "build",
+                "-Doptimize=ReleaseFast",
+                "--summary",
+                "all"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Deblock4: VapourSynth Header Probe",
+            "type": "process",
+            "command": "zig",
+            "args": [
+                "build",
+                "vs-header-run",
+                "--summary",
+                "all"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        }
+    ]
+}
