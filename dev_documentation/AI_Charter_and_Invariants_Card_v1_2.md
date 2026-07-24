@@ -1,10 +1,10 @@
 # Deblock4 - Project Charter and Invariants Card
 
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-07-24
 **Status:** Ratified charter baseline. The pinned session card is Part 1.
-**Companion specification:** `README_Deblock4_Design_Spec_v1.0.md`
-**Companion SHA-256:** `7087807e520c8475c69eacf17288717beaa43b9b6912e2fa72577e57303058c4`
+**Companion specification:** `README_Deblock4_Design_Spec_v1.1.md`
+**Companion internal revision:** `Design specification revision: 1.1`
 **Encoding:** US-ASCII only. See C-STY-01.
 
 ---
@@ -43,13 +43,12 @@ Project:
     Deblock4
 
 Charter:
-    Deblock4_AI_Charter_and_Invariants_Card_v1.1.md
-    SHA-256: <pinned hash>
+    filename          Deblock4_AI_Charter_and_Invariants_Card_v1.2.md
+    internal version  1.2
 
 Controlling specification:
-    README_Deblock4_Design_Spec_v1.0.md
-    SHA-256:
-        7087807e520c8475c69eacf17288717beaa43b9b6912e2fa72577e57303058c4
+    filename          README_Deblock4_Design_Spec_v1.1.md
+    internal revision Design specification revision: 1.1
 
 Repository:
     <repository URL>
@@ -97,15 +96,33 @@ The session package contains:
     6. any scope-specific test vectors or harness contract.
 ```
 
-Two process notes on the hashes:
+Revision matching, which replaces the SHA-256 pinning used in v1.1:
 
 ```text
-The specification hash is recorded by W3D at scope-authoring time and
-verified by W3X at session start.
+Every controlling document is identified TWICE in the scope header:
+    by filename, which carries the version;
+    by the version string recorded INSIDE the document.
 
-If the specification changes after a scope is authored, the scope is
-RE-ISSUED with the new hash rather than the hash being edited in place.
-A stale hash must fail loudly, which is its entire purpose.
+W3C verifies the two agree before beginning work, and stops if they do not.
+
+If a controlling document changes after a scope is authored, the version is
+bumped in BOTH places, the file is renamed to match, and the scope is
+RE-ISSUED. Version strings are never edited in place without a rename.
+```
+
+What this does and does not catch, stated plainly so the residual risk is
+understood rather than assumed away:
+
+```text
+CAUGHT  an old file attached under a new name
+CAUGHT  a renamed file whose contents were never updated
+CAUGHT  a scope pointing at a superseded revision
+
+NOT CAUGHT  an in-place edit that does not change the version string
+
+The uncaught case is accepted deliberately. It is a discipline risk under a
+single coordinator, not a mechanism failure, and SHA-256 pinning proved to
+cost more in circular-dependency maintenance than the residual risk warrants.
 ```
 
 ---
@@ -693,6 +710,25 @@ custom-mode primitives       luma_step_x, luma_step_y,
 ---
 
 # Part 7 - Revision history
+
+## v1.2 (2026-07-24)
+
+Issued after the first repository push exposed a circular dependency in the
+v1.1 hash mechanism.
+
+- **Removed SHA-256 pinning entirely.** In practice the mechanism could not
+  bootstrap: converting the README to ASCII changed its bytes and invalidated
+  the hash pinned in the charter that referenced it, while the charter's own
+  hash remained an unresolvable placeholder because it would have had to be
+  self-referential. Replaced with dual identification by filename version and
+  internal version string, which W3C checks for agreement.
+- Companion specification updated to `README_Deblock4_Design_Spec_v1.1.md`,
+  which carries the M1, M2, and FMA corrections.
+- The residual risk of the simpler scheme is recorded explicitly rather than
+  left implicit: an in-place edit that does not change the version string is
+  not detected.
+
+No invariant in Part 1 changed. This revision is metadata and process only.
 
 ## v1.1 (2026-07-24)
 
