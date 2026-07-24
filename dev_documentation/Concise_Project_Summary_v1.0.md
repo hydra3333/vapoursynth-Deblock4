@@ -57,7 +57,7 @@ deblock4.Deblock4(
 | `planes` | valid plane indices, default all | Planes to process |
 | `midpoint_threshold_scale` | `0.0..1.0`, conditional | Scales luma midpoint `alpha`/`beta`; `0` disables, `1` gives parity |
 | `backend` | `auto`, `avx2`, `sse41`, `scalar` | Runtime backend |
-| custom steps | positive validated integers | Explicit luma/chroma grid steps |
+| custom steps | required validated integers; exact admissible limits are defined by the custom-grid validation policy | Explicit luma/chroma grid steps |
 | `luma_midpoint_enabled` | `0` or `1` | Enables custom luma primary/midpoint classes |
 
 Out-of-range values are errors; they are not silently clamped.
@@ -174,7 +174,7 @@ per frame:
     no feature test or backend-choice branch
 ```
 
-The one DLL contains generic/dispatch, scalar, SSE4.1, and AVX2 code.
+The one DLL contains generic/dispatch, scalar, SSE4.1, and AVX2 code.  FMA is excluded from the AVX2 object under the current design.  
 
 Exact SIMD feature closures remain Stage 1 spike results; they are not guessed in advance.
 
