@@ -1,8 +1,8 @@
 # Deblock4 - Project Charter and Invariants Card
 
-**Version:** 1.2
-**Date:** 2026-07-24
-**Status:** Ratified charter baseline. The pinned session card is Part 1.
+**Version:** 1.4
+**Date:** 2026-07-25
+**Status:** Draft consolidated charter update for W3X review. Part 1 is unchanged.
 **Companion specification:** `README_Deblock4_Design_Spec_v1.1.md`
 **Companion internal revision:** `Design specification revision: 1.1`
 **Encoding:** US-ASCII only. See C-STY-01.
@@ -43,8 +43,8 @@ Project:
     Deblock4
 
 Charter:
-    filename          Deblock4_AI_Charter_and_Invariants_Card_v1.2.md
-    internal version  1.2
+    filename          Deblock4_AI_Charter_and_Invariants_Card_v1.4.md
+    internal version  1.4
 
 Controlling specification:
     filename          README_Deblock4_Design_Spec_v1.1.md
@@ -86,6 +86,10 @@ Known open measurement gates:
 
 Implementation acceptance for this scope:
     <what "done" means, independent of any open measurement gate>
+    If this scope touches any pixel-producing or frame-construction path,
+    including any plane copy, acceptance REQUIRES byte-identity against the
+    ReleaseSafe scalar oracle for every affected plane. A scope that touches
+    such a path cannot be marked done before that oracle exists to diff against.
 
 The session package contains:
     1. this completed header;
@@ -534,9 +538,208 @@ C-STY-07  One module, one responsibility. Kernel modules contain arithmetic;
           drivers contain traversal; policy modules contain validation and
           preset expansion. Kernels do not read configuration.
 
-C-STY-08  All debug printing must strictly go to stderr and are immediately
-          flushed.
+C-STY-08  All debug output must go strictly to stderr and be flushed
+          immediately.
 
+```
+
+## 4.1 Zig/C interop and memory-transfer policy
+
+```text
+C-INT-01  OWNERSHIP IS EXPLICIT AT EVERY LANGUAGE BOUNDARY.
+
+          Every pointer, slice, C string, and allocation crossing a Zig/C
+          boundary has exactly one documented ownership class:
+
+              borrowed;
+              caller-owned;
+              callee-owned;
+              copied by the callee.
+
+          The interface states who may free it and the exact event that ends
+          its valid lifetime. Ownership must never be inferred merely from a
+          pointer or slice type.
+
+C-INT-02  MIXED OWNERSHIP MUST NOT SHARE AN UNTAGGED RETURN CONTRACT.
+
+          A function must not return newly allocated storage on one path and
+          static or borrowed storage on another path through the same
+          untagged result type.
+
+          An allocating helper returns either:
+
+              success containing caller-owned storage;
+              or an error containing no storage.
+
+          Allocation failure is handled by the caller in a separate, visibly
+          non-owning branch. A static fallback string is never returned as
+          though it were an allocation and is never freed.
+
+C-INT-03  FORMATTED C-STRING LIFETIME IS PROVEN, NOT ASSUMED.
+
+          A helper that allocates a formatted, zero-terminated C string:
+
+              has a name that exposes allocation and termination ownership,
+                  for example allocPrintZ;
+              returns an error union;
+              returns only owned storage on success;
+              never catches allocation failure by returning a string literal.
+
+          Before passing allocated storage to an external API, verify from
+          pinned documentation, headers, or source whether the callee copies,
+          retains, takes ownership of, or merely borrows the data.
+
+          Where the callee copies the data, free the allocation immediately
+          after the call. Where the lifetime contract is not proven, stop and
+          verify it. Do not leak memory by assumption and do not free memory
+          by guess.
+
+          "Required by C interop" is not accepted as evidence that a leak is
+          unavoidable.
+
+C-INT-04  COMPATIBILITY-WRAPPER NAMES PRESERVE EXTERNAL CORRESPONDENCE.
+
+          Where an external C helper requires a Zig-facing compatibility
+          wrapper, preserve the original external symbol spelling after a
+          zig_ prefix:
+
+              vsh_areValidDimensions
+                  ->
+              zig_vsh_areValidDimensions
+
+          The zig_ prefix means "Zig-facing compatibility wrapper"; it does
+          not claim that the Zig compiler generated the function.
+
+          Functions that add Deblock4 policy, validation, composition, or
+          testing use the deblock4_ prefix instead.
+
+          Wrapper comments identify the original external function and state
+          that the wrapper is project-authored compatibility code.
+
+C-MEM-01  FRAME CONSTRUCTION CONSIDERS SHARING BEFORE COPYING.
+
+          The frame-construction scope explicitly considers each applicable
+          implementation option rather than assuming a whole-plane copy:
+
+              host-supported sharing or reuse of an unmodified source plane;
+              exact active-row copying into newly allocated storage;
+              another API-supported construction proven to preserve identity
+                  and lifetime safety.
+
+          The output requirement is byte identity for every unmodified plane.
+          Plane sharing is a preferred option where the VapourSynth API and
+          lifetime contract prove it safe; it is not itself an output-defining
+          invariant.
+
+          Where copying is selected:
+
+              copy only active row bytes;
+              honour source and destination strides independently;
+              use memcpy only where non-overlap is proven;
+              use memmove where overlap is permitted or possible;
+              preserve required frame properties separately.
+
+          Scalar, SSE4.1, and AVX2-specific copy implementations remain valid options
+          where there is a credible engineering basis for expecting a useful benefit,
+          including reduced frame-construction cost, better integration with an existing
+          backend, or simpler combined copy-and-processing traversal.
+          No prior demonstration that a generic copy path is a bottleneck is required
+          before such an option is considered, implemented, or selected for evaluation.
+          Though at face value, SIMD effort may appear to be most beneficial located in the
+          deblocking arithmetic kernels.
+
+          Any specialised copy implementation must preserve the same bounds, overlap,
+          stride, identity, and lifetime contract as the canonical copy path. Where
+          practical, its benefit and maintenance cost are measured against the simpler
+          alternative before final release retention. Absence of a large measured gain
+          is evidence to consider, not an automatic prohibition.
+```
+
+## 4.2 Numeric and SIMD helper policy
+
+```text
+C-NUM-01  GENERIC NUMERIC HELPERS MUST NOT CONCEAL NUMERIC POLICY.
+
+          A generic numeric helper must not hide, weaken, or silently choose
+          any range, signedness, overflow, saturation, accumulator-width,
+          rounding, conversion, non-finite, or scalar/vector contract.
+
+          Its accepted types, preconditions, intermediate widths, exact result
+          rule, and failure behaviour are explicit at the helper or its single
+          authoritative enforcement point.
+
+          Where scalar and vector forms share a helper, every scalar
+          precondition remains true and is enforced for every vector lane.
+          Removal of runtime checks in ReleaseFast never substitutes for the
+          required arithmetic and bounds proof.
+
+C-SIMD-01  VECTOR SYNTAX IS NOT SIMD PROOF.
+
+          Use of @Vector, @select, inline loops, array/vector coercions, or a
+          function named load, store, gather, fast, or SIMD does not prove the
+          generated instruction sequence or its efficiency.
+
+          Every production backend's material load, store, arithmetic,
+          masking, gather, shuffle, and tail strategy is compiled under its
+          exact target feature closure and inspected where code generation is
+          load-bearing. Operations may scalarise, split across narrower
+          instructions, or lower differently between build modes or Zig
+          versions.
+
+C-SIMD-02  VECTOR WIDTH IS AN EXPLICIT BACKEND CONTRACT.
+
+          std.simd.suggestVectorLength may inform a Stage 1 experiment but does
+          not become production policy by itself.
+
+          Production vector widths and lane organisation are selected
+          explicitly per backend, sample type, and operation after compilation
+          and relevant assembly inspection. Batch width remains output-invisible
+          under A2.
+
+C-SIMD-03  MEMORY UNITS AND ALIGNMENT ARE EXPLICIT AND PROVEN.
+
+          VapourSynth frame strides are byte counts. Any conversion to a typed
+          sample stride is checked once and names both units explicitly.
+
+          The default memory path accepts the alignment actually guaranteed by
+          the host API and constructed plane view. A stronger @alignCast or
+          aligned-load/store assumption requires proof for:
+
+              frame and plane base alignment;
+              stride preservation;
+              sample type and size;
+              every processed offset;
+              every affected traversal and tail.
+
+          An alignment cast is an assertion, not an optimisation hint.
+
+C-SIMD-04  FAST FLOAT HELPERS MUST BE SEMANTICALLY IDENTICAL.
+
+          A comparison-and-select replacement for @min, @max, clamp, absolute
+          difference, conversion, or another floating operation is forbidden
+          unless its behaviour is proved identical to the canonical scalar rule
+          for:
+
+              every finite operand order;
+              NaN and positive or negative infinity;
+              positive and negative zero;
+              exact result bits;
+              every supported scalar and vector form.
+
+          A shorter or faster-looking instruction sequence is not equivalent
+          merely because ordinary finite test values produce the same numeric
+          result.
+
+C-SIMD-05  GATHER IS A SEMANTIC DESCRIPTION, NOT A CODEGEN CLAIM.
+
+          Lane-by-lane indexed loads may be explored where the Deblock4
+          schedule permits independent work, but they are not treated as a
+          hardware gather operation without assembly evidence.
+
+          Hardware gather, scalar-load-and-pack, shuffle, transpose, and
+          alternative traversal strategies remain candidates until compiled,
+          measured where relevant, and proved against the same bounds,
+          dependency, tail, and identity contract.
 ```
 
 ---
@@ -620,6 +823,69 @@ P-10  IMPLEMENTATION ACCEPTANCE IS SEPARATE FROM MEASUREMENT GATES.
       settled-by-design quality validation remains open.
 
       Implementation proof is never blocked on corpus availability.
+
+P-11  MATERIAL EXTERNAL IMPLEMENTATION INFLUENCE IS TRACEABLE.
+
+      Before external code, an algorithmic formulation, a test vector, an
+      interop technique, or a helper pattern is copied, adapted, or materially
+      relied upon, record where reasonably feasible:
+
+          a suitable common marker flagging external influence
+          repository and upstream owner;
+          applicable licence, if any;
+          exact commit, tag, or release;
+          file and relevant lines;
+          disposition:
+              copied;
+              adapted;
+              independently reimplemented;
+              design inspiration only;
+              reviewed and rejected.
+
+      Source comments carry attribution where code is copied or adapted, or
+      where the applicable licence requires it.
+
+      Where an external implementation contains a defect or unsafe contract
+      that Deblock4 deliberately does not adopt, record that rejection when it
+      materially explains the replacement design.
+
+      Material that was only reviewed for engineering lessons belongs in the
+      relevant design, review, or provenance record rather than being credited
+      inside unrelated production code.
+
+      In regard to Deblock4 itself, we already know it is a complete redevelopment
+      of Deblock and thus attribution belongs in the relevant design, review, or
+      provenance record as well as in the github project README.md and also once at
+      or near the top of the "main" code module, rather than being also credited
+      inside of every code module.
+
+P-12  EXTERNAL COMMON-UTILITY CODE IS NOT ADOPTED AS A SHORTCUT.
+
+      External string, copy, numeric, vector, SIMD, memory, or other common
+      helper modules are not copied, adapted, or adopted wholesale merely
+      because they are reusable, concise, tested elsewhere, or written for
+      Zig and VapourSynth.
+
+      Each candidate function requires a fresh function-specific review that
+      establishes, as applicable:
+
+          a concrete Deblock4 need;
+          the exact Zig and external-API version assumptions;
+          ownership, lifetime, bounds, overlap, stride, and alignment safety;
+          signedness, range, overflow, rounding, and non-finite semantics;
+          scalar/vector and backend identity;
+          exact target-feature and build-mode code generation;
+          tail and dependency compatibility;
+          tests and provenance required by this charter.
+
+      Review, inspiration, or apparent similarity creates no presumption of
+      adoption. When any of those obligations is unclear, the default
+      disposition is "reviewed and rejected" until new evidence justifies
+      reconsideration.
+
+      The external common helpers reviewed during the v1.4 investigation are
+      not approved for adaptation or adoption. Any future proposal to use one
+      starts again under this rule rather than relying on the earlier review.
 ```
 
 ---
@@ -716,6 +982,56 @@ custom-mode primitives       luma_step_x, luma_step_y,
 ---
 
 # Part 7 - Revision history
+
+## v1.4 (2026-07-25)
+
+Issued after review of external Zig/VapourSynth common numeric and vector
+helper patterns during the Stage 1 scaffold.
+
+- Added C-NUM-01 so generic numeric helpers cannot conceal range, signedness,
+  overflow, saturation, accumulator width, rounding, conversion, non-finite,
+  or scalar/vector policy.
+- Added C-SIMD-01 through C-SIMD-05 for code-generation proof, explicit backend
+  vector widths, byte-versus-sample stride units, proven alignment, strict
+  floating-point equivalence, and evidence-based gather claims.
+- Added P-12 so external common-utility modules are never copied, adapted, or
+  adopted wholesale as a shortcut. Every candidate function requires a fresh,
+  Deblock4-specific semantic, safety, code-generation, test, and provenance
+  review.
+- Recorded the current disposition of the reviewed external common helpers:
+  no reviewed function is approved for adaptation or adoption; any future use
+  requires new evidence and a new function-specific review.
+- Corrected the v1.3 history description of C-MEM-01 to match the ratified
+  wording: specialised copy paths may be evaluated without first proving a
+  generic path is a bottleneck.
+
+No invariant in Part 1 changed. This revision adds numeric, SIMD, and external
+helper-adoption safeguards derived from source review.
+
+## v1.3 (2026-07-25)
+
+Drafted during the Zig 0.16.0 build and VapourSynth API4 interop scaffold,
+following review of external Zig/VapourSynth implementation patterns.
+
+- Corrected C-STY-08 wording while preserving its requirement that all debug
+  output go to stderr and be flushed immediately.
+- Added C-INT-01 through C-INT-04 for explicit Zig/C ownership, prohibition of
+  mixed owned-and-static return contracts, proven C-string lifetime, and
+  correspondence-preserving Zig-facing compatibility-wrapper names.
+- Added C-MEM-01 so frame construction considers safe plane sharing, exact
+  stride-correct copying, and other API-supported options without freezing an
+  implementation mechanism as an output invariant. Specialised copy paths
+  remain valid evaluation options without prior bottleneck proof, subject to
+  the same correctness contract and practical measurement before retention.
+- Added P-11 so copied, adapted, independently reimplemented, inspiration-only,
+  and reviewed-and-rejected external material remain distinguishable and
+  traceable.
+- Recorded that an alleged C-interop leak is never accepted without evidence
+  of the receiving API's actual copy, retention, borrowing, or ownership
+  contract.
+
+No invariant in Part 1 changed. This revision adds coding and process rules
+derived from the initial Zig/C interop and external-source review.
 
 ## v1.2 (2026-07-24)
 
