@@ -2,11 +2,10 @@
 #define DEBLOCK4_VAPOURSYNTH_API4_H
 
 /*
- * Deblock4 targets VapourSynth API 4.2 as supplied with R76+.
- *
- * Pin the required API explicitly. VS_USE_LATEST_API is intentionally not
- * used because updating the copied headers must not silently change the API
- * contract compiled into the plugin.
+ * Deblock4 pins VapourSynth API 4.2 via VS_USE_API_42. The vendored
+ * headers are currently VapourSynth R78. The pinned API contract is
+ * deliberate and independent of the vendored header release; updating the
+ * headers must not silently change the compiled API contract.
  */
 #define VS_USE_API_42
 
@@ -28,6 +27,6 @@ int zig_vsh_areValidDimensions(
 );
 
 /* Deblock4-specific validation of the helper bridge. */
-int deblock4_vsh_bridgeSelfTest(void);
+int deblock4_vsh_bridge_self_test(void);
 
 #endif

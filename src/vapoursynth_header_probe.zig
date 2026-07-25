@@ -41,10 +41,10 @@ comptime {
         @compileError("VSConstants4.h lacks VSC_RANGE_FULL");
 
     // C bridge to VSHelper4.h
-    if (!@hasDecl(vs, "deblock4_vsh_is_constant_video_format"))
+    if (!@hasDecl(vs, "zig_vsh_isConstantVideoFormat"))
         @compileError("VSHelper4.h bridge lacks format helper");
 
-    if (!@hasDecl(vs, "deblock4_vsh_are_valid_dimensions"))
+    if (!@hasDecl(vs, "zig_vsh_areValidDimensions"))
         @compileError("VSHelper4.h bridge lacks dimension helper");
 
     if (!@hasDecl(vs, "deblock4_vsh_bridge_self_test"))

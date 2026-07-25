@@ -1,11 +1,21 @@
 #include "vapoursynth_api4.h"
 #include "VSHelper4.h"
 
-int deblock4_vsh_is_constant_video_format(const VSVideoInfo *vi) {
+/*
+ * C-INT-04: project-authored Zig-facing compatibility wrapper for
+ * vsh_isConstantVideoFormat. The zig_ prefix marks a compatibility wrapper;
+ * it does not imply compiler-generated code.
+ */
+int zig_vsh_isConstantVideoFormat(const VSVideoInfo *vi) {
     return vsh_isConstantVideoFormat(vi);
 }
 
-int deblock4_vsh_are_valid_dimensions(
+/*
+ * C-INT-04: project-authored Zig-facing compatibility wrapper for
+ * vsh_areValidDimensions. The zig_ prefix marks a compatibility wrapper;
+ * it does not imply compiler-generated code.
+ */
+int zig_vsh_areValidDimensions(
     const VSVideoFormat *format,
     int width,
     int height
@@ -25,13 +35,13 @@ int deblock4_vsh_bridge_self_test(void) {
     format.subSamplingW = 1;
     format.subSamplingH = 1;
 
-    if (deblock4_vsh_is_constant_video_format(&video_info))
+    if (zig_vsh_isConstantVideoFormat(&video_info))
         result |= 1;
 
-    if (deblock4_vsh_are_valid_dimensions(&format, 16, 16))
+    if (zig_vsh_areValidDimensions(&format, 16, 16))
         result |= 2;
 
-    if (!deblock4_vsh_are_valid_dimensions(&format, 15, 16))
+    if (!zig_vsh_areValidDimensions(&format, 15, 16))
         result |= 4;
 
     return result;
