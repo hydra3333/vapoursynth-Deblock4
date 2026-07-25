@@ -135,9 +135,20 @@ typedef enum VSPresetVideoFormat {
     pfYUV422P14 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 14, 1, 0),
     pfYUV444P14 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 14, 0, 0),
 
+    pfYUV410P16 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 16, 2, 2),
+    pfYUV411P16 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 16, 2, 0),
+    pfYUV440P16 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 16, 0, 1),
+
     pfYUV420P16 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 16, 1, 1),
     pfYUV422P16 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 16, 1, 0),
     pfYUV444P16 = VS_MAKE_VIDEO_ID(cfYUV, stInteger, 16, 0, 0),
+
+    pfYUV410PH = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 16, 2, 2),
+    pfYUV410PS = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 32, 2, 2),
+    pfYUV411PH = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 16, 2, 0),
+    pfYUV411PS = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 32, 2, 0),
+    pfYUV440PH = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 16, 0, 1),
+    pfYUV440PS = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 32, 0, 1),
 
     pfYUV420PH = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 16, 1, 1),
     pfYUV420PS = VS_MAKE_VIDEO_ID(cfYUV, stFloat, 32, 1, 1),
@@ -478,7 +489,7 @@ struct VSAPI {
 
     /* Core and information */
     VSCore *(VS_CC *createCore)(int flags) VS_NOEXCEPT; /* flags uses the VSCoreCreationFlags enum */
-    void (VS_CC *freeCore)(VSCore *core) VS_NOEXCEPT; /* only call this function after all node, frame and function references belonging to the core have been freed */
+    void (VS_CC *freeCore)(VSCore *core) VS_NOEXCEPT; /* only call this function after all node, frame and function references belonging to the core have been freed, references that erroneously outlive the core must at least be released one at a time and not concurrently from multiple threads */
     int64_t (VS_CC *setMaxCacheSize)(int64_t bytes, VSCore *core) VS_NOEXCEPT; /* the total cache size at which vapoursynth more aggressively tries to reclaim memory, it is not a hard limit */
     int (VS_CC *setThreadCount)(int threads, VSCore *core) VS_NOEXCEPT; /* setting threads to 0 means automatic detection */
     void (VS_CC *getCoreInfo)(VSCore *core, VSCoreInfo *info) VS_NOEXCEPT;
@@ -486,7 +497,7 @@ struct VSAPI {
 
     /* Message handler */
     void (VS_CC *logMessage)(int msgType, const char *msg, VSCore *core) VS_NOEXCEPT;
-    VSLogHandle *(VS_CC *addLogHandler)(VSLogHandler handler, VSLogHandlerFree free, void *userData, VSCore *core) VS_NOEXCEPT; /* free and userData can be NULL, returns a handle that can be passed to removeLogHandler */
+    VSLogHandle *(VS_CC *addLogHandler)(VSLogHandler handler, VSLogHandlerFree free, void *userData, VSCore *core) VS_NOEXCEPT; /* free and userData can be NULL, returns a handle that can be passed to removeLogHandler, handlers must only pass the message on and return quickly, calling logMessage is allowed but no other api function and a handler must never add or remove log handlers or wait for frame requests to complete */
     int (VS_CC *removeLogHandler)(VSLogHandle *handle, VSCore *core) VS_NOEXCEPT; /* returns non-zero if successfully removed */
     
     /* Added in API 4.1, mostly graph and node inspection, PLEASE DON'T USE INSIDE FILTERS */

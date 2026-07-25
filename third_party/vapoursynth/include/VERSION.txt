@@ -1,1 +1,1 @@
-headers from VapourSynth R78, refreshed 2026-07-17
+headers from VapourSynth Release R78, refreshed 2026-07-25
