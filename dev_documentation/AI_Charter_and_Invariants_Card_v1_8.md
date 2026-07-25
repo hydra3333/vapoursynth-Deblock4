@@ -2,7 +2,7 @@
 
 **Version:** 1.8
 **Date:** 2026-07-25
-**Status:** Ratification candidate for W3X review. Part 1 adds invariant G5, which now carries the full C-SIMD-06 enforcement detail.
+**Status:** Ratified charter baseline. Part 1 includes invariant G5, which carries the full C-SIMD-06 enforcement detail.
 **Companion specification:** `README_Deblock4_Design_Spec_v1.1.md`
 **Companion internal revision:** `Design specification revision: 1.1`
 **Encoding:** US-ASCII only. See C-STY-01.
