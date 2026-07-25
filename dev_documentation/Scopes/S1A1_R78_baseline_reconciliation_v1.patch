@@ -1,0 +1,90 @@
+diff --git a/src/vapoursynth_api4.h b/src/vapoursynth_api4.h
+index 46150b8..b7157f3 100644
+--- a/src/vapoursynth_api4.h
++++ b/src/vapoursynth_api4.h
+@@ -2,11 +2,10 @@
+ #define DEBLOCK4_VAPOURSYNTH_API4_H
+ 
+ /*
+- * Deblock4 targets VapourSynth API 4.2 as supplied with R76+.
+- *
+- * Pin the required API explicitly. VS_USE_LATEST_API is intentionally not
+- * used because updating the copied headers must not silently change the API
+- * contract compiled into the plugin.
++ * Deblock4 pins VapourSynth API 4.2 via VS_USE_API_42. The vendored
++ * headers are currently VapourSynth R78. The pinned API contract is
++ * deliberate and independent of the vendored header release; updating the
++ * headers must not silently change the compiled API contract.
+  */
+ #define VS_USE_API_42
+ 
+@@ -28,6 +27,6 @@ int zig_vsh_areValidDimensions(
+ );
+ 
+ /* Deblock4-specific validation of the helper bridge. */
+-int deblock4_vsh_bridgeSelfTest(void);
++int deblock4_vsh_bridge_self_test(void);
+ 
+ #endif
+diff --git a/src/vapoursynth_header_probe.zig b/src/vapoursynth_header_probe.zig
+index c4b7e9a..1203f98 100644
+--- a/src/vapoursynth_header_probe.zig
++++ b/src/vapoursynth_header_probe.zig
+@@ -41,10 +41,10 @@ comptime {
+         @compileError("VSConstants4.h lacks VSC_RANGE_FULL");
+ 
+     // C bridge to VSHelper4.h
+-    if (!@hasDecl(vs, "deblock4_vsh_is_constant_video_format"))
++    if (!@hasDecl(vs, "zig_vsh_isConstantVideoFormat"))
+         @compileError("VSHelper4.h bridge lacks format helper");
+ 
+-    if (!@hasDecl(vs, "deblock4_vsh_are_valid_dimensions"))
++    if (!@hasDecl(vs, "zig_vsh_areValidDimensions"))
+         @compileError("VSHelper4.h bridge lacks dimension helper");
+ 
+     if (!@hasDecl(vs, "deblock4_vsh_bridge_self_test"))
+diff --git a/src/vapoursynth_helper_bridge.c b/src/vapoursynth_helper_bridge.c
+index dc1f053..a76d410 100644
+--- a/src/vapoursynth_helper_bridge.c
++++ b/src/vapoursynth_helper_bridge.c
+@@ -1,11 +1,21 @@
+ #include "vapoursynth_api4.h"
+ #include "VSHelper4.h"
+ 
+-int deblock4_vsh_is_constant_video_format(const VSVideoInfo *vi) {
++/*
++ * C-INT-04: project-authored Zig-facing compatibility wrapper for
++ * vsh_isConstantVideoFormat. The zig_ prefix marks a compatibility wrapper;
++ * it does not imply compiler-generated code.
++ */
++int zig_vsh_isConstantVideoFormat(const VSVideoInfo *vi) {
+     return vsh_isConstantVideoFormat(vi);
+ }
+ 
+-int deblock4_vsh_are_valid_dimensions(
++/*
++ * C-INT-04: project-authored Zig-facing compatibility wrapper for
++ * vsh_areValidDimensions. The zig_ prefix marks a compatibility wrapper;
++ * it does not imply compiler-generated code.
++ */
++int zig_vsh_areValidDimensions(
+     const VSVideoFormat *format,
+     int width,
+     int height
+@@ -25,13 +35,13 @@ int deblock4_vsh_bridge_self_test(void) {
+     format.subSamplingW = 1;
+     format.subSamplingH = 1;
+ 
+-    if (deblock4_vsh_is_constant_video_format(&video_info))
++    if (zig_vsh_isConstantVideoFormat(&video_info))
+         result |= 1;
+ 
+-    if (deblock4_vsh_are_valid_dimensions(&format, 16, 16))
++    if (zig_vsh_areValidDimensions(&format, 16, 16))
+         result |= 2;
+ 
+-    if (!deblock4_vsh_are_valid_dimensions(&format, 15, 16))
++    if (!zig_vsh_areValidDimensions(&format, 15, 16))
+         result |= 4;
+ 
+     return result;
