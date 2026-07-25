@@ -1,6 +1,6 @@
 # Deblock4 - Project Charter and Invariants Card
 
-**Version:** 1.4
+**Version:** 1.5
 **Date:** 2026-07-25
 **Status:** Draft consolidated charter update for W3X review. Part 1 is unchanged.
 **Companion specification:** `README_Deblock4_Design_Spec_v1.1.md`
@@ -43,8 +43,8 @@ Project:
     Deblock4
 
 Charter:
-    filename          Deblock4_AI_Charter_and_Invariants_Card_v1.4.md
-    internal version  1.4
+    filename          Deblock4_AI_Charter_and_Invariants_Card_v1.5.md
+    internal version  1.5
 
 Controlling specification:
     filename          README_Deblock4_Design_Spec_v1.1.md
@@ -982,6 +982,13 @@ custom-mode primitives       luma_step_x, luma_step_y,
 ---
 
 # Part 7 - Revision history
+
+## v1.5 (2026-07-25)
+
+Added an explicit oracle-identity acceptance requirement to the session bootstrap header
+for any scope touching a pixel or frame-construction path, so copy-path work cannot pass
+acceptance before the scalar oracle exists. Closes the gap where P-04's non-binding stage
+order was the only thing sequencing kernel correctness ahead of copy optimisation.
 
 ## v1.4 (2026-07-25)
 
