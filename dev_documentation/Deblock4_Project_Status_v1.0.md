@@ -24,10 +24,10 @@ Document authority is:
 README_Deblock4_Design_Spec_v1.1.md
     controlling technical and algorithmic design specification
 
-Deblock4_AI_Charter_and_Invariants_Card_v1.5.md
+AI_Charter_and_Invariants_Card_v1.5.md
     controlling invariants, roles, coding standards, and process rules
 
-Deblock4_Concise_Project_Summary_v1.0.md
+Concise_Project_Summary_v1.0.md
     concise orientation and user-facing companion
 
 Deblock4_Project_Status_v1.0.md
@@ -305,8 +305,8 @@ bounded scope:
 
 ```text
 Deblock4_Project_Status_v1.0.md
-Deblock4_AI_Charter_and_Invariants_Card_v1.5.md
-Deblock4_Concise_Project_Summary_v1.0.md
+AI_Charter_and_Invariants_Card_v1.5.md
+Concise_Project_Summary_v1.0.md
 README_Deblock4_Design_Spec_v1.1.md
 ```
 
