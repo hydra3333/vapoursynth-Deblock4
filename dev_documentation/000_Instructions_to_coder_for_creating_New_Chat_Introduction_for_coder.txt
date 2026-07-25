@@ -1,0 +1,60 @@
+OK, you have been outstanding. Now for some risk mitigation planning.
+
+You as the coder chatGPT chat have been great - however this chat is now very long indeed
+and seems likely near ceasing to function suddenly without prior notice, which is a bad
+thing for me since then I cannot even secure a documented handover note to the new successor chat etc.
+
+Can you please draft a really excellent introduction for your (likely memoryless) successor
+coder chat, with a view to providing (and/or referencing) all the background and context
+and rules and information the successor coder chat will need to become immediately productive.
+Keep it lean and directive — it should point into the existing documents with a clear reading
+order, not re-summarise them. Assume the successor will read the four controlling documents;
+your job is to orient, not duplicate. The greatest risk is a successor drowning in context,
+the converse risk is one starved of it.
+
+Note that the naming of the documents has changed slightly (they are re-attached here).
+Perhaps call it 111_New_Chat_Introduction_for_coder_v1.0 ?
+
+Include information in sections. Among them:
+
+**Where we are, in one line, up top.**
+State the immediate next action (the current bounded scope) before anything else,
+so the successor knows where it is in the arc before it reads a single document.
+Orientation before detail.
+
+**Reading order.**
+A memoryless chat handed multiple documents totalling 8,000+ lines will not know
+which to read first, what is controlling vs informative, or where it is in the arc.
+Give an explicit ordered reading path, marking each document as controlling or
+informative, with a one-line reason to read each. 
+This is a guided entry, not a catalogue. 
+(Each role writes its own; the designer will do the same.)
+
+**Tacit knowledge.**
+Things worthwhile for a new coder to be aware of so as to not inadvertently kill
+the project or go down some already-explored rabbit-hole: spike results, dead ends,
+the "we tried X and it failed for reason Y" — for example whatever lies behind
+the VSHelper4.h C-ABI bridge decision and the ReleaseSafe translation issue.
+This is knowledge that exists only in this chat and nowhere in the documents;
+it is the valuable perishable part.
+
+**What will bite you.**
+Separate from dead ends (things already closed), a short list of active
+hazards — traps still open that a plausible-but-wrong first move would spring.
+Framed as "if you are about to do X, don't, because Y."
+Keep it to the ones that genuinely matter.
+
+**What you suspect isn't written down.**
+Explicitly flag any context you hold that you suspect is NOT captured in the
+four documents. This is the single most valuable thing you can leave me,
+because it is exactly what I cannot recover once this chat stops.
+If you are unsure whether something made it into the record, name it here rather
+than assume it did.
+
+Just so you are aware, one of the things I fear greatest is loss of goals,
+objectives, context, knowledge, experience, decisions, rules, status, etc
+from one chat to the next.
+From experience, human project handovers hurt projects and so does this equivalent;
+I recall (only once recently) abandoning a new AI chat which was somehow unable to perform.
+
+Before doing anything, your thoughts?
