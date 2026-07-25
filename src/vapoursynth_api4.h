@@ -15,17 +15,19 @@
 
 /*
  * VSHelper4.h is compiled as C in vapoursynth_helper_bridge.c rather than
- * translated into Zig. These functions provide the stable C-ABI boundary
- * through which Zig uses the required helpers.
+ * translated into Zig. These Zig-facing compatibility wrappers provide a
+ * stable C-ABI boundary while preserving each original vsh_ helper name
+ * after the zig_ prefix so its VapourSynth correspondence remains visible.
  */
-int deblock4_vsh_is_constant_video_format(const VSVideoInfo *vi);
+int zig_vsh_isConstantVideoFormat(const VSVideoInfo *vi);
 
-int deblock4_vsh_are_valid_dimensions(
+int zig_vsh_areValidDimensions(
     const VSVideoFormat *format,
     int width,
     int height
 );
 
-int deblock4_vsh_bridge_self_test(void);
+/* Deblock4-specific validation of the helper bridge. */
+int deblock4_vsh_bridgeSelfTest(void);
 
 #endif
