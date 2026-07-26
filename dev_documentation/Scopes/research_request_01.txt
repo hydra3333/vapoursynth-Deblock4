@@ -1,0 +1,64 @@
+Research question: retaining but not exporting CPU-feature-specific code in a single shared library, with runtime dispatch.
+
+I'm building a single shared library (a Windows x64 DLL, but general answers welcome)
+that must contain multiple implementations of the same routines compiled for different
+CPU feature levels — a baseline x86-64 version, an SSE4.1 version, and an AVX2
+version — selected at runtime after CPU capability detection. This is the standard 
+"runtime CPU dispatch / function multi-versioning" pattern.
+
+I have a specific safety requirement that shapes the question. The feature-specific
+code (e.g. the AVX2 object) must be present and linked into the single DLL, but it
+must be impossible to reach except through my own runtime capability guard. In
+particular I do not want the feature-specific functions to appear in the DLL's
+public export table, because an exported symbol is a call path that bypasses my
+dispatch guard — an external caller could invoke AVX2 code directly on a CPU
+lacking AVX2 and fault. I also want to avoid depending on implicit toolchain
+behaviour (e.g. "the linker happens not to export this symbol unless asked"),
+because implicit behaviour can change silently across toolchain releases and break
+the safety property without warning.
+
+So I'm looking for established techniques, prior art, papers, blog posts, or
+standard idioms addressing any of these, ideally with the trade-offs named:
+
+1. How to retain a symbol/function in a linked binary (prevent dead-code elimination)
+without exporting it — i.e. keep internal code alive purely so it's present for
+inspection/linkage, while it remains non-public and non-callable from outside the module.
+Linker-level techniques (COFF/PE /include, GNU used/retain attributes, KEEP in linker
+scripts, module-definition/.def files, explicit export allowlists, --version-script,
+-fvisibility, etc.) are all in scope. I'd like to understand which of these make
+export a positive, explicit declaration (so nothing is exported unless named)
+versus which rely on default behaviour.
+
+2. Established patterns for runtime CPU feature dispatch inside one binary where the
+feature-specific code is deliberately kept off the public interface — how do well-known
+projects (compilers, codecs, math/SIMD libraries, e.g. glibc IFUNC, FFmpeg, x264/x265,
+dav1d, highway, simd libraries) structure this, and specifically how do they prevent
+feature-specific entry points from being externally reachable before the guard runs?
+
+3. Any discussion of the safety/soundness angle: guaranteeing that CPU-feature-specific
+instructions cannot execute on an unsupporting CPU via any unguarded path (static
+initialisers, symbol enumeration, export tables, import thunks), and how that guarantee
+is made robust against toolchain/compiler version changes rather than resting on
+incidental behaviour.
+
+Please exclude the "ship multiple separate binaries and let the loader pick the best one"
+approach — I've already evaluated and rejected that; I specifically need the
+single-binary, internally-dispatched case.
+
+Two requests on how to answer: 
+(a) distinguish clearly between techniques you can point to as established/documented
+versus your own inference — I'd rather have "I'm not certain, here's a lead to verify"
+than a confident answer I then have to disprove;
+(b) if there's no well-known standard solution to part (1) and it's genuinely a niche
+area, say so plainly rather than manufacturing one, because knowing it's niche is
+itself useful information.
+
+Toolchain context for applicability: my build uses the Zig compiler (version 0.16)
+producing a Windows x64 COFF/PE DLL, with the MSVC-style linker. General C/C++/linker
+techniques are exactly what I want to hear about — but where you name a specific
+technique, please note whether it's ELF/GNU-specific, COFF/PE-applicable, or
+toolchain-agnostic, so I can judge whether it maps onto a Zig/COFF/PE build.
+I'll verify actual Zig 0.16 behaviour myself by building; I'm asking you to surface
+the candidate techniques and their applicability, not to confirm Zig specifics.
+
+

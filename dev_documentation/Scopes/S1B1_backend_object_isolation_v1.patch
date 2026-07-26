@@ -1,0 +1,253 @@
+diff --git a/build.zig b/build.zig
+index 3c53470..9693336 100644
+--- a/build.zig
++++ b/build.zig
+@@ -1,9 +1,69 @@
+ const std = @import("std");
+ 
++const sse41_marker_symbol = "deblock4_backend_probe_sse41_marker";
++const avx2_marker_symbol = "deblock4_backend_probe_avx2_marker";
++
+ pub fn build(b: *std.Build) void {
+-    // The native Windows target is sufficient for the initial scaffold.
+-    // Production target and SIMD closures remain Stage 1 spike results.
+-    const target = b.standardTargetOptions(.{});
++    // Stage 1B.1 fixes every baseline unit to x86_64-windows-msvc. Target and
++    // CPU overrides are rejected rather than silently producing native code.
++    const requested_target = b.option(
++        []const u8,
++        "target",
++        "Unsupported: Deblock4 Stage 1B.1 fixes the Windows x64 baseline target",
++    );
++
++    const requested_cpu = b.option(
++        []const u8,
++        "cpu",
++        "Unsupported: Deblock4 Stage 1B.1 fixes per-object CPU contracts",
++    );
++
++    if (requested_target != null or requested_cpu != null) {
++        @panic(
++            "Deblock4 Stage 1B.1 rejects -Dtarget and -Dcpu overrides; " ++
++                "build the fixed per-object target contracts",
++        );
++    }
++
++    // Provisional Stage 1B.1 targets. Exact production feature closures remain
++    // Stage 1B.2 results and must not be inferred from these probe contracts.
++    const baseline_target = b.resolveTargetQuery(.{
++        .cpu_arch = .x86_64,
++        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
++        .cpu_features_sub = std.Target.x86.featureSet(&.{
++            .sse4_1,
++            .avx,
++            .avx2,
++            .fma,
++        }),
++        .os_tag = .windows,
++        .abi = .msvc,
++    });
++
++    const sse41_target = b.resolveTargetQuery(.{
++        .cpu_arch = .x86_64,
++        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
++        .cpu_features_add = std.Target.x86.featureSet(&.{.sse4_1}),
++        .cpu_features_sub = std.Target.x86.featureSet(&.{
++            .avx,
++            .avx2,
++            .fma,
++        }),
++        .os_tag = .windows,
++        .abi = .msvc,
++    });
++
++    const avx2_target = b.resolveTargetQuery(.{
++        .cpu_arch = .x86_64,
++        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
++        .cpu_features_add = std.Target.x86.featureSet(&.{
++            .avx,
++            .avx2,
++        }),
++        .cpu_features_sub = std.Target.x86.featureSet(&.{.fma}),
++        .os_tag = .windows,
++        .abi = .msvc,
++    });
+ 
+     // Allow explicit Debug, ReleaseSafe, ReleaseFast, or ReleaseSmall builds.
+     const optimize = b.standardOptimizeOption(.{});
+@@ -14,7 +74,7 @@ pub fn build(b: *std.Build) void {
+ 
+     const vapoursynth_api4_translate = b.addTranslateC(.{
+         .root_source_file = b.path("src/vapoursynth_api4.h"),
+-        .target = target,
++        .target = baseline_target,
+         .optimize = optimize,
+     });
+ 
+@@ -39,7 +99,7 @@ pub fn build(b: *std.Build) void {
+         .name = "deblock4_build_probe",
+         .root_module = b.createModule(.{
+             .root_source_file = b.path("src/build_probe.zig"),
+-            .target = target,
++            .target = baseline_target,
+             .optimize = optimize,
+         }),
+     });
+@@ -66,7 +126,7 @@ pub fn build(b: *std.Build) void {
+     run_step.dependOn(&run_build_probe.step);
+ 
+     // ---------------------------------------------------------------------
+-    // Deblock4 dynamic-library probe.
++    // Deblock4 dynamic-library probe and isolated backend objects.
+     // ---------------------------------------------------------------------
+ 
+     const dll = b.addLibrary(.{
+@@ -74,13 +134,95 @@ pub fn build(b: *std.Build) void {
+         .linkage = .dynamic,
+         .root_module = b.createModule(.{
+             .root_source_file = b.path("src/dll_probe.zig"),
+-            .target = target,
++            .target = baseline_target,
++            .optimize = optimize,
++        }),
++    });
++
++    const backend_probe_generic = b.addObject(.{
++        .name = "deblock4_backend_probe_generic",
++        .root_module = b.createModule(.{
++            .root_source_file = b.path("src/backend_probe_generic.zig"),
++            .target = baseline_target,
++            .optimize = optimize,
++        }),
++    });
++
++    const backend_probe_scalar = b.addObject(.{
++        .name = "deblock4_backend_probe_scalar",
++        .root_module = b.createModule(.{
++            .root_source_file = b.path("src/backend_probe_scalar.zig"),
++            .target = baseline_target,
++            .optimize = optimize,
++        }),
++    });
++
++    const backend_probe_sse41 = b.addObject(.{
++        .name = "deblock4_backend_probe_sse41",
++        .root_module = b.createModule(.{
++            .root_source_file = b.path("src/backend_probe_sse41.zig"),
++            .target = sse41_target,
++            .optimize = optimize,
++        }),
++    });
++
++    const backend_probe_avx2 = b.addObject(.{
++        .name = "deblock4_backend_probe_avx2",
++        .root_module = b.createModule(.{
++            .root_source_file = b.path("src/backend_probe_avx2.zig"),
++            .target = avx2_target,
+             .optimize = optimize,
+         }),
+     });
+ 
++    // Generic/scalar markers are safe smoke-test exports. Target-specific
++    // markers remain linker-visible object symbols but receive no PE export.
++    backend_probe_generic.dll_export_fns = true;
++    backend_probe_scalar.dll_export_fns = true;
++    backend_probe_sse41.dll_export_fns = false;
++    backend_probe_avx2.dll_export_fns = false;
++
++    dll.root_module.addObject(backend_probe_generic);
++    dll.root_module.addObject(backend_probe_scalar);
++    dll.root_module.addObject(backend_probe_sse41);
++    dll.root_module.addObject(backend_probe_avx2);
++
++    // COFF /include retention proves the two target-specific code symbols were
++    // consumed by the DLL link without adding a call or startup path.
++    dll.forceUndefinedSymbol(sse41_marker_symbol);
++    dll.forceUndefinedSymbol(avx2_marker_symbol);
++
+     b.installArtifact(dll);
+ 
++    // Stable copies permit dumpbin inspection without depending on cache paths.
++    const install_generic_object = b.addInstallFileWithDir(
++        backend_probe_generic.getEmittedBin(),
++        .prefix,
++        "obj/backend_probe_generic.obj",
++    );
++    b.getInstallStep().dependOn(&install_generic_object.step);
++
++    const install_scalar_object = b.addInstallFileWithDir(
++        backend_probe_scalar.getEmittedBin(),
++        .prefix,
++        "obj/backend_probe_scalar.obj",
++    );
++    b.getInstallStep().dependOn(&install_scalar_object.step);
++
++    const install_sse41_object = b.addInstallFileWithDir(
++        backend_probe_sse41.getEmittedBin(),
++        .prefix,
++        "obj/backend_probe_sse41.obj",
++    );
++    b.getInstallStep().dependOn(&install_sse41_object.step);
++
++    const install_avx2_object = b.addInstallFileWithDir(
++        backend_probe_avx2.getEmittedBin(),
++        .prefix,
++        "obj/backend_probe_avx2.obj",
++    );
++    b.getInstallStep().dependOn(&install_avx2_object.step);
++
+     const dll_check_step = b.step(
+         "dll-check",
+         "Compile the Deblock4 dynamic-library probe",
+@@ -91,7 +233,7 @@ pub fn build(b: *std.Build) void {
+         .name = "deblock4_dll_smoke_test",
+         .root_module = b.createModule(.{
+             .root_source_file = b.path("src/dll_smoke_test.zig"),
+-            .target = target,
++            .target = baseline_target,
+             .optimize = optimize,
+         }),
+     });
+@@ -105,6 +247,24 @@ pub fn build(b: *std.Build) void {
+     );
+     dll_smoke_check_step.dependOn(&dll_smoke_test.step);
+ 
++    const backend_isolation_smoke_test = b.addExecutable(.{
++        .name = "deblock4_backend_isolation_smoke_test",
++        .root_module = b.createModule(.{
++            .root_source_file = b.path("src/backend_isolation_smoke_test.zig"),
++            .target = baseline_target,
++            .optimize = optimize,
++        }),
++    });
++
++    backend_isolation_smoke_test.root_module.linkLibrary(dll);
++    b.installArtifact(backend_isolation_smoke_test);
++
++    const backend_isolation_check_step = b.step(
++        "backend-isolation-check",
++        "Compile the four-object DLL and its baseline-only smoke test",
++    );
++    backend_isolation_check_step.dependOn(&backend_isolation_smoke_test.step);
++
+     // ---------------------------------------------------------------------
+     // VapourSynth translated-header probe.
+     // ---------------------------------------------------------------------
+@@ -113,7 +273,7 @@ pub fn build(b: *std.Build) void {
+         .name = "deblock4_vs_header_probe",
+         .root_module = b.createModule(.{
+             .root_source_file = b.path("src/vapoursynth_header_probe.zig"),
+-            .target = target,
++            .target = baseline_target,
+             .optimize = optimize,
+             .link_libc = true,
+             .imports = &.{
+@@ -166,7 +326,7 @@ pub fn build(b: *std.Build) void {
+     const dll_probe_tests = b.addTest(.{
+         .root_module = b.createModule(.{
+             .root_source_file = b.path("src/dll_probe.zig"),
+-            .target = target,
++            .target = baseline_target,
+             .optimize = optimize,
+         }),
+     });
