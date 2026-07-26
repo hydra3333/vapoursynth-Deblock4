@@ -1,8 +1,8 @@
 # Deblock4 - New Chat Introduction for Coder
 
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-07-25
-**Status:** Informative successor orientation; not controlling; aligned to ratified charter v1.8
+**Status:** Informative successor orientation; not controlling; aligned to ratified charter v1.9
 **Role:** W3C successor coder
 **Encoding:** US-ASCII only
 
@@ -13,24 +13,37 @@
 The next bounded scope is **Stage 1B.1 - backend object isolation and one-DLL
 linkage**.
 
-When its formal scope is issued, prove that generic, scalar, SSE4.1, and AVX2
-non-pixel probe objects compile under separate target contracts and link into
-one Windows x64 DLL.
+When its formal scope (v1.3 or later) is issued, prove that generic, scalar,
+SSE4.1, and AVX2 non-pixel probe objects compile under separate target
+contracts and link into one Windows x64 DLL.
 
 ```text
 generic and scalar probes:
-    may be called
+    may be called (they are safe baseline code)
 
 SSE4.1 and AVX2 probe objects:
     compile and link only
+    NEVER declared with the export keyword (charter G6)
+    retained by explicit reference or an explicit retention directive
+    absence from the PE export table is then structural, not incidental
     do not call until a proven in-process capability guard protects the call
 ```
 
 Do not introduce pixel-producing, frame-construction, plane-copy, or deblocking
 code in Stage 1B.1.
 
+IMPORTANT - a prior Stage 1B.1 delivery exists in project history but is
+SUPERSEDED. It marked the SSE4.1/AVX2 markers with the export keyword and relied
+on the toolchain not adding them to the export table - implicit behaviour that
+charter v1.9 invariant G6 now forbids. External research
+(Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md) settled the correct
+approach. The active scope v1.3 (or later) carries the G6-compliant design. Do
+not resurrect the superseded export-based mechanism.
+
 Before changing anything, verify the branch, exact HEAD, working-tree state,
-document versions, and formal scope package.
+document versions, and formal scope package. Your FIRST task on the active scope
+is to assess the research package and confirm the G6 approach BEFORE writing any
+code (the scope requires this).
 
 ---
 
@@ -70,14 +83,17 @@ It may contain an older charter pointer; the latest ratified charter prevails.
 Read for the compact project shape, vocabulary, public surface, stage sequence,
 and scalar/SSE4.1/AVX2 relationship.
 
-## 2.3 `AI_Charter_and_Invariants_Card_v1_8.md` - CONTROLLING
+## 2.3 `AI_Charter_and_Invariants_Card_v1_9.md` - CONTROLLING
 
-This is the W3X-ratified charter baseline, internal version 1.8. Verify the
-filename and internal version agree before acting.
+This is the W3X-ratified charter baseline, internal version 1.9. Verify the
+filename and internal version agree before acting; if a newer ratified version
+exists in the repository, it prevails over the number written here.
 
 Before proposing code, read the bootstrap header, Part 1 in full, W3C role,
 coding/interop/numeric/SIMD/delivery rules, and process rules. Pay particular
-attention to G5 and C-DELIV-01 through C-DELIV-08.
+attention to G5 (no execution before the guard), G6 (safety properties rest on
+explicit/structural mechanisms, never implicit toolchain behaviour; gated code
+never uses the export keyword), and C-DELIV-01 through C-DELIV-08.
 
 ## 2.4 `README_Deblock4_Design_Spec_v1.1.md` - CONTROLLING
 
@@ -94,7 +110,16 @@ section 20  proposed development stages
 The README is the technical tie-breaker. Later scopes will quote the detailed
 algorithmic sections they require.
 
-## 2.5 Formal active coding scope
+## 2.5 `Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md` - INFORMATIVE
+
+Read for the Stage 1B.1 retention/export decision. It records the research query,
+the external findings verbatim, and the designer assessment that led to charter
+G6. It explains WHY gated backend code is never exported and how retention
+without export works in COFF/PE (reference-graph anchoring; /INCLUDE-class
+directives; COFF safe-by-default exports). The active 1B.1 scope requires you to
+assess this before writing code.
+
+## 2.6 Formal active coding scope
 
 Read last. It must identify the starting commit, exact permitted and forbidden
 files, validation, and acceptance. Do not write production code from this
@@ -104,14 +129,18 @@ introduction alone.
 
 # 3. Where the project is
 
-**Stage 1A is complete; Stage 1 is not complete.**
+**Stage 1A and Stage 1A.1 are complete; Stage 1 is not complete.**
 
 Reported proved: Zig 0.16.0 scaffold, Windows DLL/client linkage, VapourSynth
 API4 core/constants translation, and the settled `VSHelper4.h` C-ABI bridge.
+Stage 1A.1 reconciled the helper-bridge names and re-established a genuine R78
+build baseline; its accepted commit is the Stage 1B.1 starting point (verify the
+exact HEAD in the repository).
 
 Not yet present: a functional VapourSynth filter, scalar deblocking code,
-ReleaseSafe scalar oracle, final backend objects, capability detection, or
-runtime dispatch.
+ReleaseSafe scalar oracle, accepted backend objects, capability detection, or
+runtime dispatch. (A superseded 1B.1 backend-object delivery exists in history;
+see the IMMEDIATE NEXT ACTION note.)
 
 ---
 
@@ -242,6 +271,14 @@ no command-line, environment-variable, build-flag, manual, or 'known capable
 machine' bypass. Static initialisers, registration paths, import thunks, and
 test calls all count as execution.
 
+If you are about to declare a gated (SSE4.1/AVX2) function with the export
+keyword, do not. Charter G6: gated backend code is NEVER exported. An exported
+symbol is a call path that bypasses the dispatch guard, and relying on the
+toolchain not to export it is exactly the implicit-behaviour dependency G6
+forbids. Retain gated code by explicit reference or an explicit retention
+directive; its absence from the export table must be structural. Prove that
+absence with a standing dumpbin /EXPORTS gate, not a one-time look.
+
 If you are about to compile generic or dispatch code under AVX2, do not.
 Dispatch must run on machines lacking the feature it detects.
 
@@ -273,7 +310,7 @@ Verify rather than assume:
 ```text
 1. Exact current HEAD and clean/dirty working-tree state.
 2. Whether the attached charter filename and internal version both identify
-   ratified v1.8; stop on any mismatch.
+   ratified v1.9 (or newer); stop on any mismatch.
 3. Exact committed scaffold inventory after W3X's adjustments.
 4. Exact final build commands and console markers for Debug, ReleaseSafe, and
    ReleaseFast bridge validation.
@@ -281,9 +318,13 @@ Verify rather than assume:
 6. Whether .vscode/extensions.json and .vscode/tasks.json are committed.
 7. Whether temporary placeholder or disposable probe files remain.
 8. The coordinator machine's actual CPU features.
-9. Whether Project Status v1.0 was updated from its older charter pointer.
-10. The formal Stage 1B.1 permitted/forbidden file set.
+9. Whether the Project Status document was updated past v1.0 to reflect 1A.1
+   and the G6 development.
+10. The formal Stage 1B.1 permitted/forbidden file set (from the active scope).
 11. Final SSE4.1 and AVX2 feature closures; these remain deliberately open.
+12. Whether Zig 0.16 forceUndefinedSymbol (or its equivalent) retains a
+    NON-exported symbol - the empirical crux the active scope asks you to
+    settle with W3X for G6-compliant retention without export.
 ```
 
 These are verification items, not invitations to redesign the project.
@@ -336,11 +377,14 @@ Before proposing implementation, give W3X a compact orientation check:
 3. Current milestone: Stage 1A complete; Stage 1 incomplete.
 4. Immediate scope: Stage 1B.1 object isolation and one-DLL linkage.
 5. G5 consequence: generic/scalar may run; SSE4.1/AVX2 link but are not called.
-   No bypass is permitted; unguarded initialisers, registration, thunks, and
-   tests count as execution. Later guarded spike tests SKIP unsupported or
-   indeterminate hosts rather than calling target-specific code.
-6. Repository branch, HEAD, git status --short, and relevant scaffold files.
-7. Any mismatch, stale version, missing input, or ambiguity blocking changes.
+   No bypass; unguarded initialisers, registration, thunks, and tests count as
+   execution.
+6. G6 consequence: gated code is never exported; retention is by explicit
+   reference or directive; export-table absence is structural and proven by a
+   standing gate. State that you have read the research package and will assess
+   it before writing code.
+7. Repository branch, HEAD, git status --short, and relevant scaffold files.
+8. Any mismatch, stale version, missing input, or ambiguity blocking changes.
 ```
 
 Do not re-summarise every document. Demonstrate that you know where the project
@@ -353,11 +397,13 @@ is, what governs it, and what the next proof must do.
 Supply this introduction together with:
 
 ```text
-Deblock4_Project_Status_v1.0.md
+Deblock4_Project_Status (latest version in the repository)
 Concise_Project_Summary_v1.0.md
-AI_Charter_and_Invariants_Card_v1_8.md
+AI_Charter_and_Invariants_Card_v1_9.md   (or newer ratified)
 README_Deblock4_Design_Spec_v1.1.md
-formal active coding scope
+Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md
+Deblock4_Forward_Roadmap_v1_1.md
+formal active coding scope (Stage 1B.1 v1.3 or later)
 all source files and test contracts touched by that scope
 ```
 
@@ -368,6 +414,12 @@ If only this introduction is present, implementation must not begin.
 # 10. Revision note
 
 ```text
+v1.2  re-aligned to ratified charter v1.9 (adds G6: explicit/structural
+      mechanisms over implicit toolchain behaviour; gated code never exported).
+      Updated milestone to 1A.1-complete, added the retention/export research
+      package to the reading order, flagged the superseded export-based 1B.1
+      delivery, and added the retention-without-export empirical crux. The
+      active 1B.1 scope now requires research-package assessment before coding.
 v1.1  aligned the handover to W3X-ratified charter v1.8 and carried the
       complete G5 no-bypass, unguarded-execution, and SKIP consequences.
 ```

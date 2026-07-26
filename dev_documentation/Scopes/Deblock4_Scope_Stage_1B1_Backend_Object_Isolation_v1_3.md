@@ -1,16 +1,20 @@
 # Deblock4 - Coding Scope: Stage 1B.1 Backend Object Isolation and One-DLL Linkage
 
-**Version:** 1.1
+**Version:** 1.3
 **Date:** 2026-07-25
 **Status:** Active coding scope for W3C. Controlling for this scope only.
 **Author:** W3D designer
 **Encoding:** US-ASCII only
-**Revision note:** v1.1 sets the real post-1A.1 starting commit; replaces the
-earlier export-based presence/disassembly proof with a structural G5 proof
-(object presence by linker map or .obj symbols; non-execution by
-non-reachability, not by disassembly); names dumpbin via VsDevCmd; adds the
-three-bucket expected-final-status model; confirms extension of the existing
-Deblock4.dll.
+**Revision note:** v1.3 (after charter v1.9 / invariant G6 and the
+retention/export research) makes the retention mechanism G6-compliant: the
+SSE4.1/AVX2 markers are NOT declared with the export keyword; retention is by
+explicit reference-graph anchoring or an explicit /INCLUDE-class directive that
+does not export; export-table absence is structural (COFF safe-by-default) and
+proven by a STANDING dumpbin /EXPORTS gate rather than relied upon implicitly.
+Adds a mandatory research-package assessment gate before coding (section 0). The
+prior v1.2-era delivery that used export fn on the gated markers is SUPERSEDED.
+v1.2 added the baseline-target contract (section 2A). v1.1 set the post-1A.1
+commit and the structural G5 proof.
 
 ---
 
@@ -21,8 +25,8 @@ Project:
     Deblock4
 
 Charter:
-    filename          AI_Charter_and_Invariants_Card_v1_8.md
-    internal version  1.8
+    filename          AI_Charter_and_Invariants_Card_v1_9.md
+    internal version  1.9
 
 Controlling specification:
     filename          README_Deblock4_Design_Spec_v1.1.md
@@ -75,7 +79,7 @@ Inputs supplied:
     the repository at commit 8b6779c (clean tree, verified by W3X);
     the R78 headers under third_party/vapoursynth/include/;
     this scope;
-    charter v1.8 and README v1.1 as controlling references;
+    charter v1.9 and README v1.1 as controlling references;
     the working build_1B1.bat environment/setup head already drafted by W3X.
 
 Required validation:
@@ -84,14 +88,15 @@ Required validation:
 
 Expected result:
     the one Deblock4.dll builds in Debug, ReleaseSafe, ReleaseFast, now
-    containing four backend probe objects;
+    containing four backend probe objects, with the DLL root, generic, scalar,
+    and smoke-test units on a deliberate x86-64 baseline (section 2A);
     the existing scaffold regression checks still pass (build probe, header
     probe API 4.2, existing DLL smoke test 0x44423401, unit tests);
     the new backend-isolation smoke test confirms generic and scalar markers
     execute and returns its expected value;
-    the SSE4.1 and AVX2 objects are proved retained in the DLL by structural
-    evidence (section 6), and proved non-reachable (not exported, not called,
-    not referenced by any startup path);
+    the SSE4.1 and AVX2 objects are proved retained by forced-symbol linkage
+    plus dumpbin /SYMBOLS on the installed objects, and proved non-reachable
+    (not exported, not called, no startup/init/registration/import path);
     git diff --check clean; only permitted files and retained artifacts present.
 
 Known open measurement gates:
@@ -104,6 +109,36 @@ Implementation acceptance for this scope:
 
 Verify the branch and starting commit before changing anything. If the tree is
 not clean at 8b6779c, stop and report.
+
+---
+
+# 0. Mandatory first step - assess the research before coding
+
+Before proposing any implementation, W3C reads and assesses:
+
+```text
+Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md
+```
+
+and confirms, in its first response, agreement or reasoned disagreement with the
+G6-compliant retention approach this scope adopts (section 5.2). Specifically,
+W3C states:
+
+```text
+- that it has read the research package and understands why gated backend code
+  is never exported (charter G6);
+- its answer, or its experiment plan for W3X, on the empirical crux: does
+  Zig 0.16 forceUndefinedSymbol (or the current equivalent) retain a
+  NON-exported symbol, so retention-without-export holds by an explicit
+  directive; and if not, which explicit reference-anchoring alternative it
+  will use instead;
+- any disagreement with the approach, raised and stopped on, rather than
+  resolved silently inside the implementation.
+```
+
+No implementation is produced until this assessment is given. A prior 1B.1
+delivery that declared the gated markers with the export keyword is SUPERSEDED
+by G6 and must not be reproduced.
 
 ---
 
@@ -138,6 +173,58 @@ How the four objects are expressed (separate modules/objects linked into the
 existing library, versus Zig's mechanism for per-object target settings) is an
 implementation question for W3C to solve within build.zig, consistent with
 README sections 11 and 12. State the chosen mechanism in the delivery manifest.
+
+---
+
+# 2A. Provisional baseline-target contract (binding)
+
+The current build.zig obtains its target through:
+
+```text
+const target = b.standardTargetOptions(.{});
+```
+
+With no explicit CPU, this resolves to the NATIVE host CPU. On an AVX2-capable
+machine that means the DLL root, generic, scalar, and smoke-test code could be
+compiled with AVX2 (or other gated) instructions - silently violating G2
+(generic/dispatch code contains no gated instructions) and creating a G5 bypass
+(generic code runs on any machine, but native-compiled generic code would fault
+on a machine lacking those instructions).
+
+This scope therefore requires, as a binding structural contract:
+
+```text
+The following units are compiled to a DELIBERATE, FIXED, PROVISIONAL x86-64
+BASELINE target that assumes no gated feature (no SSE4.1, AVX, AVX2, FMA):
+
+    the Deblock4.dll root module
+    backend_probe_generic
+    backend_probe_scalar
+    backend_isolation_smoke_test
+    the existing DLL smoke-test executable (deblock4_dll_smoke_test)
+
+For these units:
+    - the baseline target is set explicitly in build.zig, not inherited from
+      the native host;
+    - -Dcpu=native, any other CPU override, environment route, or build option
+      MUST NOT silently replace the baseline for these units;
+    - an unsupported or conflicting target request is REJECTED rather than
+      quietly turned into native-host code.
+```
+
+Notes and boundaries:
+
+- This is NOT a Stage 1B.2 feature-closure decision. It is the minimum
+  structural baseline needed to satisfy G2 and G5 during Stage 1B.1. The exact
+  final baseline closure is still a later matter; here it need only be a
+  deliberate, gated-feature-free x86-64 baseline.
+- The SSE4.1 and AVX2 probe objects are exempt from the baseline (they exist
+  precisely to carry gated features) but remain non-exported and non-reachable
+  per sections 4 and 5.
+- The SEMANTIC requirement is stated here; the exact Zig 0.16 target-query
+  syntax is left to W3C, subject to W3X compilation proof (A3, P-03). If the
+  chosen syntax cannot both fix the baseline and reject native override cleanly
+  on Zig 0.16, W3C states this rather than forcing it.
 
 ---
 
@@ -179,58 +266,109 @@ AVX2 probe object      provisional AVX2 target, FMA excluded; NOT exported,
 
 ---
 
-# 5. G5 is the governing invariant - the proof is STRUCTURAL
+# 5. G5 and G6 are the governing invariants - the proof is STRUCTURAL
 
 Quoted so the memoryless coder works from the text:
 
 ```text
 G5  A backend's instructions are never EXECUTED on a machine not yet proven
-    to support them.
+    to support them. ... UNGUARDED EXECUTION PATHS ARE EXECUTION: static
+    initialisers, registration paths, import thunks, and test calls all count.
 
-    Compiling and LINKING a backend object into the DLL is safe by itself:
-    an object's mere presence executes nothing.
-
-    ... NO BYPASS. There is no manual, command-line, environment-variable,
-    build-flag, or "this machine is known to support it" route that permits
-    calling target-specific code without the guard having run and passed. ...
-
-    UNGUARDED EXECUTION PATHS ARE EXECUTION. Presence in the DLL is safe only
-    if NO unguarded path can reach target-specific instructions. That includes,
-    and is not limited to, static initialisers, registration paths, import
-    thunks, and test calls. ...
+G6  Safety properties rest on EXPLICIT or STRUCTURAL mechanisms, never on
+    implicit toolchain behaviour. Preference: (1) structural - the unsafe
+    state is inexpressible by construction; (2) explicit declaration - the
+    safe set is positively stated; (3) guarded residual - a loud-failing
+    standing gate. Corollary: gated backend functions are NOT declared with
+    the export keyword; their retention is proven by explicit reference or an
+    explicit retention directive, and their absence from the export table is
+    then structural (COFF/PE exports nothing without positive declaration).
 ```
 
-## 5.1 Do NOT export the SSE4.1 or AVX2 probe functions
+## 5.1 Do NOT declare the SSE4.1 or AVX2 markers with the export keyword
+
+This is the G6 corollary and it is the single most important rule in this scope.
 
 An exported target-specific function is a public, callable entry point into the
-DLL. Before the Stage 1B.3 capability guard exists, an external caller could
-invoke it on a machine lacking the feature, faulting - exactly the bypass G5
-forbids. Therefore the SSE4.1 and AVX2 probe functions are NOT exported, NOT
-called by any generic/scalar code, and NOT referenced by any DLL-load, static
-initialiser, registration, or import-thunk path.
+DLL - a call path that bypasses the dispatch guard (G5), and a property that
+would depend on the toolchain NOT exporting it (implicit behaviour G6 forbids).
 
-## 5.2 Prove presence WITHOUT a callable entry point
-
-"Present and linked" must be shown by evidence that does not open a reachable
-path:
+Therefore the SSE4.1 and AVX2 marker functions:
 
 ```text
-PREFERRED  a linker map for Deblock4.dll showing each backend object was
-           retained in the link (each object's symbol appears in the map).
-
-FALLBACK   dumpbin /SYMBOLS on the intermediate backend .obj files, plus
-           evidence the linker consumed them, if a map is impractical under
-           Zig 0.16.
-
-DATA-ONLY  a non-executable, read-only data marker per backend, retained by
-           reference from generic/scalar code, read WITHOUT executing any
-           target-specific instruction. If used, the marker must contain no
-           gated code and its retention path must be generic/scalar only.
+- are NOT declared with the export keyword (this is the structural, tier-1
+  mechanism: COFF/PE puts nothing in the export table without positive
+  declaration, so a non-exported function CANNOT appear there by construction);
+- are retained by an explicit mechanism (section 5.2), not by export;
+- are NOT called by any generic/scalar code;
+- are NOT referenced by any DLL-load, static-initialiser, registration, or
+  import-thunk path.
 ```
 
-W3C chooses one, states which in the delivery manifest, and explains why it does
-not create a reachable execution path. If Zig 0.16 cannot emit a link map, say
-so and use the fallback rather than inventing a target-specific export.
+The generic and scalar markers MAY use export, because the smoke test calls them
+from outside the DLL and they are safe baseline code. Only the gated markers are
+forbidden the export keyword.
+
+Note on the superseded delivery: an earlier 1B.1 implementation declared the
+gated markers with export fn and relied on the toolchain not tabling them. That
+is exactly what G6 forbids. Do not reproduce it.
+
+## 5.2 Prove presence WITHOUT a callable entry point - forced-symbol retention
+
+"Present and linked" must be shown by evidence that does not open a reachable
+path. The ratified mechanism for this scope is a forced-undefined marker symbol
+on a real, trivial, non-exported target-specific FUNCTION:
+
+```text
+1. Each target-specific object (SSE4.1, AVX2) defines a real, trivial,
+   NON-EXPORTED marker function, with no startup registration, no pointer
+   table, and no call reference from anywhere.
+
+2. The DLL applies dll.forceUndefinedSymbol() to each target-specific marker
+   symbol. On Windows COFF/PE this maps to the linker /include:<symbol>
+   requirement, so the DLL link FAILS if the object or symbol is absent.
+   A successful link therefore proves the linker resolved and CONSUMED the
+   target-specific object's code contribution - WITHOUT creating any call path
+   (/include adds a retention requirement, not a call).
+
+3. Copies of all four emitted .obj files are installed to stable inspection
+   paths under zig-out, so validation does not depend on Zig cache filenames.
+
+4. dumpbin /SYMBOLS on the installed SSE4.1 and AVX2 objects proves the marker
+   definitions exist in those objects.
+
+5. dumpbin /EXPORTS on Deblock4.dll proves neither target-specific marker
+   appears in the PE export table.
+```
+
+Why a marker FUNCTION and not a data-only marker: a retained data marker proves
+an object contributed DATA to the DLL; it does not prove that executable
+target-specific CODE survived link-time dead-stripping. Since the whole point of
+this scope is to prove target-specific code is linked-but-unreachable, the
+marker must be a real (if trivial) function retained by the forced-symbol
+mechanism. The data-only alternative is NOT accepted for this phase.
+
+The empirical crux (settle in section 0's assessment): the mechanism above
+requires that forceUndefinedSymbol / /INCLUDE retains a NON-exported symbol. The
+research indicates /INCLUDE operates on the linker retention root set
+independently of the export table, so this should hold - but it is toolchain
+behaviour and W3X's build is the arbiter (P-03). If it holds, retention-without-
+export is achieved by an explicit directive (G6 tier 1/2). If it does NOT hold
+on Zig 0.16, W3C uses explicit reference-graph anchoring instead: a real,
+honest reference to the marker from a retained code path, NOT the export keyword
+and NOT a fake guard that never executes. W3C proposes the exact anchor; W3D
+reviews it. Falling back to export, or to a data-only marker, is NOT permitted.
+
+STANDING GATE (G6 tier-3 discipline as corroboration): the dumpbin /EXPORTS
+check that neither gated marker appears in the export table is not a one-time
+inspection. It becomes a permanent step in build_1B1.bat (and successor stage
+batches) that FAILS THE RUN if either gated marker ever appears in .edata. Under
+the non-export design this must never fire; it exists so that no toolchain change
+can turn the gated markers into exports silently. W3C specifies this gate as part
+of the post-acceptance batch changes.
+
+If W3X's dumpbin /EXPORTS ever shows a gated marker in the export table, Stage
+1B.1 STOPS: it is a G5/G6 violation and is never accepted.
 
 ## 5.3 Prove non-execution STRUCTURALLY, not by disassembly
 
@@ -272,15 +410,22 @@ delivery manifest, and which artifact each runs against):
 
 ```text
 dumpbin /EXPORTS zig-out\bin\Deblock4.dll
-    proves NO target-specific function is exported (section 5.3).
+    proves NO target-specific marker function is exported (sections 5.2, 5.3).
 
-linker map for Deblock4.dll   (preferred presence evidence, section 5.2)
-    or dumpbin /SYMBOLS on the backend .obj files   (fallback)
-    proves each backend object was retained in the link.
+dumpbin /SYMBOLS <installed SSE4.1 .obj>   and   <installed AVX2 .obj>
+    proves each target-specific marker function is defined in its object
+    (section 5.2). Objects are installed at stable paths under zig-out.
+
+successful Deblock4.dll link with forceUndefinedSymbol on both markers
+    is itself proof the linker consumed the target-specific object code
+    (a missing object or symbol would fail the link).
 
 dumpbin /DISASM zig-out\bin\Deblock4.dll   (supplementary only)
     inspection aid; not the non-execution proof.
 ```
+
+All dumpbin inspection runs against the ReleaseFast artifacts, since ReleaseFast
+is the last mode built by build_1B1.bat.
 
 "It built" does not close the inspection obligation (charter C-DELIV-07). W3C
 states each exact command; W3X runs them and reports output.
@@ -306,12 +451,15 @@ zig-out\bin\deblock4_dll_smoke_test.exe      (existing DLL smoke: 0x44423401)
  return the expected value; no target-specific code is called>
 ```
 
-After the three modes, the structural G5 inspection (once is sufficient, on a
-representative built DLL, but state which mode's artifact):
+After the three modes, the structural G5 inspection on the ReleaseFast
+artifacts (the last mode built):
 
 ```text
 dumpbin /EXPORTS zig-out\bin\Deblock4.dll
-<presence evidence: linker map, or dumpbin /SYMBOLS on backend .obj files>
+    (must show NO target-specific marker in the export table)
+dumpbin /SYMBOLS <installed SSE4.1 .obj>
+dumpbin /SYMBOLS <installed AVX2 .obj>
+    (must show the target-specific marker functions defined)
 dumpbin /DISASM zig-out\bin\Deblock4.dll    (supplementary, optional to retain)
 
 git diff --check
@@ -325,7 +473,8 @@ Expected:
 - all existing scaffold regression checks still pass;
 - the new backend-isolation smoke test passes, executing generic/scalar only;
 - dumpbin /EXPORTS shows NO target-specific export;
-- presence evidence shows both SSE4.1 and AVX2 objects retained in the link;
+- successful link with forceUndefinedSymbol, plus dumpbin /SYMBOLS on the
+  installed objects, shows both SSE4.1 and AVX2 marker functions retained;
 - git diff --check clean; git status --short shows only permitted files
   (and the retained phase artifacts once committed).
 ```
@@ -347,8 +496,11 @@ isolated target contracts and coexist in the one existing Deblock4.dll.
 Generic and scalar probes execute and return their identity markers via the new
 backend-isolation smoke test, which invokes only generic/scalar code.
 
-The SSE4.1 and AVX2 objects are proved RETAINED in the link by structural
-evidence (linker map or intermediate-object symbols), and proved NON-REACHABLE:
+The SSE4.1 and AVX2 markers are real functions NOT declared with the export
+keyword (G6). They are proved RETAINED by an explicit mechanism (forceUndefinedSymbol
+/INCLUDE retention, or explicit reference-graph anchoring if retention-without-export
+does not hold on Zig 0.16), corroborated by dumpbin /SYMBOLS on the installed
+objects. They are proved NON-REACHABLE:
 not exported (dumpbin /EXPORTS), not called by generic/scalar code, and not
 referenced by any DLL-load, static-initialiser, registration, or import-thunk
 path.
@@ -356,9 +508,18 @@ path.
 The existing scaffold regression checks (build probe, header probe API 4.2,
 existing DLL smoke test 0x44423401, unit tests) still pass in all three modes.
 
+The DLL root, generic, scalar, and both smoke-test units are compiled to a
+deliberate provisional x86-64 baseline (section 2A), not the native host, and no
+override silently replaces that baseline.
+
+No gated (SSE4.1/AVX2) marker is declared with the export keyword (G6); their
+absence from the PE export table is structural, and a STANDING dumpbin /EXPORTS
+gate in the batch fails the run if either ever appears there.
+
 No pixel, frame, copy, deblocking, capability-detection, or final dispatch path
 is introduced; no feature closure, vector width, or lane layout is frozen; no
-target-specific function is exported or called.
+target-specific function is exported or called; no data-only marker substitutes
+for a retained target-specific marker function.
 ```
 
 Deferred explicitly to later stages:

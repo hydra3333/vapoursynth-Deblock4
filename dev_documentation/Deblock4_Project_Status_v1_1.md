@@ -1,6 +1,6 @@
 # Deblock4 - Project Status
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-07-25
 **Status:** Current implementation and proof-state record. Informative, not controlling.
 **Project:** Deblock4
@@ -24,13 +24,21 @@ Document authority is:
 README_Deblock4_Design_Spec_v1.1.md
     controlling technical and algorithmic design specification
 
-AI_Charter_and_Invariants_Card_v1.5.md
+AI_Charter_and_Invariants_Card_v1_9.md
     controlling invariants, roles, coding standards, and process rules
+    (v1.9 adds invariant G6: safety properties rest on explicit/structural
+     mechanisms, never implicit toolchain behaviour; gated code never exported)
 
-Concise_Project_Summary_v1.0.md
+Deblock4_Concise_Project_Summary_v1.0.md
     concise orientation and user-facing companion
 
-Deblock4_Project_Status_v1.0.md
+Deblock4_Forward_Roadmap_v1_1.md
+    informative forward stage sequence
+
+Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md
+    informative research record behind the G6 retention/export decision
+
+Deblock4_Project_Status_v1_1.md
     current implementation/proof state and next-step record
 ```
 
@@ -59,18 +67,31 @@ session bootstrap header.
 
 # 3. Current position
 
-Deblock4 has completed the foundation of Stage 1, but Stage 1 as a whole is not
-complete.
+Deblock4 has completed the Stage 1 foundation and the Stage 1A.1 R78 baseline
+reconciliation, but Stage 1 as a whole is not complete.
 
-Recommended milestone name:
+Milestone:
 
 ```text
-Stage 1A complete - Zig build, Windows DLL, and VapourSynth API4 interop
-scaffold proven.
+Stage 1A complete   - Zig build, Windows DLL, VapourSynth API4 interop scaffold.
+Stage 1A.1 complete - helper-bridge names reconciled (zig_vsh_* wrappers,
+                      deblock4_vsh_bridge_self_test), stale R76 wording
+                      corrected, genuine R78 build baseline re-established and
+                      accepted. Accepted commit:
+                      8b6779c4d39d96622825e0454e1cc23974de4a9a
+                      (verify current HEAD before the next scope).
 ```
 
 The project is not yet a functional VapourSynth deblocking filter. The current
 DLL and executables are build, linkage, API-surface, and interop probes.
+
+Stage 1B.1 (backend object isolation) has an active scope at v1.3. A prior
+1B.1 delivery was produced but is SUPERSEDED: it declared the gated SSE4.1/AVX2
+markers with the export keyword and relied on the toolchain not adding them to
+the PE export table. Charter v1.9 invariant G6 now forbids that implicit
+dependency; scope v1.3 carries the G6-compliant design (gated code never
+exported; retention by explicit reference or directive; export-table absence
+structural and proven by a standing gate).
 
 ---
 
@@ -89,14 +110,17 @@ DLL and executables are build, linkage, API-surface, and interop probes.
 | Build/run probe executable | Passed |
 | Windows x64 DLL construction | Proven with `Deblock4.dll` probe |
 | DLL export/import-library/client linkage | Proven by smoke-test executable |
-| VapourSynth API selection | API 4.2 explicitly pinned for R76+ headers |
+| VapourSynth API selection | API 4.2 explicitly pinned via VS_USE_API_42 |
 | `VapourSynth4.h` | Translated into a Zig module |
 | `VSConstants4.h` | Translated into a Zig module |
 | `VSHelper4.h` | Compiled as C through a narrow tested C-ABI bridge |
+| Vendored headers | Updated to VapourSynth R78; API 4.2 pin survives; bridge decision confirmed still needed |
+| Stage 1A.1 name reconciliation | Accepted: zig_vsh_isConstantVideoFormat, zig_vsh_areValidDimensions, deblock4_vsh_bridge_self_test; C-INT-04 comments added |
+| R78 build baseline | Debug/ReleaseSafe/ReleaseFast + build probe + header probe (API 4.2) + DLL smoke (0x44423401) + tests, accepted |
 | Zig-facing helper naming | Settled as `zig_vsh_originalName` for direct compatibility wrappers |
-| Zig/C ownership and lifetime policy | Recorded in charter v1.5 |
-| Numeric and SIMD helper policy | Recorded in charter v1.5 |
-| External-source provenance policy | Recorded in charter v1.5 |
+| Zig/C ownership and lifetime policy | Recorded in charter (current v1.9) |
+| Numeric and SIMD helper policy | Recorded in charter (current v1.9) |
+| External-source provenance policy | Recorded in charter (current v1.9) |
 
 Important translation result:
 
@@ -152,11 +176,13 @@ Stage 1 - Zig project / build / dispatch scaffold and spikes
     PASS  Windows DLL construction and client linkage
     PASS  VapourSynth API4 core/constants translation
     PASS  VSHelper4 C-ABI bridge architecture
-    OPEN  final backend object isolation
-    OPEN  target-feature closure spikes
-    OPEN  assembly inspection
-    OPEN  CPU/OS capability detection
-    OPEN  per-instance backend resolution and dispatch harness
+    PASS  Stage 1A.1 R78 baseline reconciliation (accepted, committed)
+    ACTIVE 1B.1 backend object isolation (scope v1.3, G6-compliant; awaiting
+           new-coder assessment and delivery)
+    OPEN  target-feature closure spikes (1B.2)
+    OPEN  assembly inspection (1B.2)
+    OPEN  CPU/OS capability detection (1B.3)
+    OPEN  per-instance backend resolution and dispatch harness (1B.3)
 
 Stage 2 - Canonical scalar core and proof harness
     NOT STARTED as accepted implementation
@@ -180,9 +206,9 @@ executable scalar testing, and backend object/link work.
 
 ---
 
-# 7. Recommended next bounded scope
+# 7. Active bounded scope
 
-## Stage 1B.1 - backend object isolation and one-DLL linkage
+## Stage 1B.1 - backend object isolation and one-DLL linkage (scope v1.3)
 
 Objective:
 
@@ -209,17 +235,24 @@ one smoke-test executable
     verifies exact backend identity markers
 ```
 
-Required proof obligations:
+Required proof obligations (per scope v1.3):
 
-1. Generic and scalar code contain no AVX, AVX2, or FMA assumption.
+1. Generic and scalar code contain no SSE4.1, AVX, AVX2, or FMA assumption; the
+   DLL root, generic, scalar, and smoke-test units are on a fixed provisional
+   x86-64 baseline target, with -Dtarget/-Dcpu overrides rejected (section 2A).
 2. The SSE4.1 and AVX2 probes are isolated from generic/dispatch code.
-3. All four modules coexist in one DLL.
-4. Exported or internal calling conventions are stable.
+3. All four objects coexist in the one existing Deblock4.dll.
+4. The gated SSE4.1/AVX2 markers are NOT declared with the export keyword
+   (charter G6); retention is by explicit reference or an explicit retention
+   directive; export-table absence is structural.
 5. The AVX2 object excludes FMA.
 6. No pixel, frame, copy, or deblocking path is introduced.
 7. Debug, ReleaseSafe, and ReleaseFast build/test expectations are stated and
-   run by W3X.
-8. Changed and forbidden files are explicitly bounded in the coding scope.
+   run by W3X, including the existing scaffold regression checks.
+8. A standing dumpbin /EXPORTS gate fails the run if any gated marker appears
+   in the export table.
+9. Changed and forbidden files are explicitly bounded; the phase patch and
+   build_1B1.bat are the permitted retained non-source artifacts.
 
 Implementation acceptance:
 
@@ -304,10 +337,14 @@ The following four-document package is sufficient to move into the next
 bounded scope:
 
 ```text
-Deblock4_Project_Status_v1.0.md
-AI_Charter_and_Invariants_Card_v1.5.md
-Concise_Project_Summary_v1.0.md
+Deblock4_Project_Status_v1_1.md
+AI_Charter_and_Invariants_Card_v1_9.md
+Deblock4_Concise_Project_Summary_v1.0.md
 README_Deblock4_Design_Spec_v1.1.md
+Deblock4_Forward_Roadmap_v1_1.md
+Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md
+111_New_Chat_Introduction_for_Coder_v1_2.md
+Deblock4_Scope_Stage_1B1_Backend_Object_Isolation_v1_3.md
 ```
 
 They serve different purposes and should live alongside one another:
@@ -321,7 +358,7 @@ They serve different purposes and should live alongside one another:
 
 Before moving ahead, W3X should confirm:
 
-1. the charter's canonical filename and internal version both say v1.5;
+1. the charter's canonical filename and internal version both say v1.9;
 2. the README's filename and internal design revision both say v1.1;
 3. the concise summary remains marked non-controlling;
 4. this status document remains marked informative and non-controlling;
@@ -361,11 +398,19 @@ For each material update:
 
 # 12. Immediate next action
 
-Author the bounded W3C coding scope for:
+Stand up a fresh W3C coder chat with the v1.2 coder introduction and the active
+Stage 1B.1 scope v1.3. The coder's first task is to assess the retention/export
+research package and confirm the G6-compliant approach BEFORE producing code
+(scope section 0). The prior export-based 1B.1 delivery is superseded and must
+not be reproduced.
+
+Starting commit for Stage 1B.1:
 
 ```text
-Stage 1B.1 - backend object isolation and one-DLL linkage
+8b6779c4d39d96622825e0454e1cc23974de4a9a
+    (the accepted Stage 1A.1 baseline; verify current HEAD)
 ```
 
-Use the actual clean-tree starting commit and quote all controlling charter and
-README sections on which the scope relies.
+The open empirical crux for the coder and W3X: does Zig 0.16 forceUndefinedSymbol
+(or equivalent) retain a NON-exported symbol, giving retention-without-export by
+explicit directive; if not, use explicit reference-graph anchoring instead.
