@@ -1,15 +1,27 @@
 # Deblock4 - Coding Scope: Stage 1B.1 Backend Object Isolation and One-DLL Linkage
 
-**Version:** 1.3
+**Version:** 1.4
 **Date:** 2026-07-25
 **Status:** Active coding scope for W3C. Controlling for this scope only.
 **Author:** W3D designer
 **Encoding:** US-ASCII only
-**Revision note:** v1.3 (after charter v1.9 / invariant G6 and the
+**Revision note:** v1.4 (after the v1.3 forced-symbol experiment was
+empirically falsified) replaces the retention mechanism: W3X's first Debug build
+proved that Zig 0.16 OMITS a non-exported pub fn entirely when nothing
+semantically references it (both gated objects had .text length 0, no marker
+symbol at all - not mangled, not present), so forceUndefinedSymbol has nothing
+to retain. Section 5.2 is replaced by an explicit reference-graph anchor:
+baseline code takes the ADDRESS of each gated marker (address-taken, never
+called) so Zig emits it and the linker retains it via that reference, while it
+stays non-exported and unreachable. This is the honest v1.3 fallback, now
+ratified as the mechanism. Everything else is carried from v1.3 below.
+
+**Prior revision note:** v1.3 (after charter v1.9 / invariant G6 and the
 retention/export research) makes the retention mechanism G6-compliant: the
 SSE4.1/AVX2 markers are NOT declared with the export keyword; retention is by
-explicit reference-graph anchoring or an explicit /INCLUDE-class directive that
-does not export; export-table absence is structural (COFF safe-by-default) and
+an explicit reference-graph anchor (baseline code takes the address of each
+gated marker, address-taken and never called) that forces emission and retention
+without export; export-table absence is structural (COFF safe-by-default) and
 proven by a STANDING dumpbin /EXPORTS gate rather than relied upon implicitly.
 Adds a mandatory research-package assessment gate before coding (section 0). The
 prior v1.2-era delivery that used export fn on the gated markers is SUPERSEDED.
@@ -94,8 +106,9 @@ Expected result:
     probe API 4.2, existing DLL smoke test 0x44423401, unit tests);
     the new backend-isolation smoke test confirms generic and scalar markers
     execute and returns its expected value;
-    the SSE4.1 and AVX2 objects are proved retained by forced-symbol linkage
-    plus dumpbin /SYMBOLS on the installed objects, and proved non-reachable
+    the SSE4.1 and AVX2 markers are emitted and retained by an explicit
+    reference-graph anchor (address-taken by baseline code, never called),
+    shown present with non-zero .text by dumpbin /SYMBOLS, and proved non-reachable
     (not exported, not called, no startup/init/registration/import path);
     git diff --check clean; only permitted files and retained artifacts present.
 
@@ -127,12 +140,12 @@ W3C states:
 ```text
 - that it has read the research package and understands why gated backend code
   is never exported (charter G6);
-- its answer, or its experiment plan for W3X, on the empirical crux: does
-  Zig 0.16 forceUndefinedSymbol (or the current equivalent) retain a
-  NON-exported symbol, so retention-without-export holds by an explicit
-  directive; and if not, which explicit reference-anchoring alternative it
-  will use instead;
-- any disagreement with the approach, raised and stopped on, rather than
+- confirmation that it will implement the ratified reference-graph anchor of
+  section 5.2 (address-taken by baseline code, never called, non-exported), and
+  that it understands WHY the earlier forced-symbol mechanism was abandoned:
+  W3X's build proved Zig 0.16 omits an unreferenced non-exported pub fn
+  entirely, so there was nothing to force-retain;
+- any disagreement with the anchor approach, raised and stopped on, rather than
   resolved silently inside the implementation.
 ```
 
@@ -313,62 +326,87 @@ Note on the superseded delivery: an earlier 1B.1 implementation declared the
 gated markers with export fn and relied on the toolchain not tabling them. That
 is exactly what G6 forbids. Do not reproduce it.
 
-## 5.2 Prove presence WITHOUT a callable entry point - forced-symbol retention
+## 5.2 Prove presence by an EXPLICIT REFERENCE-GRAPH ANCHOR (ratified mechanism)
 
-"Present and linked" must be shown by evidence that does not open a reachable
-path. The ratified mechanism for this scope is a forced-undefined marker symbol
-on a real, trivial, non-exported target-specific FUNCTION:
+Empirical finding (W3X Debug build, confirmed by dumpbin /SYMBOLS on the failed
+cache objects): Zig 0.16 does NOT emit a top-level `pub fn ... callconv(.c)`
+marker if nothing semantically references it. Both gated objects had `.text`
+length 0 and contained no marker symbol at all - not under the requested name,
+not mangled, not present. `forceUndefinedSymbol` (a /INCLUDE-class requirement)
+therefore has nothing to retain: it correctly requests the symbol, but the
+symbol was never generated. The forced-undefined mechanism of the superseded
+attempt is abandoned.
+
+The ratified mechanism is an explicit reference-graph anchor. The principle:
+give Zig a genuine semantic reference to each gated marker so it is EMITTED, and
+make that reference an ADDRESS reference from retained baseline code so the
+linker RETAINS it - without ever CALLING it and without EXPORTING it.
 
 ```text
-1. Each target-specific object (SSE4.1, AVX2) defines a real, trivial,
-   NON-EXPORTED marker function, with no startup registration, no pointer
-   table, and no call reference from anywhere.
+1. Each gated marker (SSE4.1, AVX2) is a real, non-exported function. It is NOT
+   declared with the export keyword (G6 unchanged).
 
-2. The DLL applies dll.forceUndefinedSymbol() to each target-specific marker
-   symbol. On Windows COFF/PE this maps to the linker /include:<symbol>
-   requirement, so the DLL link FAILS if the object or symbol is absent.
-   A successful link therefore proves the linker resolved and CONSUMED the
-   target-specific object's code contribution - WITHOUT creating any call path
-   (/include adds a retention requirement, not a call).
+2. Baseline (generic-target) code TAKES THE ADDRESS of each gated marker and
+   stores it into an internal, non-exported, module-level pointer (for example
+   a small internal table of *const fn () callconv(.c) u32, or one pointer per
+   marker). Taking the address is the semantic reference that forces Zig to
+   EMIT the function, and it is the reachability-graph reference that makes the
+   linker RETAIN it.
 
-3. Copies of all four emitted .obj files are installed to stable inspection
-   paths under zig-out, so validation does not depend on Zig cache filenames.
+3. The address is TAKEN, never CALLED. There is no call through the pointer
+   anywhere in Stage 1B.1. The pointer exists and is retained; nothing invokes
+   it. This is the G5-critical line: address-taken retains code without
+   creating an execution path; a call would create one and is forbidden here.
 
-4. dumpbin /SYMBOLS on the installed SSE4.1 and AVX2 objects proves the marker
-   definitions exist in those objects.
+4. The pointer table/variables are themselves internal and non-exported, so no
+   external caller can reach the markers through them either. (An exported
+   pointer would be a doorway; keep the anchor internal.)
 
-5. dumpbin /EXPORTS on Deblock4.dll proves neither target-specific marker
-   appears in the PE export table.
+5. The gated markers still never appear in the PE export table (G6, structural).
 ```
 
-Why a marker FUNCTION and not a data-only marker: a retained data marker proves
-an object contributed DATA to the DLL; it does not prove that executable
-target-specific CODE survived link-time dead-stripping. Since the whole point of
-this scope is to prove target-specific code is linked-but-unreachable, the
-marker must be a real (if trivial) function retained by the forced-symbol
-mechanism. The data-only alternative is NOT accepted for this phase.
+Why address-taken and not called: a call is an execution path, and until the
+Stage 1B.3 capability guard exists there is no safe caller. Taking the address
+merely records "this code exists and is referenced", which is exactly enough for
+emission and linker retention, and is inert at runtime. The anchor thus proves
+presence-and-linkage without ever executing gated instructions - the whole point
+of the isolation stage.
 
-The empirical crux (settle in section 0's assessment): the mechanism above
-requires that forceUndefinedSymbol / /INCLUDE retains a NON-exported symbol. The
-research indicates /INCLUDE operates on the linker retention root set
-independently of the export table, so this should hold - but it is toolchain
-behaviour and W3X's build is the arbiter (P-03). If it holds, retention-without-
-export is achieved by an explicit directive (G6 tier 1/2). If it does NOT hold
-on Zig 0.16, W3C uses explicit reference-graph anchoring instead: a real,
-honest reference to the marker from a retained code path, NOT the export keyword
-and NOT a fake guard that never executes. W3C proposes the exact anchor; W3D
-reviews it. Falling back to export, or to a data-only marker, is NOT permitted.
+What is FORBIDDEN as an anchor (all would violate the fallback discipline):
 
-STANDING GATE (G6 tier-3 discipline as corroboration): the dumpbin /EXPORTS
-check that neither gated marker appears in the export table is not a one-time
-inspection. It becomes a permanent step in build_1B1.bat (and successor stage
-batches) that FAILS THE RUN if either gated marker ever appears in .edata. Under
-the non-export design this must never fire; it exists so that no toolchain change
-can turn the gated markers into exports silently. W3C specifies this gate as part
-of the post-acceptance batch changes.
+```text
+- declaring the marker export (G6 breach: export-table doorway);
+- a data-only marker (proves data survived, not that CODE was emitted/retained);
+- a call to the marker, guarded or unguarded (G5 breach: execution path);
+- a "guard" that is really a disguised call, or a branch that could reach the
+  call at runtime before the capability record exists;
+- any reference that does not genuinely force emission (if a chosen form leaves
+  .text length 0 again, it is not a valid anchor - stop and report).
+```
 
-If W3X's dumpbin /EXPORTS ever shows a gated marker in the export table, Stage
-1B.1 STOPS: it is a G5/G6 violation and is never accepted.
+Verification that the anchor worked (W3X, per section 6/7):
+
+```text
+- the DLL links successfully (the markers are now emitted and retained);
+- dumpbin /SYMBOLS on the installed gated .obj files shows each marker function
+  present with non-zero .text (contrast: the failed build showed .text 0);
+- dumpbin /EXPORTS on Deblock4.dll shows NEITHER gated marker (still not
+  exported - the anchor is an internal address reference, not an export);
+- the smoke test still references only generic/scalar and never the gated
+  markers or the internal pointer table.
+```
+
+If any chosen anchor form still leaves the gated .text empty, or forces the
+markers into the export table, or can only be made to work by adding a call,
+Stage 1B.1 STOPS again for W3D review rather than proceeding. The anchor must
+achieve emission + retention + non-export + non-execution simultaneously; if it
+cannot on Zig 0.16, that is new information for review, not something to force.
+
+W3C proposes the exact Zig form of the anchor (pointer table shape, where the
+address is taken, how it is kept internal) in its delivery manifest, and W3D
+reviews that the address is genuinely taken-not-called and the pointer is
+genuinely internal before acceptance.
+
 
 ## 5.3 Prove non-execution STRUCTURALLY, not by disassembly
 
@@ -416,9 +454,9 @@ dumpbin /SYMBOLS <installed SSE4.1 .obj>   and   <installed AVX2 .obj>
     proves each target-specific marker function is defined in its object
     (section 5.2). Objects are installed at stable paths under zig-out.
 
-successful Deblock4.dll link with forceUndefinedSymbol on both markers
-    is itself proof the linker consumed the target-specific object code
-    (a missing object or symbol would fail the link).
+successful Deblock4.dll link with the reference-graph anchor in place
+    is proof the markers are emitted and retained (the anchor's address
+    reference forces emission; a missing marker would fail the link).
 
 dumpbin /DISASM zig-out\bin\Deblock4.dll   (supplementary only)
     inspection aid; not the non-execution proof.
@@ -473,8 +511,9 @@ Expected:
 - all existing scaffold regression checks still pass;
 - the new backend-isolation smoke test passes, executing generic/scalar only;
 - dumpbin /EXPORTS shows NO target-specific export;
-- successful link with forceUndefinedSymbol, plus dumpbin /SYMBOLS on the
-  installed objects, shows both SSE4.1 and AVX2 marker functions retained;
+- successful link with the reference-graph anchor, plus dumpbin /SYMBOLS on the
+  installed objects showing each gated marker present with NON-ZERO .text
+  (contrast the falsified build: .text length 0), proves emission and retention;
 - git diff --check clean; git status --short shows only permitted files
   (and the retained phase artifacts once committed).
 ```
@@ -497,10 +536,10 @@ Generic and scalar probes execute and return their identity markers via the new
 backend-isolation smoke test, which invokes only generic/scalar code.
 
 The SSE4.1 and AVX2 markers are real functions NOT declared with the export
-keyword (G6). They are proved RETAINED by an explicit mechanism (forceUndefinedSymbol
-/INCLUDE retention, or explicit reference-graph anchoring if retention-without-export
-does not hold on Zig 0.16), corroborated by dumpbin /SYMBOLS on the installed
-objects. They are proved NON-REACHABLE:
+keyword (G6). They are EMITTED and RETAINED by an explicit reference-graph
+anchor - baseline code takes each marker's address (address-taken, never called)
+into an internal non-exported pointer - shown present with non-zero .text by
+dumpbin /SYMBOLS on the installed objects. They are proved NON-REACHABLE:
 not exported (dumpbin /EXPORTS), not called by generic/scalar code, and not
 referenced by any DLL-load, static-initialiser, registration, or import-thunk
 path.
