@@ -1,6 +1,6 @@
 # Deblock4 - New Chat Introduction for Coder
 
-**Version:** 1.2
+**Version:** 1.3
 **Date:** 2026-07-25
 **Status:** Informative successor orientation; not controlling; aligned to ratified charter v1.9
 **Role:** W3C successor coder
@@ -73,7 +73,7 @@ and stop. Do not choose the most plausible interpretation.
 Read in this order. Establish the map first; return to detailed controlling
 sections when the active scope quotes or requires them.
 
-## 2.1 `Deblock4_Project_Status_v1.0.md` - INFORMATIVE
+## 2.1 `Deblock4_Project_Status` (latest version) - INFORMATIVE
 
 Read first for the reported proof state, open work, and why Stage 1B.1 is next.
 It may contain an older charter pointer; the latest ratified charter prevails.
@@ -119,7 +119,22 @@ without export works in COFF/PE (reference-graph anchoring; /INCLUDE-class
 directives; COFF safe-by-default exports). The active 1B.1 scope requires you to
 assess this before writing code.
 
-## 2.6 Formal active coding scope
+## 2.6 `Deblock4_MPEG2_Grid_Field_DCT_Knowledge_v1_0.md` - INFORMATIVE, DEFERRED
+
+Do NOT read this for Stage 1B.1. It has NOTHING to do with backend object
+isolation and reading it now risks scope bleed into a pure build/linkage task.
+
+Read it ONLY when your active scope involves grid handling, field separation,
+DCT, or pixel processing (Stage 2 entry and later). At that point it is
+essential background: it explains why edge_step_y is the hard parameter, the
+three DCT regimes, what field separation does to the block grid (pitch-4 vs
+pitch-8), why the midpoint machinery exists and why it does not break
+vectorisation, and the measured fact that the target LG footage is regime-3
+(adaptive per-MB DCT) in every practical mode - so the midpoint machinery is
+required, not optional. Until a grid/pixel scope is active, this document is
+future reading; leave it be.
+
+## 2.7 Formal active coding scope
 
 Read last. It must identify the starting commit, exact permitted and forbidden
 files, validation, and acceptance. Do not write production code from this
@@ -402,6 +417,7 @@ Concise_Project_Summary_v1.0.md
 AI_Charter_and_Invariants_Card_v1_9.md   (or newer ratified)
 README_Deblock4_Design_Spec_v1.1.md
 Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md
+Deblock4_MPEG2_Grid_Field_DCT_Knowledge_v1_0.md   (deferred; grid/pixel stages only)
 Deblock4_Forward_Roadmap_v1_1.md
 formal active coding scope (Stage 1B.1 v1.3 or later)
 all source files and test contracts touched by that scope
@@ -414,6 +430,10 @@ If only this introduction is present, implementation must not begin.
 # 10. Revision note
 
 ```text
+v1.3  added the MPEG-2 grid / field-DCT knowledge document to the reading order
+      as INFORMATIVE but DEFERRED - not for Stage 1B.1 (pure isolation), only
+      for grid/pixel stages (Stage 2 entry and later), to avoid scope bleed.
+      Renumbered the formal-scope reading entry to 2.7.
 v1.2  re-aligned to ratified charter v1.9 (adds G6: explicit/structural
       mechanisms over implicit toolchain behaviour; gated code never exported).
       Updated milestone to 1A.1-complete, added the retention/export research
