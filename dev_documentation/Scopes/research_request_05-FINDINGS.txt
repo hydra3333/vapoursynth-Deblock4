@@ -1,0 +1,112 @@
+I thought it looked to good to be true.
+
+ME:
+===
+I wonder if there is a buried gem in your own thinking which undercuts the entire premise of what I thought I needed.
+
+"in field pictures, dct_type isn't even in the bitstream,
+since field DCT is always used" and "In frame pictures,
+the value of frame_pred_frame_dct dictates whether or not a
+dct_type bit is read. 
+If it's zero, the value is read from the bitstream,
+and if it's one, the value is implicitly zero."
+
+If so it partly deflates the whole exercise. 
+Is that proven correct ?
+Are there any gotchas with that reasoning or related matters which invalidate 
+my hopes mentioned this post ?
+
+Here's why it matters for my  files specifically:
+
+My home_576i.mpg is frame-pictures, interlaced (MediaInfo: "picture structure: Frame", "Scan type: Interlaced"). 
+For those frames, whether dct_type even appears in the bitstream depends entirely on the frame_pred_frame_dct flag:
+If frame_pred_frame_dct == 1 → dct_type is not coded at all, implicitly frame-DCT (0) for every macroblock. There's nothing to extract — the answer is "all frame-DCT, by construction."
+If frame_pred_frame_dct == 0 → dct_type is coded per-MB and then the extraction is meaningful.
+
+So before building any bitstream extractor, can we instead answer a huge part of
+the question with a single flag that ffprobe may already expose or that's trivially
+readable from the picture coding extension header.
+If frame_pred_frame_dct == 1 across my frames, 
+there is no per-MB DCT decision to measure — it's uniformly frame-DCT, 
+and both the MSSG path and the pixel path would just confirm "pitch-4 everywhere." 
+
+That's the cheap disambiguation to do first, and none of us had flagged it until your thinking surfaced it.
+
+Action before anything else: check frame_pred_frame_dct on my actual frames. 
+It reframes whether I even need Option A/B/C.
+
+Can you help in some way ?
+
+Google AI Studio THOUGHTS:
+==========================
+Your realization is **100% correct, syntactically proven, and standards-compliant.** This is indeed a highly effective "cheap disambiguation" that can completely bypass the need for compiling any bitstream extraction tools.
+
+---
+
+### The Bitstream Reality (Established Facts)
+
+According to the official ISO/IEC 13818-2 (MPEG-2 Video) Specification (specifically Section 6.3.17.1, *Macroblock Modes*), the 1-bit `dct_type` field is conditionally parsed based on the following exact logic:
+
+```c
+if (picture_structure == 3) { /* 3 means FRAME_PICTURE */
+    if (frame_pred_frame_dct == 0) {
+        if (macroblock_intra || macroblock_pattern) {
+            dct_type = Get_Bits(1);
+        }
+    }
+}
+```
+
+This confirms your exact points:
+1.  **If `frame_pred_frame_dct == 1`:** The `dct_type` bit is **never** written to the bitstream for any macroblock. Every macroblock in that frame is implicitly and strictly forced to **Frame-DCT (0)**. There is nothing to extract; it is frame-DCT by construction.
+2.  **If `frame_pred_frame_dct == 0`:** The encoder is permitted to choose between Frame-DCT and Field-DCT on a per-macroblock basis. 
+
+---
+
+### The Three Gotchas to Keep in Mind (Skeptical Analysis)
+
+While this simplifies your workflow, there are three technical caveats to ensure your validation remains robust:
+
+1.  **Gotcha 1: The flag is evaluated *per frame***
+    `frame_pred_frame_dct` resides in the *Picture Coding Extension* header. While most encoders set this flag globally for the entire file, the standard allows it to change from frame to frame. To be absolutely sure, you must inspect the flag for the first $N$ frames, not just the first one.
+2.  **Gotcha 2: Coded Block Pattern dependency**
+    Even if `frame_pred_frame_dct == 0`, the bit is only present if the macroblock is `intra` or has a `macroblock_pattern` (meaning it actually contains coded AC coefficients). Skipped or motion-only macroblocks with zero residual coefficients do not perform a DCT at all, so they do not contain a `dct_type` bit.
+3.  **Gotcha 3: Field Pictures vs. Frame Pictures**
+    If any of your source clips use Field Pictures (`picture_structure` is 1 or 2, representing Top or Bottom Field individually), `frame_pred_frame_dct` does not apply. Field pictures always use Field-DCT implicitly.
+
+---
+
+### How to Query `frame_pred_frame_dct` Instantly (No Compilation Required)
+
+Standard `ffprobe` does not expose this flag because it only reports generic frame properties shared across all video codecs (like H.264/HEVC), discarding legacy, codec-specific MPEG-2 flags after decoding.
+
+However, the CLI version of **MediaInfo** has a deep-parser mode that reads and dumps the raw Picture Coding Extension header of every frame.
+
+#### The Exact Command:
+Run the following command in your terminal (using the free MediaInfo CLI tool):
+
+```bash
+mediainfo --Details=1 input.mpg
+```
+
+#### How to read the output:
+This will output a highly detailed, byte-by-byte trace of the file's headers. Search the text output (using `findstr` on Windows or `grep` on Linux) for the picture structure and DCT flags:
+
+```bash
+# Windows CMD
+mediainfo --Details=1 input.mpg | findstr /C:"picture_structure" /C:"frame_pred_frame_dct"
+
+# Linux / macOS
+mediainfo --Details=1 input.mpg | grep -E "picture_structure|frame_pred_frame_dct"
+```
+
+For an interlaced frame-picture, you will see pairs of entries repeating for every frame in the file:
+
+```text
+ picture_structure:             3 (0x3) - (Frame)
+ frame_pred_frame_dct:          0 (0x0)
+```
+
+#### Interpretation:
+*   If the output shows `frame_pred_frame_dct: 1 (0x1)` across your frames, **stop immediately.** You do not need any macroblock extractor or pixel-analysis tool. Your source is mathematically proven to be 100% Frame-DCT, and you can expect a uniform 4-line boundary pitch in your decoded fields.
+*   If the output shows `frame_pred_frame_dct: 0 (0x0)`, only then do you have a true per-macroblock decision mix, justifying the use of the pixel-analysis Python script or the compilation of a bitstream tool.

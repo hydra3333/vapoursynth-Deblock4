@@ -1,0 +1,284 @@
+Google AI Studio:
+=================
+Here is the definitive status and technical breakdown of free tools and methods to identify MPEG-2 sequence, frame, and macroblock characteristics from your PAL SD `.mpg` source clips.
+
+---
+
+### TIER 1 - Stream/Sequence-Level Info
+
+**Status:** Fully solved. Two standard free tools provide this information reliably.
+
+#### Tool 1: MediaInfo (CLI or GUI)
+*   **Version:** 24.01 or later (any modern version).
+*   **Command Line (CLI):**
+    ```bash
+    mediainfo --Inform="Video;%Width%x%Height%,%ChromaSubsampling%,%DisplayAspectRatio/String%,%ScanType%,%ScanOrder%,%Standard%" input.mpg
+    ```
+*   **Fields Reported:**
+    *   `ScanType` (e.g., `Interlaced` or `Progressive`)
+    *   `ScanOrder` (e.g., `Top Field First` / `TFF` or `Bottom Field First` / `BFF`)
+    *   `Width` & `Height` (e.g., `720` and `576`)
+    *   `ChromaSubsampling` (e.g., `4:2:0`)
+    *   `DisplayAspectRatio/String` (e.g., `16:9`)
+
+#### Tool 2: ffprobe (FFmpeg Suite)
+*   **Version:** 6.0 or later.
+*   **Command Line:**
+    ```bash
+    ffprobe -v error -select_streams v:0 -show_entries stream=width,height,pix_fmt,display_aspect_ratio,field_order -of default=noprint_wrappers=1 input.mpg
+    ```
+*   **Fields Reported:**
+    *   `width` / `height`
+    *   `pix_fmt` (reports `yuv420p` for 4:2:0)
+    *   `display_aspect_ratio`
+    *   `field_order` (reports `tt` for top-coded first, bottom-displayed first; `bb` for bottom-coded first, bottom-displayed first; `progressive`; or `unknown`).
+
+---
+
+### TIER 2 - Per-Picture Info (First N Frames)
+
+**Status:** Fully solved. `ffprobe` is the standard tool that extracts these parameters on a per-frame basis directly from the MPEG-2 Picture Coding Extension headers.
+
+*   **Tool:** `ffprobe`
+*   **Version:** 6.0 or later (Windows builds available via gyan.dev or BtbN).
+*   **Command Line (JSON output for the first 2 frames):**
+    ```bash
+    ffprobe -v error -select_streams v:0 -show_entries frame=pict_type,interlaced_frame,top_field_first,repeat_pict -read_intervals %+1 -of json -show_frames input.mpg
+    ```
+    *(Note: `-read_intervals %+1` limits the demuxer to the first second of the file to save processing time. You can extract the first $N$ entries from the resulting JSON array.)*
+
+#### Field Mapping & Correspondence:
+1.  **`pict_type`**: Reports `I`, `P`, or `B`. This corresponds directly to the MPEG-2 `picture_coding_type` (values 1, 2, or 3 respectively).
+2.  **`interlaced_frame`**: Reports `1` or `0`.
+    *   *MPEG-2 Mapping:* This is the inverse of the `progressive_frame` flag in the MPEG-2 Picture Coding Extension. If `interlaced_frame` is `0`, the frame was flagged as progressive.
+3.  **`top_field_first`**: Reports `1` or `0`.
+    *   *MPEG-2 Mapping:* Corresponds directly to the `top_field_first` bitstream flag.
+4.  **`repeat_pict`**: Reports an integer (typically `0` or `1`).
+    *   *MPEG-2 Mapping:* Corresponds to the `repeat_first_field` flag. In FFmpeg's internal decoder, `repeat_pict` represents the number of extra half-frames to delay/repeat (where `0` means no repeat, and `1` means repeat the first field).
+
+---
+
+### TIER 3 - Per-Macroblock DCT Type (`dct_type`)
+
+**Status:** No standard, modern, pre-compiled command-line tool (such as FFmpeg, ffprobe, or MediaInfo) exposes the per-macroblock `dct_type` (frame-DCT vs. field-DCT) in a standard text-based or aggregatable report format out of the box. 
+
+You are correct that `ffmpeg -debug mb_type` displays prediction type (intra/inter/forward/backward), which is distinct from the DCT transformation type.
+
+#### The Source-Level Exception (MSSG Reference Decoder):
+If you require this data from the bitstream, the only known free tool that decodes and reports this is the original **MPEG Software Simulation Group (MSSG) MPEG-2 Reference Decoder**. 
+
+*   **Tool:** MSSG `mpeg2decode`
+*   **Source Availability:** Open-source (C code), widely available on GitHub mirrors.
+*   **How it works:**
+    In the MSSG source code file `slice.c` (inside the `macroblock_modes()` function), the decoder parses the 1-bit `dct_type` from the bitstream when `frame_pred_frame_dct` is `0`.
+    If the `TRACE` macro is defined during compilation, the tool writes a highly detailed bitstream trace to a text file (typically named `trace.txt` or directed to `stdout`).
+*   **Command Line (if compiled with TRACE enabled):**
+    ```bash
+    mpeg2decode -b input.mpg -t
+    ```
+    This generates a text file containing entries for every macroblock:
+    ```text
+    dct_type (1): 0
+    ```
+    *(where `0` indicates frame-based DCT and `1` indicates field-based DCT).*
+*   **Limitation:** This requires compiling 30-year-old C code on a modern compiler and writing a custom text-parsing script (e.g., Python or Perl) to aggregate the trace output.
+
+---
+
+### SEPARATELY - Decoded Pixel Analysis (Blockiness / Grid Periodicity)
+
+**Status:** No standard tool exists to automatically measure decoded-pixel block-grid periodicity (4-line vs. 8-line pitch on separated fields). You must implement this yourself.
+
+However, implementing this programmatically is relatively straightforward and highly reliable. Because MPEG-2 compression leaves distinct boundary artifacts, you can determine whether frame-DCT or field-DCT was used by looking at the vertical block-edge spacing in separated fields.
+
+#### The Mathematical Logic for a "Roll-Your-Own" Script:
+An 8x8 DCT block on standard-definition video produces block-edge discontinuities every 8th pixel horizontally and vertically.
+
+1.  **Deinterlace by separating fields:**
+    Split a $720 \times 576$ interlaced frame into two $720 \times 288$ fields (Even Field and Odd Field).
+2.  **Evaluate vertical block-edge location:**
+    *   **If Field DCT was used:** The 8x8 DCT was performed on the $720 \times 288$ fields individually. The block boundaries are located at field lines $y = 8, 16, 24, 32, \dots$ (multiples of 8).
+    *   **If Frame DCT was used:** The 8x8 DCT was performed on the $720 \times 576$ frame. When separated into fields, every 8-line boundary in the frame is split across the fields. The boundaries now fall at field lines $y = 4, 8, 12, 16, \dots$ (multiples of 4, alternating between fields).
+3.  **Algorithmic implementation (Python / OpenCV / NumPy):**
+    You can measure this by calculating the mean absolute vertical difference between adjacent lines across a frame or series of frames:
+    
+    $$D(y) = \frac{1}{W} \sum_{x=0}^{W-1} |P(x, y) - P(x, y-1)|$$
+    
+    If you plot or average $D(y)$ modulo 8 versus modulo 4:
+    *   A strong statistical spike exclusively at $y \pmod 8 == 0$ indicates **Field DCT**.
+    *   A statistical spike at $y \pmod 4 == 0$ (specifically at odd multiples of 4, like 4, 12, 20) indicates **Frame DCT**.
+    
+Me:
+===
+Thanks. re "The Source-Level Exception (MSSG Reference Decoder)" has anyone (re)implemented it in python to decode/inspect mpeg2 video ? eg in pypi or other, or maybe on github or similar ?
+
+Google AI Studio:
+=================
+There is no robust, production-grade, or widely adopted PyPI package that implements a full MPEG-2 video decoder down to the macroblock level. 
+
+While there are several educational, toy, or academic MPEG-2 decoders written in Python on GitHub, they generally share limitations that make them impractical for real-world video restoration workflows.
+
+### Why Pure Python MPEG-2 Macroblock Decoders Are Rare
+
+To understand why a simple Python parser cannot easily extract `dct_type`, it helps to look at the structure of the MPEG-2 bitstream:
+
+1.  **Byte-Aligned Headers vs. Bit-Stream Slices:** 
+    Sequence headers, GOP headers, and Picture headers are byte-aligned and preceded by start codes (e.g., `0x000001B3`). A simple Python script using libraries like `bitstring` or `construct` can easily search for these start codes, parse the headers, and stop.
+2.  **The Entropy Coding Barrier:** 
+    Macroblock headers (including `dct_type`) reside inside video slices and are **not** byte-aligned. They are encoded using Variable Length Coding (VLC / Huffman-style tables). 
+    To read the `dct_type` of the 100th macroblock in a frame, a parser cannot simply jump to it. It must sequentially decode the VLCs of the preceding 99 macroblocks to know where the 100th macroblock even begins. 
+
+Consequently, any Python tool capable of reporting `dct_type` must implement a complete MPEG-2 entropy decoder, which is highly complex to write and runs too slowly in pure Python for practical video analysis.
+
+---
+
+### What Exists on GitHub/PyPI (and Their Limitations)
+
+If you search GitHub for Python-based MPEG-2 parsers, you will find two main categories:
+
+#### 1. High-Level Bitstream Parsers (e.g., `construct` examples, `pydemux`)
+*   **What they do:** Parse the MPEG Program Stream (`.mpg`) or Transport Stream (`.ts`) container packets and high-level sequence/picture headers.
+*   **Why they fail for Tier 3:** They stop at the picture header level. They do not parse the slice data or decode macroblocks.
+
+#### 2. Academic/Educational Decoders
+*   **Examples on GitHub:** You will find repositories under search terms like `mpeg2-python`, `python-mpeg2-decoder`, or university course projects.
+*   **Limitations:**
+    *   **Input Requirements:** They almost always require raw Elementary Streams (`.m2v` or `.mpv`). They cannot ingest Program Streams (`.mpg`) directly without you first demuxing the file using a tool like FFmpeg (`ffmpeg -i input.mpg -vcodec copy -an output.m2v`).
+    *   **Feature Completeness:** Most educational decoders only implement the MPEG-2 Simple Profile (progressive-only, no B-frames). Because PAL VHS transfers are typically Main Profile @ Main Level (interlaced, using B-frames, alternative scan patterns, and custom quantization matrices), these toy decoders will crash or output garbage when processing commercial/broadcast-standard MPEG-2 files.
+
+---
+
+### Recommended Pragmatic Workarounds
+
+If you want to use Python to automate this analysis, the most reliable paths do not involve parsing the bitstream in pure Python.
+
+#### Option A: Python Wrapper for the Decoded Pixel Method (Recommended)
+Because parsing the bitstream is highly complex, using the "Separately" method (measuring actual block-edge grid periodicity in Python) is often much easier to implement and maintain. You can use standard, robust Python libraries to decode the frames and perform the math:
+
+```python
+import cv2
+import numpy as np
+
+# 1. Load the video using OpenCV (which uses FFmpeg under the hood)
+cap = cv2.VideoCapture('input.mpg')
+success, frame = cap.read()
+
+if success:
+    # 2. Separate into Even and Odd fields (halving the height)
+    # frame shape is typically (576, 720, 3)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    even_field = gray[0::2, :] # Shape: (288, 720)
+    odd_field = gray[1::2, :]  # Shape: (288, 720)
+    
+    # 3. Compute vertical absolute differences between adjacent rows
+    # A Field-DCT compressed frame will show sharp spikes in differences
+    # at row indices that are multiples of 8 inside these 288-line fields.
+    # A Frame-DCT compressed frame will show them at multiples of 4.
+```
+
+#### Option B: Compile MSSG `mpeg2decode` and Call it via Python
+If you absolutely must have the exact bitstream flags, you can compile the MSSG decoder to a command-line executable once, then use Python's `subprocess` module to run it, pipe the stdout, and parse the text output:
+
+```python
+import subprocess
+
+# Run the compiled MSSG decoder with trace enabled
+process = subprocess.Popen(
+    ['mpeg2decode', '-b', 'input.m2v', '-t'], 
+    stdout=subprocess.PIPE, 
+    stderr=subprocess.PIPE,
+    text=True
+)
+
+# Parse the trace stream line by line in Python
+for line in process.stdout:
+    if "dct_type" in line:
+        # Parse the value: "dct_type (1): 0" or similar
+        print(line.strip())
+```
+
+Me:
+===
+Good ! I can demux if need be.  OK if not python what about zig ?
+
+Google AI Studio:
+=================
+There are no known, mature, pure-Zig implementations of an MPEG-2 video decoder or bitstream parser that can extract macroblock-level parameters like `dct_type`. 
+
+However, if you are comfortable working with Zig, its **native C interoperability** and **integrated C compiler (`zig cc`)** make it an exceptionally powerful tool for solving this exact problem.
+
+Instead of needing a pure-Zig re-implementation, Zig allows you to seamlessly compile, import, and wrap existing C reference code (like the MSSG decoder or `libmpeg2`) and write your custom extraction logic in clean Zig.
+
+---
+
+### How Zig Simplifies the C-Based Solution
+
+In most languages (like Python, Rust, or Go), interfacing with a 30-year-old C codebase requires writing complex FFI (Foreign Function Interface) bindings, compiling the C library separately, and linking it. 
+
+In Zig, you can import C code directly and compile it as part of your Zig build process.
+
+#### 1. Zig can compile the C reference decoder natively
+Because Zig contains a fully featured C compiler, you do not need `make`, `cmake`, or MSVC on Windows to build the MSSG code. You can use Zig to compile it directly:
+```bash
+zig cc -O2 -DTRACE mpeg2dec.c -o mpeg2dec.exe
+```
+
+#### 2. You can import the C structs directly into Zig
+If you want to write a custom tool in Zig that decodes a file and prints out the `dct_type` for every macroblock, you can import the MSSG decoder's headers directly into your `main.zig`:
+
+```zig
+const std = @import("std");
+
+// Import the C headers directly into Zig
+const c = @cImport({
+    @cDefine("TRACE", "1");
+    @cInclude("config.h");
+    @cInclude("global.h");
+});
+
+pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+    
+    // Example: Initialize the decoder structures using Zig
+    // (Translating the main loop of the C decoder into Zig)
+    var ld: c.struct_layer_data = undefined;
+    
+    // You can access C variables and functions as if they were Zig code:
+    c.Initialize_Sequence();
+    
+    // Your extraction logic here...
+    try stdout.print("MPEG-2 stream initialized.\n", .{});
+}
+```
+
+---
+
+### The Most Practical "Zig + C" Path
+
+If you want to use Zig to analyze the `dct_type` without writing a decoder from scratch:
+
+1.  **Obtain the MSSG Source:** Download the MSSG `mpeg2decode` source files (they are lightweight and public domain).
+2.  **Locate the Target Variable:** In the C file `slice.c`, locate where `dct_type` is parsed:
+    ```c
+    if (!picture_structure && !frame_pred_frame_dct)
+    {
+      dct_type = Get_Bits(1);
+    }
+    ```
+3.  **Expose It to Zig:** 
+    Instead of writing a complex output format in C, you can write a simple C callback function inside `slice.c`:
+    ```c
+    // Add this to slice.c
+    void (*zig_on_macroblock_dct)(int frame_num, int mb_x, int mb_y, int dct_type) = NULL;
+    ```
+    And call it inside the parsing block:
+    ```c
+    if (zig_on_macroblock_dct) {
+        zig_on_macroblock_dct(true_frame_number, mb_col, mb_row, dct_type);
+    }
+    ```
+4.  **Handle the Data in Zig:**
+    In your `main.zig`, assign a Zig function to that C function pointer. You can now aggregate, format, and filter the macroblock data using Zig's standard library and print it or write it to a CSV file.
+
+This approach gives you the speed and safety of Zig for the data processing/aggregation layer, while relying on the proven, compliant parsing of the original MPEG-2 reference decoder.
+

@@ -1,0 +1,86 @@
+Follow-up research question: realistic difficulty and effort assessment for the
+"Zig wraps MSSG mpeg2decode" path to extract per-macroblock dct_type
+
+Context: in a previous exchange you established that no standard tool exposes
+MPEG-2 per-macroblock dct_type (frame-DCT vs field-DCT), and you proposed a path
+I will call "Option A": use Zig's integrated C compiler (zig cc) to compile the
+public-domain MPEG Software Simulation Group (MSSG) mpeg2decode reference decoder,
+add a small callback in slice.c at the point where dct_type is parsed, and
+aggregate the results in Zig. My source files are MPEG-2 PROGRAM STREAMS (.mpg,
+MPEG-PS), PAL SD, Main Profile at Main Level, interlaced, with B-frames and
+custom quantisation matrices. I am comfortable in Zig and can demux with ffmpeg
+if required.
+
+I want a REALISTIC, skeptical assessment of the difficulty and effort of Option
+A - not an optimistic sketch. Please treat each of the following as a question to
+answer concretely, and flag clearly where you are inferring versus stating
+something documented or established.
+
+1. COMPILING MSSG ON A MODERN TOOLCHAIN.
+   The MSSG source is roughly 30 years old (K&R-era C). Realistically, what is
+   involved in getting it to compile and run correctly under a modern compiler
+   such as zig cc on Windows x64? Specifically:
+   - what classes of problem typically arise (implicit int, missing prototypes,
+     assumptions about type sizes, non-portable I/O, warnings escalated to
+     errors, etc.)?
+   - is compilation typically a small, bounded fix-up, or can it become an
+     open-ended rabbit hole? Give your honest estimate of the range.
+   - are there known-good modern forks or patch sets of MSSG mpeg2decode that
+     already build cleanly on current compilers, and if so, which?
+
+2. PROGRAM-STREAM VS ELEMENTARY-STREAM INPUT.
+   Does MSSG mpeg2decode accept MPEG-2 PROGRAM STREAMS (.mpg) directly, or does
+   it require a demuxed ELEMENTARY STREAM (.m2v)? If a demux is required, confirm
+   the exact ffmpeg command and whether any subtlety (e.g. multiple programs,
+   timestamps, private streams) can complicate it for typical PAL DVD/VHS-capture
+   .mpg files.
+
+3. CORRECTNESS ON MAIN-PROFILE INTERLACED CONTENT.
+   My material is Main Profile at Main Level: interlaced, B-frames, alternate
+   scan, custom quant matrices. Does the MSSG reference decoder fully and
+   correctly handle all of that (it is the reference implementation, so I expect
+   yes, but confirm), such that its dct_type reporting is trustworthy for this
+   content - as opposed to the "toy/educational decoder" limitations you noted
+   for simpler implementations?
+
+4. THE CALLBACK / EXTRACTION MODIFICATION.
+   You proposed adding a callback in slice.c at the dct_type parse site. Assess
+   the realistic size of this modification:
+   - is dct_type parsed in exactly one place, or several (e.g. different code
+     paths for different picture structures)?
+   - what surrounding state (frame number, macroblock coordinates, picture
+     structure, frame_pred_frame_dct) is available at that point to report
+     alongside dct_type, and is any of it awkward to obtain?
+   - is the decoder's global-variable-based design (non-reentrant, file-scope
+     state) a problem for a simple "tap one value at the parse site and emit it"
+     approach, or is tapping at the parse site exactly what side-steps the global
+     state concern?
+
+5. ZIG INTEGRATION SPECIFICS.
+   For the Zig side: is the clean @cImport-and-call-into-C picture you sketched
+   realistic given MSSG's global state and main-loop structure, or is the more
+   robust arrangement to let the C decoder own its main loop and merely call a
+   Zig-implemented callback (C calls Zig, not Zig drives C)? Which arrangement
+   would you actually recommend, and why?
+
+6. OVERALL EFFORT ESTIMATE.
+   Given all the above, give an honest banded effort estimate for a competent
+   developer comfortable in Zig and C, to reach a working tool that: ingests a
+   PAL SD .mpg (demuxing if needed), decodes the first N frames, and emits per
+   frame the count/proportion of frame-DCT vs field-DCT macroblocks. Distinguish
+   the likely case from the bad case (e.g. "half a day if MSSG builds cleanly;
+   two to three days if the build needs significant patching"). State the main
+   risk factors that would push it toward the bad case.
+
+7. IS THERE A LOWER-EFFORT BITSTREAM ALTERNATIVE?
+   Separately from MSSG: is there any other free route to per-macroblock dct_type
+   that is LESS effort than resurrecting MSSG - for example, a debug/trace build
+   option in libmpeg2, a build-time trace in another maintained decoder, or a
+   maintained bitstream-analysis tool - that you did not mention before? If MSSG
+   genuinely is the lowest-effort bitstream route, say so plainly.
+
+How to answer: concrete and skeptical; distinguish documented/established facts
+from inference; give honest effort ranges rather than best-case sketches; and if
+the honest conclusion is that this is more effort than it is worth for a
+one-time validation cross-check (versus simply measuring block-edge pitch in the
+decoded pixels), say so plainly.
