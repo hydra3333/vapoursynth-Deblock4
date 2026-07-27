@@ -1,7 +1,7 @@
 @echo off
 @setlocal ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
 
-set "STAGE=1B.1"
+set "STAGE=1B.1 v1.7"
 set "dset=Debug ReleaseSafe ReleaseFast"
 
 REM --------------------------------------------------------------------------------------------
@@ -42,14 +42,8 @@ set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
 echo ***
 
-echo ***
-set "current_command=dumpbin /?"
-echo !current_command!
-!current_command! >nul
-set "exit_code=!ERRORLEVEL!"
-REM if not "!exit_code!"=="0" goto :fail
-set "exit_code=0"
-echo ***
+rem `where dumpbin` is the environment-resolution gate. DUMPBIN help may
+rem return tool-specific nonzero codes even when the tool is available.
 
 echo.
 echo ---------- END Setting up %STAGE% environment
@@ -226,7 +220,7 @@ echo ***
 
 echo.
 echo ***
-set "current_command=Verify required export deblock4_build_probe_value"
+set "current_command=Verify root inversion preserved export deblock4_build_probe_value"
 set "current_commandx_zzz=findstr /C:"deblock4_build_probe_value" "!exports_file!""
 echo !current_commandx_zzz!
 !current_commandx_zzz! >nul
@@ -283,9 +277,23 @@ if not "!exit_code!"=="1" goto :fail
 echo ***
 
 echo.
+echo ***
+set "current_command=Verify internal anchor storage is absent from the export table"
+set "current_commandx_zzz=findstr /C:"sse41_marker_anchor" /C:"avx2_marker_anchor" /C:"marker_anchor" "!exports_file!""
+echo !current_commandx_zzz!
+!current_commandx_zzz! >nul
+set "exit_code=!ERRORLEVEL!"
+if "!exit_code!"=="0" (
+    set "exit_code=1"
+    goto :fail
+)
+if not "!exit_code!"=="1" goto :fail
+echo ***
+
+echo.
 echo *********************************************************************
 set "exit_code=0"
-echo Export-table gate: PASS
+echo Existing and backend export-table gates: PASS
 echo *********************************************************************
 echo.
 
@@ -300,18 +308,38 @@ echo TYPE "!sse41_symbols_file!"
 TYPE "!sse41_symbols_file!"
 echo ***
 
-set "current_command=Verify SSE4.1 marker is a defined object symbol"
-set "current_commandx_zzz_1=findstr /C:"deblock4_backend_probe_sse41_marker" "!sse41_symbols_file!""
-set "current_commandx_zzz_2=findstr /R /C:"SECT[0-9A-F][0-9A-F]*""
-echo !current_commandx_zzz_1! pipe !current_commandx_zzz_2!
-!current_commandx_zzz_1! | !current_commandx_zzz_2! >nul
+echo.
+echo ***
+set "current_command=Verify SSE4.1 marker is defined on a SECTn symbol line"
+set "current_commandx_zzz=findstr /R /C:"SECT[0-9A-F][0-9A-F]*.*deblock4_backend_probe_sse41_marker" "!sse41_symbols_file!""
+echo !current_commandx_zzz!
+!current_commandx_zzz! >nul
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
+rem Storage class may be Static or External. SECTn, rather than UNDEF, proves
+rem that the marker is defined in this object.
+echo ***
+
+echo.
+echo ***
+set "current_command=Verify SSE4.1 object .text section length is non-zero"
+set "current_commandx_zzz=findstr /R /C:"^[ ]*0 [.]text" "!sse41_symbols_file!""
+echo !current_commandx_zzz!
+!current_commandx_zzz! >nul
+set "exit_code=!ERRORLEVEL!"
+if "!exit_code!"=="0" (
+    rem A "0 .text" summary line means the object has no emitted code.
+    set "exit_code=1"
+    goto :fail
+)
+if not "!exit_code!"=="1" goto :fail
+set "exit_code=0"
+echo ***
 
 echo.
 echo *********************************************************************
 set "exit_code=0"
-echo SSE4.1 retained-function symbol gate: PASS
+echo SSE4.1 emitted-and-defined function gates: PASS
 echo *********************************************************************
 echo.
 
@@ -321,27 +349,46 @@ echo !current_command! pipe "!avx2_symbols_file!"
 !current_command! > "!avx2_symbols_file!"
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
+echo.
 echo TYPE "!avx2_symbols_file!"
 TYPE "!avx2_symbols_file!"
 echo ***
 
+echo.
 echo ***
-set "current_command=Verify AVX2 marker is a defined object symbol"
-set "current_commandx_zzz_1=findstr /C:"deblock4_backend_probe_avx2_marker" "!avx2_symbols_file!""
-set "current_commandx_zzz_2=findstr /R /C:"SECT[0-9A-F][0-9A-F]*""
-echo !current_commandx_zzz_1! pipe !current_commandx_zzz_2!
-!current_commandx_zzz_1! | !current_commandx_zzz_2! >nul
+set "current_command=Verify AVX2 marker is defined on a SECTn symbol line"
+set "current_commandx_zzz=findstr /R /C:"SECT[0-9A-F][0-9A-F]*.*deblock4_backend_probe_avx2_marker" "!avx2_symbols_file!""
+echo !current_commandx_zzz!
+!current_commandx_zzz! >nul
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
+rem Storage class may be Static or External. SECTn, rather than UNDEF, proves
+rem that the marker is defined in this object.
+echo ***
+
+echo.
+echo ***
+set "current_command=Verify AVX2 object .text section length is non-zero"
+set "current_commandx_zzz=findstr /R /C:"^[ ]*0 [.]text" "!avx2_symbols_file!""
+echo !current_commandx_zzz!
+!current_commandx_zzz! >nul
+set "exit_code=!ERRORLEVEL!"
+if "!exit_code!"=="0" (
+    rem A "0 .text" summary line means the object has no emitted code.
+    set "exit_code=1"
+    goto :fail
+)
+if not "!exit_code!"=="1" goto :fail
+set "exit_code=0"
+echo ***
 
 echo.
 echo *********************************************************************
 set "exit_code=0"
-echo AVX2 retained-function symbol gate: PASS
+echo AVX2 emitted-and-defined function gates: PASS
 echo *********************************************************************
 echo.
 
-echo.
 echo ***
 set "current_command=dumpbin /NOLOGO /DISASM zig-out\bin\Deblock4.dll"
 echo !current_command! pipe "!disasm_file!"
