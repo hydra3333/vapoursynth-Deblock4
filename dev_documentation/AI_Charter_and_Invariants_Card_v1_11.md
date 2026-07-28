@@ -1,8 +1,8 @@
 # Deblock4 - Project Charter and Invariants Card
 
-**Version:** 1.9
+**Version:** 1.11
 **Date:** 2026-07-25
-**Status:** Ratification candidate for W3X review. Part 1 adds invariant G6 (explicit/structural mechanisms over implicit toolchain behaviour).
+**Status:** W3X-ratified. Part 1 carries invariants G1-G9. v1.11 rewrote G3 for named psABI tiers and added G7 (integer-exact/float-tolerance), G8 (.strict), and G9 (the R76 standing differential gate).
 **Companion specification:** `README_Deblock4_Design_Spec_v1.1.md`
 **Companion internal revision:** `Design specification revision: 1.1`
 **Encoding:** US-ASCII only. See C-STY-01.
@@ -43,8 +43,8 @@ Project:
     Deblock4
 
 Charter:
-    filename          AI_Charter_and_Invariants_Card_v1_9.md
-    internal version  1.9
+    filename          AI_Charter_and_Invariants_Card_v1_11.md
+    internal version  1.11
 
 Controlling specification:
     filename          README_Deblock4_Design_Spec_v1.1.md
@@ -254,8 +254,13 @@ F1  Non-finite (NaN / infinity) handling is evaluated PER EDGE POSITION,
     (Per-batch declining makes output depend on backend width: see A2.)
 
 F2  Strict floating point. No contraction, no reassociation, no fast-math.
-    FMA is excluded from the AVX2 object's target feature set, so
-    contraction is impossible at the code-generation level.
+    Contraction (including auto-fusing a*b+c into an FMA) is prevented by
+    explicit @setFloatMode(.strict) at kernel scope (G8), NOT by excluding FMA
+    from the target. FMA is part of the v3 level (G3) and remains available;
+    under .strict the compiler will not fuse unless an explicit @mulAdd is
+    used, which is not currently required. (Revised v1.11: earlier charters
+    excluded FMA from the AVX2 target; that exclusion is dropped in favour of
+    full declared tiers plus .strict.)
 
 F3  The plugin never modifies MXCSR. Denormal behaviour is inherited from
     the host and must not be depended upon.
@@ -287,18 +292,33 @@ G2  Generic and dispatch code must contain NO AVX2 instructions. Only the
     AVX2 object may assume them. Dispatch cannot require the feature it is
     detecting.
 
-G3  The SSE4.1 and AVX2 objects are compiled for the smallest feature
-    closures proven by the Zig 0.16.0 build and assembly spike.
+G3  Backends are compiled for NAMED x86-64 psABI microarchitecture LEVELS,
+    used in full with no identity-driven feature exclusions (revised v1.11;
+    see Part 7 and Deblock4_Verification_And_Tiering_Decisions):
 
-    Dispatch checks exactly the features assumed by each compiled object.
-    AVX2 additionally requires CPU AVX, OSXSAVE, and XCR0 XMM+YMM state.
+        scalar/generic  -> x86_64_v1  (baseline SSE/SSE2)
+        SSE4.1 backend  -> x86_64_v2  (adds SSE3..SSE4.2, POPCNT)
+        AVX2 backend    -> x86_64_v3  (adds AVX, AVX2, BMI1, BMI2, F16C,
+                                       FMA, LZCNT, MOVBE; AVX/AVX2 need
+                                       OSXSAVE and XCR0 XMM+YMM state)
 
-    FMA is excluded from the AVX2 object.
+    The level IS the tier's feature contract - a published standard, not a
+    bespoke per-build closure. FMA is PART of the v3 level and is NOT excluded;
+    under strict float semantics (G8) the compiler will not auto-fuse, so FMA
+    is present-but-unused unless a later measured decision selects it. The v3
+    level's additional integer instructions compute identical integer results,
+    so integer exactness (G7) is unaffected.
 
-    No architecture level such as x86_64_v2 or x86_64_v3 becomes normative
-    before the object has compiled and its emitted instructions have been
-    inspected. A public backend token and its detected feature set must
-    name the same contract.
+    WHOLE-LEVEL dispatch. Dispatch checks that the CPU satisfies the ENTIRE
+    level, never the headline instruction. Selection tests v3, then v2, then
+    v1, and uses the highest FULLY-satisfied level, falling back down the
+    chain; v1 always succeeds. A CPU with AVX2 but missing any other v3
+    feature is v2, not v3 - running the v3 backend on it would fault. A public
+    backend token and its detected feature set name the same level contract.
+
+    Stage 1B.2 CONFIRMS each compiled object stays WITHIN its declared level
+    and that the guard checks the whole level; it does not derive a bespoke
+    closure. If any object emits an instruction outside its level, stop.
 
 G4  Deblock4 is stateless and 1-in/1-out. No shared mutable state beyond
     immutable configuration. All scratch is per-call, never per-instance.
@@ -387,11 +407,107 @@ G6  SAFETY PROPERTIES REST ON EXPLICIT OR STRUCTURAL MECHANISMS, NEVER ON
     mechanism sits in. Tier 3 requires the standing gate to be delivered in
     the same scope as the mechanism it guards.
 
-    Corollary for gated backend code: target-specific functions are NOT
-    declared with the export keyword. Their retention is proven by explicit
-    reference or an explicit retention directive; their absence from the
-    export table is then structural (tier 1), and the dumpbin /EXPORTS check
-    in validation is corroboration, not the load-bearing mechanism.
+    Corollary for gated backend code (revised v1.10 after empirical
+    falsification of the v1.9 form; see Part 7 and the toolchain findings
+    document, F1/F2/F4/F5):
+
+    THE BAN IS ON PE-EXPORT, NOT ON THE export KEYWORD.
+
+    Three properties are separately controlled and must not be conflated:
+
+```text
+        EMISSION   code exists in an object. Decided PER COMPILATION UNIT:
+                   the semantic root must be in that unit's own graph
+                   (export fn, or an in-graph reference). A reference from a
+                   DIFFERENT compilation does NOT force emission.
+
+        LINKAGE    a symbol is visible to the linker for cross-object
+                   reference. In Zig this is export/@export on the definition
+                   side and extern/@extern on the reference side. There is no
+                   other mechanism.
+
+        PE EXPORT  a symbol appears in the DLL's .edata export table. This
+                   requires a dllexport-class directive from the DLL
+                   compilation itself. export in an OBJECT-mode compilation
+                   grants emission and linkage but NOT PE-export candidacy.
+```
+
+    Therefore, for target-specific (gated) backend code:
+
+```text
+        - it is compiled as its own single-target object, where export fn is
+          PERMITTED and is the mechanism that gives it emission and linkage;
+        - it is NOT part of the DLL root compilation graph (which is what
+          would make an export PE-export);
+        - baseline code reaches it only by @extern + address-taken, stored in
+          internal non-exported pointers, NEVER called before the capability
+          guard (G5 unchanged);
+        - it must NEVER appear in the PE export table. Where the toolchain
+          offers an explicit export-list mechanism (a .def-class allowlist),
+          use it (tier 2). Otherwise the absence rests on documented
+          object-mode behaviour and MUST be enforced by a standing
+          loud-failing dumpbin /EXPORTS gate (tier 3), delivered in the same
+          scope.
+```
+
+    The v1.9 form of this corollary ("gated functions are NOT declared with
+    the export keyword; absence from the export table is then structural")
+    was falsified by build evidence: without export, Zig omits an unreferenced
+    function entirely, so no retention mechanism can act on it; and export in
+    an object-mode unit does not in fact create a PE export. The SAFETY GOAL
+    is unchanged - no export-table doorway, nothing reachable before the
+    guard. Only the mechanism claim is corrected to match the toolchain.
+```
+
+```text
+G7  CROSS-BACKEND EQUIVALENCE IS SAME-ALGORITHM, SPLIT BY TYPE (added v1.11;
+    see Deblock4_Verification_And_Tiering_Decisions).
+
+    INTEGER paths produce BIT-IDENTICAL results across scalar, v2 and v3. A
+    defined integer algorithm has one correct result; wider instructions
+    compute the identical value, so exactness costs nothing and a tolerance
+    there would only mask bugs. Integer output is exact and reproducible.
+
+    FLOAT paths implement the SAME specified algorithm and must agree with the
+    scalar oracle within a MEASURED, deterministic-per-backend tolerance.
+    Hardware accuracy gains on capable tiers (e.g. FMA on v3) are a FEATURE,
+    not a defect. The tolerance is DERIVED analytically and then STRESS-TESTED
+    against adversarial and real-footage corpora, never merely fitted to the
+    largest difference observed in development.
+
+    STRUCTURAL and edge results stay EXACT and loud even under float tolerance:
+    lane mapping, saturation, widen/narrow, transpose/shuffle, tail handling,
+    bounds, dispatch selection, and decision masks. A final-magnitude tolerance
+    must NEVER excuse a wrong lane, tail, bound, schedule, or mask. Tolerance
+    applies only to final float magnitudes.
+
+    The ReleaseSafe scalar backend is the ground-truth oracle. The ReleaseFast
+    production scalar backend is proven against that oracle before it is used
+    as the reference for the SIMD comparisons.
+
+G8  FLOAT KERNELS USE EXPLICIT .strict FLOAT MODE (added v1.11).
+
+    Float kernels state @setFloatMode(.strict) explicitly at kernel scope.
+    Production optimisation is ReleaseFast; .strict and ReleaseFast are
+    INDEPENDENT controls, and ReleaseFast does NOT imply fast-math. .strict
+    prevents result-changing reordering and auto-contraction (including fusing
+    a*b+c into an FMA), keeping scalar-vs-SIMD differences to genuine rounding.
+    There is NO @mulAdd requirement: not subtracting FMA is not requiring it.
+    General fast-math (.optimized) is rejected as a default.
+
+G9  THE SCALAR-VS-SIMD DIFFERENTIAL IS A STANDING GATE ACROSS TOOLCHAIN
+    VERSIONS (added v1.11; the R76-class miscompile guard).
+
+    Compiler code-generation defects (correct source, wrong machine code)
+    cluster at EDGES and TAILS - exactly where a deblocker operates - and
+    produce gross corruption, not rounding. Because the risk is toolchain-
+    version dependent ("certain compilers"), the scalar-vs-SIMD differential
+    test is a STANDING gate, re-run on EVERY Zig or LLVM version bump, not a
+    one-time check. The test corpus MUST include non-vector-width-multiple
+    dimensions with strong boundary edges (e.g. 711x480) to force the tail
+    path. .strict (G8) is retained partly for this reason. This gate is the
+    reason the relaxed float tolerance (G7) does not weaken defect detection:
+    garbage vastly exceeds any tolerance band and is caught regardless.
 ```
 
 ## H. When to stop
@@ -1380,6 +1496,65 @@ custom-mode primitives       luma_step_x, luma_step_y,
 ---
 
 # Part 7 - Revision history
+
+## v1.11 (2026-07-28)
+
+Adopted the verification and tiering decisions recorded in
+Deblock4_Verification_And_Tiering_Decisions_v1_0. Three changes to Part 1:
+
+- REWROTE G3. The prior G3 required "smallest feature closures", EXCLUDED FMA
+  from the AVX2 object, and forbade any architecture level from becoming
+  normative before assembly inspection. All three are reversed: backends now
+  target the NAMED x86-64 psABI levels v1/v2/v3 IN FULL (the level is the
+  published feature contract, not a bespoke measured closure); FMA is part of
+  the v3 level and is not excluded; dispatch is WHOLE-LEVEL with v3->v2->v1
+  fallback. Stage 1B.2 now CONFIRMS an object stays within its level rather
+  than deriving a closure. The safety intent (dispatch checks exactly what the
+  object may execute) is unchanged; the mechanism is now a named level plus a
+  whole-level guard.
+- ADDED G7: cross-backend equivalence is same-algorithm, split by type -
+  integer exact, float same-algorithm within a measured tolerance, with
+  structural/edge results exact even under tolerance, and the scalar oracle
+  (ReleaseSafe) as ground truth with the ReleaseFast scalar proven against it.
+- ADDED G8: float kernels use explicit @setFloatMode(.strict); ReleaseFast and
+  .strict are independent; no @mulAdd requirement; fast-math rejected.
+- ADDED G9: the scalar-vs-SIMD differential is a STANDING gate re-run on every
+  Zig/LLVM version bump (the R76-class miscompile guard), with an
+  edge/tail-forcing corpus requirement.
+
+The change relaxes cross-backend FLOAT bit-identity to a measured tolerance and
+stops constraining instruction sets for identity; it does NOT relax integer
+exactness, structural/edge exactness, G5 execution safety, or G6 export
+discipline. Full reasoning and the withdrawn alternatives (twin-build, bespoke
+closures) are in the decisions document.
+
+## v1.10 (2026-07-28)
+
+Revised the G6 corollary for gated backend code after W3X build evidence
+falsified its v1.9 mechanism claim. The v1.9 corollary said gated functions are
+never declared with the export keyword, and that their absence from the export
+table is therefore structural (tier 1). Two Stage 1B.1 builds proved this
+unsatisfiable and factually wrong on Zig 0.16 + lld-link (COFF/PE):
+
+1. Without export (and with no in-unit reference), Zig omits the function
+   ENTIRELY - both gated objects showed .text length 0 with no marker symbol -
+   so no retention mechanism (forceUndefinedSymbol / INCLUDE-class, nor a
+   cross-compilation address reference) has anything to retain. Emission is
+   decided per compilation unit; a reference from a different compilation does
+   not force it.
+2. export in an OBJECT-mode compilation does NOT create a PE export: the
+   generic and scalar markers are export fn in addObject-ed units and appeared
+   in NEITHER the DLL export table NOR the import library. PE-export requires a
+   dllexport-class directive from the DLL compilation itself.
+
+The corollary now bans PE-EXPORT of gated code rather than the export keyword,
+separates the three properties (emission, linkage, PE-export) with their
+distinct controls, and requires either an explicit export-list allowlist
+(tier 2) or a standing loud-failing dumpbin /EXPORTS gate (tier 3). The safety
+goal is unchanged: no export-table doorway, and nothing reachable before the
+capability guard (G5). Only the mechanism claim is corrected. Evidence and the
+corresponding community-proven Zig dispatch idiom are recorded in
+Deblock4_Toolchain_Findings (F1, F2, F4, F5).
 
 ## v1.9 (2026-07-25)
 

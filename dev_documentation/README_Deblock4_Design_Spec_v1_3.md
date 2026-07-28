@@ -64,7 +64,7 @@ This project is distributed under the GNU GENERAL PUBLIC LICENSE Version 2 or la
 
 # Architecture Decisions and Detailed Specification
 
-**Design specification revision:** 1.1  
+**Design specification revision:** 1.3  
 **Date:** 2026-07-24  
 **Status:** accepted design-specification baseline; this is not a claim that the plugin binary is released.  
 **Toolchain:** Zig 0.16.0 pinned; exact object-link and runtime-detection syntax remains subject to compile/run proof.  
@@ -114,19 +114,30 @@ Deblock4 shall define **one canonical deblocking algorithm** and implement it th
 - an SSE4.1 backend;
 - an AVX2 backend.
 
-The required relationship is:
+The required relationship is (revised v1.3; see charter G7 and
+Deblock4_Verification_And_Tiering_Decisions):
 
 ```text
-canonical scalar output
-        ==
-SSE4.1 output
-        ==
-AVX2 output
+INTEGER formats:  canonical scalar == SSE4.1 == AVX2   (byte-exact)
+FLOAT formats:    same specified algorithm, each backend within a
+                  measured tolerance of the canonical scalar oracle
 ```
 
-For integer formats, `==` means byte-exact output.
+For INTEGER formats, `==` means byte-exact output across all backends: a
+defined integer algorithm has one correct result, and wider instructions
+compute the identical value, so exactness costs nothing and a difference
+indicates a bug.
 
-For 32-bit floating-point formats, byte-exact output is the target. Strict floating-point operation ordering shall be retained. Any exception for IEEE special values must be explicitly decided and documented; it must not arise accidentally from compiler optimisation.
+For 32-bit FLOATING-POINT formats, the backends implement the SAME specified
+algorithm and must agree with the scalar oracle within a measured,
+deterministic-per-backend tolerance. Byte-exact float output across backends is
+NOT required: hardware accuracy differences (e.g. FMA on the AVX2 tier) are a
+FEATURE, not a defect. Strict floating-point operation ordering is retained
+(section 8.6). STRUCTURAL and decision results (masks, edge eligibility, lane
+mapping, tails) remain EXACT even under float tolerance - the tolerance applies
+only to final float magnitudes. Any exception for IEEE special values must be
+explicitly decided and documented; it must not arise accidentally from compiler
+optimisation.
 
 ## 1.2 Relationship to HolyWu
 
@@ -201,7 +212,12 @@ The current working recommendation is:
 |---|---|---|
 | One canonical algorithm | Settled | Required |
 | Scalar reference oracle | Settled | First-class deliverable, written before SIMD |
-| Scalar/SSE4.1/AVX2 identity | Settled | Mandatory |
+| Scalar/SSE4.1/AVX2 identity | Revised v1.3 | INTEGER byte-exact across backends; FLOAT same-algorithm within a measured tolerance (charter G7) |
+| CPU tiers | Settled v1.3 | Named psABI levels x86_64_v1/v2/v3, used in full, no identity-driven exclusions (charter G3) |
+| Tier dispatch | Settled v1.3 | Whole-level detection; highest fully-satisfied level wins with v3->v2->v1 fallback |
+| FMA | Settled v1.3 | Part of the v3 level, not excluded; not required; .strict prevents auto-fusion (charter G8) |
+| Float tolerance values | Deferred | Derived analytically then stress-tested; frozen once real kernels exist (Stage 2) |
+| Version/tier stderr emission | Settled v1.3 | Always-on, ffmpeg-style; float cross-machine byte-identity not promised |
 | HolyWu bit-exactness | Settled | Desired baseline similarity, not absolute requirement |
 | Whole-frame pad/resize/crop | Settled | Rejected for Deblock4 core |
 | Algorithmic boundary rule | Settled | Process only complete-footprint candidate edges |
@@ -716,7 +732,8 @@ Differences may be acceptable, but must be:
 
 ## 4.3 SIMD width must not define output
 
-Given identical input and parameters, the output must not depend on:
+For INTEGER formats, given identical input and parameters, the output must not
+depend on any of:
 
 - whether the CPU has AVX2;
 - whether the CPU only has SSE4.1;
@@ -725,6 +742,17 @@ Given identical input and parameters, the output must not depend on:
 - stride;
 - thread scheduling;
 - number of VapourSynth worker threads.
+
+For FLOAT formats, the STRUCTURAL result (which edges are filtered, lane
+mapping, tail handling, decision masks) must likewise not depend on any of the
+above; only final float MAGNITUDES may differ, and only between backends
+(scalar vs SSE4.1 vs AVX2), within the measured tolerance of charter G7.
+Batch-end position, alignment, stride, and thread count must NOT change even the
+float magnitude for a given backend - a single backend is deterministic. What is
+permitted is that the AVX2 tier may compute a marginally more accurate float
+result than scalar (e.g. via FMA), bounded by the tolerance. Cross-MACHINE float
+byte-identity is not promised (a different CPU may select a different backend);
+see section 12 and the reproducibility contract.
 
 ---
 
@@ -1290,7 +1318,14 @@ Do not enable optimized/fast-math in the canonical float kernels because it may 
 - FMA contraction;
 - other result-changing transformations.
 
-An AVX2 object must not acquire FMA merely because AVX2 is enabled. Strict mode and the minimal target-feature closure shall reinforce one another.
+An AVX2 object targets the full x86_64_v3 level (charter G3), which INCLUDES
+FMA; FMA is not excluded. Contraction is prevented by explicit
+@setFloatMode(.strict) at kernel scope (charter G8), not by removing FMA from
+the target. Under .strict the compiler will not auto-fuse unless an explicit
+@mulAdd is used (not currently required), so an ordinary `a*b + c` retains its
+non-fused evaluation. (Revised v1.3: earlier text excluded FMA from the AVX2
+target and required a minimal closure; that is superseded by full declared tiers
+plus .strict.)
 
 Exceptional-value policy:
 
@@ -1298,11 +1333,11 @@ Exceptional-value policy:
    - six samples for luma/full normal filtering;
    - four samples for proper chroma filtering.
 2. If any sample in that footprint is NaN or positive/negative infinity, that edge position is left unmodified.
-3. The decision is independent for every edge position. SIMD backends implement it with per-lane masking and must never reject an entire backend batch because one lane is non-finite.
+3. The decision is independent for every edge position. SIMD backends implement it with per-lane masking and must never reject an entire backend batch because one lane is non-finite. This masking decision is a STRUCTURAL result and is EXACT across all backends (charter G7); the float tolerance never applies to it.
 4. Samples left unchanged preserve their original bit patterns, including NaN payloads, infinities, and signed zero.
-5. If finite arithmetic produces numerical zero, the canonical scalar expression and strict operation order define its sign; every backend must match that bit pattern.
+5. If finite arithmetic produces numerical zero, the canonical scalar expression and strict operation order define its sign. Integer paths match this exactly. For FLOAT paths, the sign of a computed zero may differ between backends only within the measured tolerance regime (charter G7); it is not a required cross-backend bit match, because IEEE-754 compares `-0.0` and `+0.0` as equal and any downstream activation comparison therefore does not depend on the sign.
 
-Strict floating-point mode fixes operation ordering and prevents reassociation/contraction. IEEE-754 compares `-0.0` and `+0.0` as equal, so activation comparisons require no backend-specific signed-zero rule.
+Strict floating-point mode fixes operation ordering and prevents reassociation/contraction within a backend. IEEE-754 compares `-0.0` and `+0.0` as equal, so activation comparisons require no backend-specific signed-zero rule, and structural/decision results stay exact across backends even though final float magnitudes may differ within tolerance.
 
 Deblock4 does not set or modify MXCSR. Flush-to-zero and denormals-are-zero state is inherited from the host process. The algorithm and tests shall not depend on subnormal preservation; backend identity is required under the same inherited MXCSR state. Nominal-range float video values are far above the affected magnitudes.
 
@@ -1843,19 +1878,18 @@ The conceptual build is:
 
 ```text
 generic objects
-    target: supported x86-64 baseline
+    target: x86_64_v1 (supported x86-64 baseline)
 
 SSE4.1 object(s)
-    target: baseline + required SSE4.1 feature closure
+    target: x86_64_v2 (the SSE4.1-class level, in full)
 
 AVX2 object(s)
-    target: explicit required AVX2 feature closure, established by the
-            Stage 1 compile and assembly spike
-            FMA is excluded from this closure
+    target: x86_64_v3 (the AVX2 level, in full), including FMA
 
-    Architecture-level shorthands such as x86_64_v3 must NOT be used as the
-    AVX2 target. x86_64_v3 includes FMA, which would permit floating-point
-    contraction and break the scalar/SSE4.1/AVX2 float identity requirement.
+    The named psABI level IS the target (charter G3). FMA is part of v3 and is
+    NOT excluded; float contraction is prevented by explicit .strict at kernel
+    scope (section 8.6, charter G8), not by removing FMA from the target.
+    Dispatch verifies the WHOLE v3 level (section 12.3), never just AVX2.
 
 link all objects into one DLL
 ```
@@ -1864,25 +1898,35 @@ The same shared source may be instantiated separately into SSE4.1 and AVX2 objec
 
 ## 12.3 Important `x86_64_v3` dispatch rule
 
-`x86_64_v3` is broader than "AVX2 exists".
+`x86_64_v3` is broader than "AVX2 exists". It includes AVX, AVX2, BMI1, BMI2,
+F16C, FMA, LZCNT, MOVBE (with AVX/AVX2 requiring OSXSAVE and XCR0 XMM+YMM
+state).
 
-It includes a feature set such as AVX2, FMA, BMI1, BMI2, and others.
+Deblock4 adopts the named psABI levels in full (charter G3): the AVX2 backend
+targets `x86_64_v3`, the SSE4.1 backend `x86_64_v2`, the scalar backend
+`x86_64_v1`. The level IS the tier's feature contract. Therefore:
 
-Therefore:
+- dispatch must verify the CPU satisfies the ENTIRE level, plus OS vector-state
+  support for the AVX tiers - never just the headline CPUID bit;
+- WHOLE-LEVEL selection: test v3, then v2, then v1, and use the highest FULLY
+  satisfied level, falling back down the chain; v1 always succeeds;
+- a CPU with AVX2 but missing any other v3 feature (e.g. BMI2) is v2, not v3;
+  running the v3 backend on it would fault. This is the one genuinely dangerous
+  mistake and is prohibited;
+- FMA is PART of v3 and is not excluded; strict float mode (section 8.6, charter
+  G8) prevents contraction, so FMA is present-but-unused unless explicitly
+  chosen later.
 
-- if the AVX2 object is compiled for `x86_64_v3`, dispatch must verify the complete required v3 feature set and OS vector-state support;
-- checking only the AVX2 CPUID bit is insufficient;
-- the preferred initial direction is a tested minimal explicit feature closure, expected to be the required SSE/v2 support plus AVX and AVX2, with dispatch checking the same closure;
-- FMA shall not be enabled merely because AVX2 is enabled; strict float mode remains mandatory.
-
-The README should not say:
+The README must NOT say:
 
 ```text
 compile x86_64_v3
 dispatch when has_avx2
 ```
 
-without reconciling this mismatch.
+The correct form is "compile x86_64_v3; dispatch when the CPU satisfies the
+whole v3 level (else fall back)". Stage 1B.2 confirms each object stays within
+its level and that the guard checks the whole level.
 
 ## 12.4 AVX operating-system state
 
@@ -1969,6 +2013,49 @@ Inspect generated AVX2 functions for correct AVX-to-SSE transition behaviour, in
 
 Do not assume this without assembly inspection.
 
+## 12.8 Target-specific backend code is never exported (charter G6)
+
+The SSE4.1 and AVX2 backend functions are never placed on the DLL's public
+export surface. This is a safety requirement, not a style preference: an
+exported target-specific function is a callable entry point that bypasses the
+capability guard of section 12.5, so an external caller could invoke AVX2 code
+on a CPU lacking AVX2 and fault. That is precisely the unguarded execution
+charter G5 forbids.
+
+Charter G6 (v1.10+) governs how the requirement is met. The ban is on
+PE-EXPORT, not on the Zig export keyword (this was corrected after Stage 1B.1
+build evidence; the earlier "never use the export keyword" form was falsified -
+see charter Part 7 and Deblock4_Toolchain_Findings F1/F2/F4/F5):
+
+- Target-specific backend functions ARE declared `export fn`, in their own
+  single-target objects. In an OBJECT-mode compilation, `export` grants EMISSION
+  and linker visibility but does NOT create a PE export; only code in the DLL's
+  root compilation graph is PE-exported. So the gated objects are kept OUT of
+  the DLL root graph, and their `export` never reaches the export table.
+
+- The backend code is reached ONLY through the per-instance resolution of
+  section 12.5. The DLL root references each gated marker by `@extern`,
+  address-taken and stored in internal non-exported pointers, never called
+  before the capability guard. There is no named public symbol for an external
+  caller to reach.
+
+- Generic and scalar backends, by contrast, ARE imported into the DLL root
+  graph so their `export fn` declarations genuinely PE-export where required
+  (e.g. for the isolation smoke test). Duplicate-symbol rule: a source is in the
+  DLL root graph OR linked as a separate object, never both.
+
+- The absence of any target-specific symbol from the PE export table is verified
+  by a STANDING build gate (a dumpbin /EXPORTS check that fails the build if a
+  gated marker ever appears), so a future toolchain change cannot reintroduce an
+  export silently. Where the toolchain offers an explicit export allowlist
+  (.def), that is the stronger tier-2 mechanism.
+
+This mechanism was proven in Stage 1B.1: the gated SSE4.1/AVX2 markers emit with
+non-zero .text, are externally linkable, are retained by the @extern anchors,
+and are absent from the DLL export table, while generic/scalar/build-probe are
+present. See Deblock4_DISPATCH_RELATED_Backend_Objects_Explained for the
+verbatim mechanism.
+
 ---
 
 # 13. VapourSynth processing contract
@@ -2036,6 +2123,36 @@ Rules:
 - `Deblock4MidpointScale` is omitted when midpoint processing is not applicable, rather than written as zero.
 - Each scalar value has its own property so scripts and tests do not need to parse packed strings or arrays.
 - The properties are always enabled because they are the audit trail for grid selection, under-deblocking reports, and backend diagnosis.
+
+
+## 13.6 Always-on version and tier emission; reproducibility contract
+
+In addition to the per-frame audit properties, Deblock4 emits its version marker
+and the SELECTED backend tier to stderr, ALWAYS-ON (ffmpeg-style), not behind a
+debug flag. This makes "which tier ran" immediately visible for support and
+performance triage (e.g. a user reporting slowness -> confirm which tier was
+selected and why a higher one was not).
+
+Reproducibility contract:
+
+```text
+- a forced backend="scalar" selection is available (section 12.6) for
+  reproducible reference output;
+- the selected backend is recorded in frame properties (Deblock4Backend,
+  section 13.5) and emitted to stderr;
+- INTEGER output is exact and reproducible across backends and machines;
+- a given backend is DETERMINISTIC run-to-run on the same machine;
+- FLOAT output is NOT promised to be byte-identical across DIFFERENT machines,
+  because automatic dispatch may select a different backend on a different CPU,
+  and float backends may differ within the measured tolerance (charter G7).
+  This is stated honestly rather than implied.
+```
+
+The float cross-machine caveat is the principal cost of the same-algorithm
+model (charter G7) and is accepted deliberately: for the intended VHS/MPEG-2
+restoration material the differences are assessed as immaterial, integer output
+remains exact, and users needing byte-identical cross-machine float output can
+force backend="scalar".
 
 
 ---
@@ -2107,6 +2224,14 @@ Examples should include, but not be limited to:
 1919, 1920, 1921
 3839, 3840, 3841
 ```
+
+The corpus MUST include non-vector-width-multiple dimensions with strong
+boundary edges (e.g. 711x480) to force the tail/edge path, which is where
+compiler code-generation defects concentrate (charter G9, the R76-class
+guard). The scalar-vs-SIMD differential across these dimensions is a STANDING
+gate, re-run on every Zig or LLVM version bump - not a one-time check - because
+such miscompiles are toolchain-version dependent and produce gross edge
+corruption that any differential test catches immediately.
 
 ## 14.4 Format matrix
 
@@ -2192,9 +2317,22 @@ Test:
 - finite out-of-range values;
 - positive and negative zero;
 - subnormal values if preserved;
-- NaN and infinities after policy is defined.
+- NaN and infinities after policy is defined;
+- values engineered NEAR decision thresholds (to exercise the near-boundary
+  case where a small float difference could flip an activation decision).
 
-Compare bit patterns, not just decimal formatting.
+Float backends are compared against the scalar oracle within the measured
+tolerance of charter G7 - NOT by cross-backend bit-pattern equality. Record, per
+comparison: maximum absolute difference; maximum ULP difference for ordinary
+finite values; number and percentage of differing samples; exact
+finite/NaN/infinity classification agreement (which must match EXACTLY);
+decision/activation mask agreement (which must match EXACTLY); and the input,
+coordinates, backend, and branch for every worst case. Structural and
+classification results are exact; only final float magnitudes are subject to
+tolerance. (The tolerance values themselves are frozen once real kernels exist -
+see the decisions document.)
+
+Integer paths are still compared by exact bit-pattern equality across backends.
 
 ## 14.8 Assembly inspection
 
@@ -2219,12 +2357,15 @@ Verify:
 Verify:
 
 - intended YMM operations;
-- no accidental AVX-512;
+- no accidental AVX-512 (nothing outside the x86_64_v3 level);
+- that every emitted instruction stays WITHIN the declared v3 level, and that
+  the runtime guard checks the whole level (charter G3);
 - expected widening/narrowing/shuffle sequence;
 - no large-vector decomposition caused by an incorrect lane count;
 - no unsafe aligned loads;
 - correct `vzeroupper` behaviour;
-- no FMA contraction in strict float kernels.
+- no FMA contraction in strict float kernels (FMA is available in v3 but must
+  not be auto-fused under .strict; its absence is legitimate).
 
 Generated assembly is a release gate, not an optional curiosity.
 
@@ -2317,6 +2458,56 @@ If the candidate schedule is not demonstrably equal or better:
 # 16. Revision history
 
 This section replaces the former "Proposed README corrections" list, which instructed this document to amend itself and became self-referential once those amendments were applied.
+
+## Revision v1.3
+
+Adopted the verification and tiering decisions (charter G3 rewrite and new
+G7/G8/G9; see Deblock4_Verification_And_Tiering_Decisions). Changes:
+
+- Section 1.1: cross-backend relationship split - INTEGER byte-exact, FLOAT
+  same-algorithm within a measured tolerance; structural/decision results stay
+  exact even under float tolerance.
+- Section 4.3: SIMD-width-independence split by type; float magnitudes may
+  differ between backends within tolerance, but a single backend stays
+  deterministic and structural results are width-independent.
+- Section 8.6: FMA exclusion dropped; contraction prevented by explicit .strict
+  (not by removing FMA from the target); float computed-zero sign relaxed to the
+  tolerance regime while structural masking stays exact.
+- Section 12.3: adopted named psABI levels v1/v2/v3 in full with WHOLE-LEVEL
+  dispatch and v3->v2->v1 fallback; FMA is part of v3, not excluded.
+- Section 12.8: REWRITTEN to the corrected G6 (the ban is on PE-EXPORT, not the
+  export keyword). Gated backends ARE export fn in their own objects, kept out
+  of the DLL root graph, reached by @extern address-taken-never-called; the
+  earlier "never use the export keyword" wording was falsified by Stage 1B.1 and
+  is superseded.
+- Section 13.6 (new): always-on ffmpeg-style version+tier stderr emission and
+  the reproducibility contract (integer exact/reproducible; float not promised
+  byte-identical across machines; forced scalar available).
+- Sections 14.3, 14.7, 14.8: R76-class standing differential gate with
+  edge/tail-forcing dimensions; float validation records tolerance metrics
+  rather than requiring cross-backend bit equality; AVX2 assembly inspection
+  confirms within-level emission.
+- Decision-status table: identity row revised; tiering, dispatch, FMA,
+  tolerance, and emission rows added.
+
+No change to integer exactness, structural/edge exactness, G5 execution safety,
+the one-DLL object architecture, or the canonical algorithm. This revision
+relaxes only cross-backend FLOAT bit-identity and stops constraining instruction
+sets for identity.
+
+## Revision v1.2
+
+- Added section 12.8: target-specific (SSE4.1/AVX2) backend code is never
+  exported. States the charter G6 requirement - non-export is structural in
+  COFF/PE, backends are reached only through the guarded per-instance entry
+  points/function table of section 12.5, retention without export uses an
+  explicit mechanism (reference-graph anchor or explicit retention directive)
+  never the export keyword, and export-table absence is verified by a standing
+  build gate. Closes an underspecification: the dispatch design was already
+  G6-compatible but did not state the non-export consequence. (Charter G5, G6.)
+- No algorithmic change; this revision records a safety-mechanism requirement
+  settled after v1.1 (the Stage 1B.1 retention/export decision and the
+  retention/export research package).
 
 ## Revision v1.1
 
@@ -2541,9 +2732,20 @@ The detector can be unit-tested by injecting synthetic CPUID/XCR0 words. Confirm
 
 The complete `x86_64_v3` feature set is the `x86_64_v2` set (SSE3, SSSE3, SSE4.1, SSE4.2, POPCNT, CMPXCHG16B, LAHF/SAHF) plus AVX, AVX2, BMI1, BMI2, F16C, FMA, LZCNT, MOVBE, and XSAVE.
 
-**The recommendation is the minimal explicit alternative offered in section 12.3**, not `x86_64_v3`: compile the AVX2 object for the `v2` baseline plus AVX and AVX2 only, and have dispatch check exactly that set plus OS YMM state.
+**The decision (v1.3) is to use the named `x86_64_v3` level in full** (charter
+G3), not a bespoke minimal closure: compile the AVX2 object for `x86_64_v3` and
+have dispatch verify the WHOLE v3 level plus OS YMM state (section 12.3),
+selecting the highest fully-satisfied level with v3->v2->v1 fallback.
 
-Beyond being simpler to verify, this choice has a second benefit that reinforces section 8.6 mechanically: **excluding FMA from the AVX2 object's target features removes the possibility of float contraction at the code generation level**, rather than relying solely on strict-mode flags to suppress it. The strict-float requirement and the target-feature choice then agree instead of one policing the other.
+FMA is part of v3 and is retained, not excluded. Float contraction is prevented
+by explicit `.strict` at kernel scope (section 8.6, charter G8): under `.strict`
+the compiler will not auto-fuse `a*b + c`, so the presence of FMA in the target
+does not break the same-algorithm float model. The earlier recommendation (a
+minimal v2+AVX+AVX2 closure with FMA excluded from the target) is superseded -
+identity-driven feature subtraction is dropped in favour of full declared tiers,
+because cross-backend float output is now same-algorithm-within-tolerance
+(charter G7), not byte-identical, so there is no float-identity requirement for
+FMA exclusion to protect.
 
 ## F11. Quality test sufficiency (was Q11)
 
