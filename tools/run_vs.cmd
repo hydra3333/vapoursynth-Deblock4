@@ -30,6 +30,7 @@ if not exist "%VSPIPE_EXE%" (
     exit /b 9009
 )
 pushd "%VSROOT%" || (echo [run_vs] ERROR: cannot 'cd /d' to "%VSROOT%" 1>&2 & exit /b 1)
+echo "%VSPIPE_EXE%" %*
 "%VSPIPE_EXE%" %*
 set "RC=%ERRORLEVEL%"
 popd
