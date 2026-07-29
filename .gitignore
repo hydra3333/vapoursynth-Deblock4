@@ -8,3 +8,26 @@ zig-pkg
 .mise
 dist
 /build
+
+# Claude Code — keep shared .claude/settings.json tracked; ignore personal overrides
+.claude/settings.local.json
+
+# Harness / encode outputs (trim these if you ever commit sample media)
+*.y4m
+*.264
+*.h264
+*.h265
+*.hevc
+*.mkv
+#*.mp4
+#*.mpg
+*.log
+
+# Editor / OS / Windows cruft
+.vs/
+*.user
+*.suo
+Thumbs.db
+desktop.ini
+__pycache__/
+*.pyc

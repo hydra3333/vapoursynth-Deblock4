@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(zig build:*)",
+      "Bash(zig build-obj:*)",
+      "Bash(zig build-lib:*)",
+      "Bash(zig test:*)",
+      "Bash(zig fmt:*)",
+      "Bash(zig version)",
+      "Bash(run_vs.cmd:*)",
+      "Bash(tools\\run_vs.cmd:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Bash(rm:*)",
+      "Bash(del:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)"
+    ]
+  }
+}
