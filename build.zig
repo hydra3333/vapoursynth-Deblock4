@@ -1,45 +1,28 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    // Stage 1B.1 fixes every safe baseline unit to the same provisional
-    // x86-64 target. No command-line CPU or target option can replace it.
+    // Stage 1B.2 fixes baseline units to the complete x86_64_v1 psABI level.
+    // No command-line CPU or target option can replace this target.
     const baseline_target = b.resolveTargetQuery(.{
         .cpu_arch = .x86_64,
         .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
-        .cpu_features_sub = std.Target.x86.featureSet(&.{
-            .sse4_1,
-            .avx,
-            .avx2,
-            .fma,
-        }),
         .os_tag = .windows,
         .abi = .msvc,
     });
 
-    // These target contracts are provisional Stage 1B.1 linkage probes, not
-    // the final feature closures. AVX2 explicitly excludes FMA.
+    // The separately compiled backend objects use the complete named psABI
+    // levels. x86_64_v3 includes FMA; strict float semantics prevent implicit
+    // result-changing contraction rather than removing FMA from the target.
     const sse41_probe_target = b.resolveTargetQuery(.{
         .cpu_arch = .x86_64,
-        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
-        .cpu_features_add = std.Target.x86.featureSet(&.{.sse4_1}),
-        .cpu_features_sub = std.Target.x86.featureSet(&.{
-            .avx,
-            .avx2,
-            .fma,
-        }),
+        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v2 },
         .os_tag = .windows,
         .abi = .msvc,
     });
 
     const avx2_probe_target = b.resolveTargetQuery(.{
         .cpu_arch = .x86_64,
-        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
-        .cpu_features_add = std.Target.x86.featureSet(&.{
-            .sse4_1,
-            .avx,
-            .avx2,
-        }),
-        .cpu_features_sub = std.Target.x86.featureSet(&.{.fma}),
+        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v3 },
         .os_tag = .windows,
         .abi = .msvc,
     });

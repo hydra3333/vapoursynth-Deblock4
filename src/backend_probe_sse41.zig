@@ -11,11 +11,13 @@ comptime {
         @compileError("SSE4.1 backend probe target lacks SSE4.1");
     }
 
+    // This narrow guard catches AVX-family drift only. The named target and
+    // Stage 1B.2 assembly inspection prove complete x86_64_v2 membership.
     if (builtin.cpu.has(.x86, .avx) or
         builtin.cpu.has(.x86, .avx2) or
         builtin.cpu.has(.x86, .fma))
     {
-        @compileError("SSE4.1 backend probe target exceeds its provisional contract");
+        @compileError("SSE4.1 backend probe target unexpectedly enables AVX-family features outside x86_64_v2");
     }
 }
 

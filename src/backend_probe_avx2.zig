@@ -7,15 +7,14 @@ comptime {
         @compileError("AVX2 backend probe requires Windows x86-64");
     }
 
+    // The named x86_64_v3 target supplies complete psABI membership,
+    // including FMA. This guard preserves the required AVX-family minimum;
+    // Stage 1B.2 assembly inspection proves whole-level containment.
     if (!builtin.cpu.has(.x86, .sse4_1) or
         !builtin.cpu.has(.x86, .avx) or
         !builtin.cpu.has(.x86, .avx2))
     {
-        @compileError("AVX2 backend probe target lacks its provisional features");
-    }
-
-    if (builtin.cpu.has(.x86, .fma)) {
-        @compileError("AVX2 backend probe target must exclude FMA");
+        @compileError("AVX2 backend probe target lacks required x86_64_v3 AVX-family features");
     }
 }
 

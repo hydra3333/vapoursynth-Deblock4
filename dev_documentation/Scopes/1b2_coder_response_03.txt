@@ -1,0 +1,144 @@
+Scope v1.5 correctly resolves the four matters raised in the previous review. The psABI level contract, `OSXSAVE` placement, four-object classification, and Stage 5C `vzeroupper` deferral are now coherent. 
+
+Three small points remain before implementation; none requires architectural reconsideration.
+
+# W3C response to Stage 1B.2 scope v1.5
+
+## Overall assessment
+
+Stage 1B.2 scope v1.5 satisfactorily resolves W3C's previous response:
+
+* `OSXSAVE` is correctly retained in authoritative psABI set A;
+* the separate set-B obligation is now the XGETBV/XCR0 register-state check;
+* all four objects are explicitly classified against their own full level;
+* v1 classification is no longer reduced to merely “no AVX”;
+* the header names all four inspection inputs;
+* the `vzeroupper` proof is correctly deferred to Stage 5C;
+* the added Stage 1B.3 diagnostics and force-down testing requirements are appropriately recorded as future obligations rather than Stage 1B.2 implementation work.
+
+The implementation direction is accepted.
+
+The following limited corrections or clarifications remain.
+
+## 1. Definition of done omits the newly added G/H report contents
+
+Part 3.3 now requires the Stage 1B.2 report to contain:
+
+```text
+A-F: level, OS-state, Zig-model, inspection, vzeroupper and hand-forward record
+G:   Stage 1B.3 detection-diagnostics requirements
+H:   Stage 1B.3 debug-only force-down requirements
+```
+
+However, the definition of done still says:
+
+```text
+Deblock4_Stage_1B2_WithinLevel_Report.md produced with contents A-F
+```
+
+That permits formal completion without recording G and H, despite v1.5 adding them specifically so they are not lost.
+
+Replace that checklist item with:
+
+```text
+[ ] Deblock4_Stage_1B2_WithinLevel_Report.md produced with contents A-H of
+    Part 3.3, including the Stage 1B.3 detection-diagnostics and debug-only
+    force-down obligations.
+```
+
+The existing A/B/C distinction text may remain after that sentence.
+
+This is the only direct definition-of-done defect.
+
+## 2. Automated versus manual classifier failure must be stated consistently
+
+Part 3.1 correctly allows:
+
+```text
+- a conservative automated deny-list;
+- retained complete per-object disassembly;
+- explicitly manual classification of what automation does not cover;
+- no claim of exhaustive automation.
+```
+
+But validation V4 says the within-level gate:
+
+```text
+FAILS loudly on any out-of-level instruction
+```
+
+A non-exhaustive automated gate cannot itself fail on an instruction that only
+the manual review detects.
+
+Please distinguish the two outcomes:
+
+```text
+[V4] The automated deny-list gate FAILS loudly on every forbidden instruction
+     or encoding it detects. Complete per-object disassembly is retained for
+     the explicitly manual remainder. Any out-of-level instruction found by
+     either the automated gate or W3X's manual review is an overall scope FAIL.
+     The batch/report must not claim exhaustive automated classification.
+```
+
+This preserves the permitted implementation while making the acceptance claim
+honest.
+
+## 3. Force-down diagnostics should distinguish actual and effective capability
+
+The new G/H hand-forward requirements are sound. One diagnostic distinction
+should be recorded now to prevent ambiguity in Stage 1B.3.
+
+When the force-down seam is active, “present/absent” output could otherwise
+describe either:
+
+* the CPU's actual detected capabilities; or
+* the capabilities remaining after the test mask was applied.
+
+Require the diagnostic record to distinguish:
+
+```text
+1. actual detected set-A feature bits and XCR0 state;
+2. the force-down request or mask;
+3. the resulting effective capability set / maximum permitted tier;
+4. the selected tier and fallback reason.
+```
+
+Suggested addition to H:
+
+```text
+When force-down is active, diagnostics must report the actual detected
+capability separately from the forced-down effective capability. A deliberately
+masked bit must never be reported as genuinely absent from the CPU.
+```
+
+This is a Stage 1B.3 requirement only. It adds no Stage 1B.2 code.
+
+## Accepted without further objection
+
+W3C accepts:
+
+* full named `x86_64_v1`, `v2` and `v3` targets;
+* no bespoke feature closure;
+* FMA included in v3 and not relied upon;
+* removal of the FMA exclusion in the target and AVX2 guard;
+* the accurate narrow SSE4.1 guard;
+* set A containing complete psABI membership, including `OSXSAVE`;
+* set B containing the additional XGETBV/XCR0 state check;
+* set C being reproducibility evidence, not the Stage 1B.3 runtime checklist;
+* four-object within-level inspection;
+* conservative automation plus honest manual review;
+* the Stage 5C `vzeroupper` deferral;
+* the debug-only force-down concept, provided it can only lower effective
+  capability and never bypass the real guard;
+* leaving all Stage 1B.1 linkage, anchoring and PE-export mechanisms untouched.
+
+## Coder disposition
+
+After the A-H checklist correction and the two wording clarifications above,
+W3C considers Stage 1B.2 scope v1.5 ready for implementation.
+
+No further design-level review is required.
+
+The checklist omission is visible because G/H are mandatory report obligations in Part 3.3, while the completion checklist still names only A-F.  
+
+The classifier design itself is acceptable; the remaining change only separates automated batch failure from overall failure after manual disassembly review.  
