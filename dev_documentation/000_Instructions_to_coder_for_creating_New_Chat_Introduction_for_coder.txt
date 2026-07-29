@@ -7,7 +7,7 @@ thing for me since then I cannot even secure a documented handover note to the n
 Can you please draft a really excellent introduction for your (likely memoryless) successor
 coder chat, with a view to providing (and/or referencing) all the background and context
 and rules and information the successor coder chat will need to become immediately productive.
-Keep it lean and directive — it should point into the existing documents with a clear reading
+Keep it lean and directive - it should point into the existing documents with a clear reading
 order, not re-summarise them. Assume the successor will read the four controlling documents;
 your job is to orient, not duplicate. The greatest risk is a successor drowning in context,
 the converse risk is one starved of it.
@@ -33,14 +33,14 @@ This is a guided entry, not a catalogue.
 **Tacit knowledge.**
 Things worthwhile for a new coder to be aware of so as to not inadvertently kill
 the project or go down some already-explored rabbit-hole: spike results, dead ends,
-the "we tried X and it failed for reason Y" — for example whatever lies behind
+the "we tried X and it failed for reason Y" - for example whatever lies behind
 the VSHelper4.h C-ABI bridge decision and the ReleaseSafe translation issue.
 This is knowledge that exists only in this chat and nowhere in the documents;
 it is the valuable perishable part.
 
 **What will bite you.**
 Separate from dead ends (things already closed), a short list of active
-hazards — traps still open that a plausible-but-wrong first move would spring.
+hazards - traps still open that a plausible-but-wrong first move would spring.
 Framed as "if you are about to do X, don't, because Y."
 Keep it to the ones that genuinely matter.
 

@@ -91,10 +91,12 @@ and stop. Do not choose the most plausible interpretation.
 Read in this order. Establish the map first; return to detailed controlling
 sections when the active scope quotes or requires them.
 
-## 2.1 `Deblock4_Project_Status` (latest version) - INFORMATIVE
+## 2.1 `Deblock4_Project_Status_v1_10.md` - INFORMATIVE
 
 Read first for the reported proof state, open work, and why Stage 1B.2 is next.
-It may contain an older charter pointer; the latest ratified charter prevails.
+Verify the exact filename and internal version. If it differs, stop and obtain
+the correspondingly version-bumped, cross-reconciled successor package. Do not
+substitute a "latest" status or charter into this package.
 
 ## 2.2 `Deblock4_Concise_Project_Summary_v1.1.md` - INFORMATIVE
 

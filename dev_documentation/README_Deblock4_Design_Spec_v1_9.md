@@ -3167,8 +3167,12 @@ Open to measurement:
 
 Open bounded implementation work:
 
-6. Zig 0.16.0 object-link syntax and one-DLL link.
-7. CPUID/XGETBV implementation and exact target-feature closure.
+6. Stage 1B.2 within-level object-code and assembly confirmation, including
+   `vzeroupper` inspection and production of the complete requirements that
+   Stage 1B.3 must enforce. (Zig 0.16.0 object-link syntax and one-DLL link.)
+7. Stage 1B.3 named-level runtime detection and guarded dispatch; strongly prefer
+   one shared target/detection mechanism, with explicit CPUID/XGETBV only as the
+   canonical-descriptor fallback described in section 12.4.
 8. VapourSynth frame-property write mechanics using the settled names in section 13.5.
 
 Deferred scope:

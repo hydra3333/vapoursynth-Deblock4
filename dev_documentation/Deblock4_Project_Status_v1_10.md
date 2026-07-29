@@ -416,7 +416,7 @@ They serve different purposes and should live alongside one another:
 Before moving ahead, W3X should confirm:
 
 1. the charter's canonical filename and internal version both say v1.16;
-2. the README's filename and internal design revision both say v1.8;
+2. the README's filename and internal design revision both say v1.9;
 3. the concise summary remains marked non-controlling;
 4. this status document remains marked informative and non-controlling;
 5. the next coding scope records the actual starting commit;
@@ -473,7 +473,7 @@ proved in Stage 1B.1 are exactly what it inspects.
 Two filters, Classic first: the plugin will register deblock4.Classic (H.264,
 built first) and deblock4.Deblock4 (the end-goal MPEG-2 algorithm, second). The
 1B.x infrastructure work is filter-agnostic and precedes both; the per-algorithm
-build then runs for Classic first, then Deblock4. See README v1.8 section 1.0.
+build then runs for Classic first, then Deblock4. See README section 1.0.
 The MPEG-2 filter remains the end goal; Classic-first is a sequencing choice.
 
 Starting point: the accepted Stage 1B.1 commit on branch main (verify the
