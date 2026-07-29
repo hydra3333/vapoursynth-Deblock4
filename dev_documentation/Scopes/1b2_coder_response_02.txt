@@ -1,0 +1,433 @@
+I have read the full Stage 1B.2 v1.2 scope and checked it against the supplied source tree, charter G3, README 12.3/12.4, the toolchain findings, and the backend-object explanation.
+
+The CPU-tier authority is clear and settled: **x86_64_v1, v2 and v3 are the full psABI microarchitecture levels.** I will not substitute bespoke feature closures or resolve any apparent conflict independently. 
+
+The scope is broadly well constructed, but I see several matters that should be resolved with W3D/W3X before editing.
+
+# W3C initial assessment of Stage 1B.2 scope v1.2
+
+## Overall assessment
+
+The proposed migration of the existing probe targets to the production named psABI levels belongs naturally in Stage 1B.2. The linkage, retention and PE-export mechanism proved by Stage 1B.1 remains untouched, while Stage 1B.2 changes only target selection, probe guards, inspection automation and the hand-forward report.
+
+I have no objection to the central direction:
+
+* baseline/generic/scalar target x86_64_v1;
+* SSE4.1-class object targets the full x86_64_v2 level;
+* AVX2-class object targets the full x86_64_v3 level;
+* FMA remains included in v3;
+* no native target or user target override;
+* no backend execution, pixel processing or runtime dispatch;
+* Stage 1B.2 records requirements; Stage 1B.3 implements and proves the runtime guard.
+
+Before implementation, I request rulings or corrections on the following points.
+
+## 1. Exact starting commit is still required
+
+The scope header still contains:
+
+```text
+<W3X: the exact HEAD commit of the accepted Stage 1B.1 v1.7 delivery>
+```
+
+The supplied source ZIP does not contain `.git`, so W3C cannot determine this value.
+
+Please provide the exact full or agreed short commit hash and place it in the active scope before coding begins.
+
+## 2. W3X ratification of FLAG 1
+
+The scope still asks W3X to ratify that migration from the provisional Stage 1B.1 targets to the full named levels occurs now, in Stage 1B.2.
+
+I support that judgement. Inspection against a named level is only meaningful once the object actually targets that level.
+
+Please record W3X's explicit ratification so FLAG 1 is no longer open.
+
+## 3. The current probe cannot settle `vzeroupper`
+
+This is the main technical concern.
+
+`src/backend_probe_avx2.zig` contains only a no-argument marker returning a constant `u32`. It performs no vector or floating-point work and is very unlikely to emit any AVX/YMM instruction.
+
+The scope simultaneously:
+
+* forbids changing the marker function;
+* forbids adding backend/kernel logic;
+* requires Stage 1B.2 to settle `vzeroupper` by inspecting the v3 object.
+
+With no AVX/YMM-producing code, absence of `vzeroupper` proves only that none was required in this trivial function. It does not prove how the compiler handles an AVX-using function returning to SSE/baseline code.
+
+A designer ruling is required:
+
+### Option A — defer the proof
+
+Stage 1B.2 records:
+
+```text
+No AVX/YMM instruction was emitted by the current constant-return probe;
+therefore no AVX-to-SSE transition existed and `vzeroupper` was not applicable.
+The compiler-transition proof is deferred to the first real v3 function that
+actually uses YMM state.
+```
+
+### Option B — amend the scope to permit a dedicated probe
+
+Permit a narrowly bounded, non-executed AVX/YMM code-generation probe designed specifically to make the compiler produce an AVX ABI boundary. Its retention and inspection method would also need to be specified.
+
+Under the current permitted/forbidden changes, Option B cannot be implemented safely without further scope design.
+
+W3C recommends **Option A** unless W3D has a clean dedicated-probe design.
+
+## 4. Toolchain-resolved features must not automatically become runtime checks
+
+Part 3.3 asks the report to record:
+
+1. the exact feature set reported by the toolchain for each model; and
+2. the complete feature list that Stage 1B.3 must verify at runtime.
+
+These are not necessarily identical sets.
+
+A Zig CPU model's resolved feature set may include compiler code-generation or tuning properties in addition to hardware/OS capability bits. Stage 1B.3 cannot CPUID-check a compiler tuning property.
+
+The report should therefore distinguish at least:
+
+```text
+A. Authoritative psABI level membership
+   Runtime-checkable CPU/OS requirements belonging to v1/v2/v3.
+
+B. Separate runtime AVX state requirement
+   OSXSAVE and XGETBV/XCR0 XMM+YMM enablement.
+
+C. Zig resolved target/model feature set
+   Including any compiler-internal or tuning properties; recorded for
+   reproducibility but not automatically imposed on the runtime guard.
+```
+
+Please confirm that Part 3.3 does **not** instruct Stage 1B.3 to test every bit appearing in Zig's resolved model feature set.
+
+## 5. Exact baseline artifacts for inspection
+
+Part 3.1 refers to “the baseline object” singular.
+
+The source tree installs at least two stable baseline backend objects:
+
+```text
+deblock4_backend_probe_generic.obj
+deblock4_backend_probe_scalar.obj
+```
+
+The whole DLL cannot be classified as v1 because it intentionally contains the linked v2 and v3 objects.
+
+W3C proposes that the Stage 1B.2 classifier inspect:
+
+```text
+generic object  -> v1 control
+scalar object   -> v1 control
+SSE4.1 object   -> v2
+AVX2 object     -> v3
+```
+
+Please confirm that these are the exact four per-object inspection inputs.
+
+## 6. The SSE4.1 negative guard must not overclaim
+
+The existing SSE4.1 guard rejects only:
+
+```text
+AVX
+AVX2
+FMA
+```
+
+The proposed message “target is above the x86_64_v2 level” is broader than the predicate actually proves. It is not a complete whole-level comparison.
+
+I propose retaining the narrow guard but describing it accurately, for example:
+
+```text
+SSE4.1 backend probe target unexpectedly enables AVX-family features outside
+the x86_64_v2 contract
+```
+
+Whole-level confirmation remains the responsibility of the selected named target plus assembly inspection.
+
+Please approve that narrower wording, or specify an authoritative complete level predicate.
+
+## 7. Output names and locations should be fixed before coding
+
+The scope currently says both:
+
+```text
+build_1B2_v1.bat
+```
+
+and:
+
+```text
+Confirm the exact new name with W3X's naming convention.
+```
+
+It also permits:
+
+```text
+docs/Deblock4_Stage_1B2_WithinLevel_Report.md
+```
+
+but says the report may instead be placed elsewhere because the repository currently has no `docs` directory.
+
+Because all other files are forbidden, the alternative location is ambiguous.
+
+W3C proposes fixing these exact paths:
+
+```text
+build_1B2_v1.bat
+docs/Deblock4_Stage_1B2_WithinLevel_Report.md
+```
+
+and creating `docs/` as part of adding the permitted report file.
+
+Please confirm.
+
+## 8. Mechanical scope correction
+
+The supplied scope is v1.2, but the inputs list still says:
+
+```text
+Deblock4_Scope_Stage_1B2_v1_0.md
+```
+
+That should be corrected to:
+
+```text
+Deblock4_Scope_Stage_1B2_v1_2.md
+```
+
+## 9. Within-level classifier interpretation
+
+W3C accepts the scope's fallback model:
+
+```text
+automated conservative deny-list gate
++ complete per-object disassembly retained
++ manual W3X review
++ explicit reporting of which conclusions are automated and which are manual
+```
+
+W3C will not claim that a short grep-based deny list exhaustively classifies the entire x86 instruction set.
+
+## 10. HolyWu oracle note
+
+HolyWu tag `r9` is recorded as the proposed future Classic oracle pin. It is not consumed by Stage 1B.2 and causes no change to this scope.
+
+## Coder disposition
+
+No code changes should begin until points 1-7 are resolved or explicitly waived in the formal scope.
+
+Once resolved, the expected implementation remains narrowly bounded:
+
+```text
+build.zig target definitions/comments
+SSE4.1 and AVX2 compile-time guards/comments
+new Stage 1B.2 batch
+new within-level hand-forward report
+```
+
+The accepted Stage 1B.1 linkage, anchor, imports, object wiring and PE-export mechanism remain untouched.
+
+The official Zig 0.16 documentation shows that target CPU feature sets can include code-generation properties alongside ISA features, which is why I want the report to separate the resolved compiler model from Stage 1B.3’s runtime-checkable psABI contract. ([Zig Programming Language][1])
+
+HolyWu’s repository currently identifies **r9**, released June 30, 2026, as its latest release, so your proposed archive is the appropriate future D-CLASSIC-4 candidate. ([GitHub][2])
+
+The scope’s active objective and non-pixel boundary are otherwise clear and correctly aligned with Stage 1B.2. 
+
+[1]: https://ziglang.org/documentation/0.16.0/?utm_source=chatgpt.com "Documentation - The Zig Programming Language"
+[2]: https://github.com/HolyWu/VapourSynth-Deblock "GitHub - HolyWu/VapourSynth-Deblock: Deblock filter for VapourSynth · GitHub"
+Scope v1.4 resolves the previous review points well. The attached-tree base, ratified target migration, accurate SSE guard wording, fixed output paths, four inspection objects, three-set report structure, and honest `vzeroupper` deferral are all acceptable.
+
+However, I have found **one direct conflict with the settled G3/README 12.3 tier authority**. Per your instruction, I am stopping before implementation and bringing it to W3X rather than resolving it independently.
+
+Here is my response for W3D:
+
+# W3C response to Stage 1B.2 scope v1.4
+
+## Overall assessment
+
+Scope v1.4 satisfactorily resolves the matters raised in W3C's first response:
+
+* the attached source tree is now the explicit working base;
+* W3X's Stage 1B.2 target-migration decision is recorded as ratified;
+* `vzeroupper` is honestly deferred because the current probe emits no AVX/YMM;
+* the report separates psABI membership, runtime OS state and Zig's resolved model set;
+* the exact four object inputs are named;
+* the SSE4.1 negative guard is described narrowly and accurately;
+* the batch and report paths are fixed;
+* the scope self-reference is corrected.
+
+The principal implementation direction is accepted.
+
+One controlling-tier conflict remains and must be corrected before coding begins.
+
+## 1. BLOCKER — OSXSAVE is simultaneously included in and excluded from the v3 level
+
+Part 2 correctly states that the full `x86_64_v3` level includes:
+
+```text
+AVX, AVX2, BMI1, BMI2, F16C, FMA, LZCNT, MOVBE, OSXSAVE
+```
+
+Part 3.3 then places `OSXSAVE` in set B and states that it is:
+
+```text
+not a level member
+an OS-state check, not a CPUID feature-membership bit
+```
+
+Those two statements cannot both be true.
+
+W3X has explicitly restated that the tiers are the complete x86-64 psABI microarchitecture levels and that the named level is the authoritative feature contract. The scope itself repeats that this is settled and must not be independently reinterpreted.
+
+Please obtain or record W3X's correction.
+
+The correction that appears consistent with charter G3 and README 12.3 is:
+
+```text
+A. AUTHORITATIVE psABI LEVEL MEMBERSHIP
+
+   x86_64_v3 includes OSXSAVE as a named-level member.
+
+B. SEPARATE RUNTIME AVX/YMM OS-STATE REQUIREMENT
+
+   XGETBV/XCR0 must show XMM and YMM state enabled before executing AVX-family
+   backend code.
+
+   This XCR0 state requirement is additional runtime safety; it is not itself
+   another psABI feature-level member.
+```
+
+Consequently, Stage 1B.3 would verify complete set A, including OSXSAVE for v3,
+and then separately verify the XCR0 state requirement in B.
+
+W3C will not implement or silently infer this correction without a revised scope
+or explicit W3X ruling.
+
+## 2. The v1 classification obligation is still under-specified in the automated gate
+
+Part 3.1 correctly names four inspection inputs:
+
+```text
+generic -> v1
+scalar  -> v1
+sse41   -> v2
+avx2    -> v3
+```
+
+It also correctly says both v1 objects must contain nothing above
+`x86_64_v1`.
+
+However, the fallback classifier examples and the definition-of-done
+parenthetical focus on:
+
+```text
+no AVX-512 anywhere
+no VEX/AVX in v1 or v2
+```
+
+Absence of VEX/AVX is not sufficient to classify an object as v1. A v1 object
+must also contain no instruction whose minimum contract is v2 or higher.
+
+Please amend Part 3.1, V4 and the checklist to require:
+
+```text
+- v1 objects: no instruction requiring x86_64_v2, v3 or later;
+- v2 object: no instruction requiring x86_64_v3 or later;
+- v3 object: no instruction requiring a level above x86_64_v3.
+```
+
+The automated portion may remain a conservative deny-list, provided:
+
+```text
+- it covers every reliably detectable forbidden family appropriate to each
+  object;
+- complete disassembly is retained;
+- remaining classification is explicitly manual;
+- the batch/report does not claim exhaustive automated classification.
+```
+
+The current four-object design is correct; only the stated gate obligation
+needs tightening.
+
+## 3. Header validation item should name all four objects
+
+The scope header currently describes the new within-level inspection as being
+performed on the v2 and v3 objects.
+
+Part 3 and the checklist correctly require four objects, including the two v1
+controls.
+
+Please change the header item to:
+
+```text
+The NEW within-level inspection on all four per-object inputs:
+generic->v1, scalar->v1, sse41->v2 and avx2->v3.
+```
+
+This is mechanical but removes an internal scope ambiguity.
+
+## 4. `vzeroupper` deferral stage should be Stage 5C, not Stage 4C/5C
+
+The supplied roadmap and README define:
+
+```text
+Stage 4C = Classic v2 / SSE4.1-class backend
+Stage 5C = Classic v3 / AVX2-class backend
+```
+
+A Stage 4C v2 function cannot establish an AVX/YMM-to-SSE transition.
+
+Please change the owed point from:
+
+```text
+Stage 4C/5C
+```
+
+to:
+
+```text
+Stage 5C, when the first real Classic v3/YMM-using function exists
+```
+
+The corresponding Deblock4 v3 path can later be checked again at Stage 5D if
+required.
+
+## 5. Accepted matters
+
+W3C accepts without further objection:
+
+* migration to full named psABI levels in Stage 1B.2;
+* deletion of the v3 FMA subtraction and FMA-rejection guard;
+* leaving the proven Stage 1B.1 linkage/export mechanism untouched;
+* the narrow SSE4.1 AVX-family guard wording;
+* attached-tree base identity with the mandatory stop on repo/tree mismatch;
+* fixed paths:
+  `build_1B2_v1.bat` and
+  `docs/Deblock4_Stage_1B2_WithinLevel_Report.md`;
+* no synthetic YMM probe in this scope;
+* honest `vzeroupper` deferral;
+* separation of the psABI runtime contract from Zig tuning/code-generation
+  properties;
+* HolyWu `r9` being recorded for later Stage 2C handling, not consumed here.
+
+## Coder disposition
+
+Do not begin code changes until item 1 is resolved by W3X and incorporated into
+the scope.
+
+Items 2-4 are precise scope corrections and should be folded into the same
+revision.
+
+After those corrections, W3C expects the scope to be ready for implementation
+without another design-level review.
+
+The contradiction is visible inside the scope itself: v3 correctly includes `OSXSAVE` in Part 2, while Part 3.3 later calls it “not a level member.”  
+
+The four-object expansion is correct, but the fallback gate and checklist still need to prove the v1 objects against **all** v2-or-higher instructions, not merely AVX/VEX absence.  
+
+The user-supplied tier authority is otherwise represented clearly and correctly in the scope. 
