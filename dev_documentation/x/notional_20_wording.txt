@@ -1,0 +1,95 @@
+These two are very difficult for a human to decode.
+So I gave it a go but I may have misunderstood them, so please discern my intent
+and see if you can fix my wording to align with the need of each rule.
+
+Orignal:
+```
+20. Proposed unified wording for the two scope-blocking rules
+
+The following wording would reconcile the charter, roadmap, status, and futurescopes.
+
+20.1 Per-type differential acceptance
+
+For any scope modifying an established pixel-producing or frame-construction
+path:
+
+INTEGER:
+    every affected plane must be byte-identical to the applicable ReleaseSafe
+    scalar oracle.
+
+FLOAT:
+    every affected plane must implement the same specified algorithm, preserve
+    every exact structural result, and satisfy the approved final-magnitude and
+    near-threshold numeric-activation differential contract against the
+    applicable ReleaseSafe scalar oracle.
+
+A path specified to preserve source pixels unchanged, including plane sharing
+or copying, remains byte-exact for every format.
+
+20.2 Oracle-construction exception
+
+The first bounded Stage 2C or 2D scope that constructs a filter's ReleaseSafe
+scalar oracle is exempt from comparison against a pre-existing whole-plane
+oracle, because it creates that oracle.
+
+That scope is accepted only against independently authored scalar obligations:
+arithmetic vectors, threshold tables, geometry, footprints, schedule,
+range/overflow proof, memory canaries, exceptional-value cases, and the pinned
+external oracle where applicable.
+
+After acceptance of the ReleaseSafe scalar oracle, every subsequent
+pixel-producing, frame-construction, copy/share, ReleaseFast scalar, v2, or v3
+scope must be differentially validated against it.
+```
+
+Proposed for you to hopefully interpret and fix based on what is agreed and needed
+and not by what I write below:
+```
+20. Proposed unified wording for the two scope-blocking rules
+
+The following wording would reconcile the charter, roadmap, status, and futurescopes.
+
+20.1 Per-type differential acceptance
+
+For any scope modifying an established pixel-producing or frame-construction
+path:
+
+INTEGER:
+    every affected plane must be byte-identical to the applicable ReleaseSafe
+    scalar integer oracle.
+
+FLOAT:
+    every affected plane must implement the same specified algorithm, preserve
+    every exact structural result, and satisfy the approved final-magnitude and
+    near-threshold numeric-activation differential contract against the
+    applicable ReleaseSafe scalar oracle. i.e. each plane must have pixels
+    within tolerances as specified from time to time by the designer, when
+    compared to the scalar float oracle.
+
+A path specified to preserve source pixels unchanged, including plane sharing
+or copying, remains byte-exact for every format. ??? I don't know what this
+means, but it sounds good ??? Maybe it means copied source planes must not
+be corrupted during a copy if the intent is for the copy (before use or
+re-calculation) is to be exactly like the source and that the original source
+must not be corrupted especially by plane sharing et al ???
+
+20.2 Oracle-construction exception
+
+The first bounded Stage 2C or 2D scope that constructs a filter's ReleaseSafe
+scalar oracle is exempt from comparison against a pre-existing whole-plane
+oracle, because it creates that oracle; reasonableness evaulation should 
+nevertheless be determined and acted upon though, for example determination
+whether oracle output vs source "tolerances" are "reasonable" and do not indicate
+wild corruption given that the goal is to reduce blocking rather than wholesale
+significant changes; perhaps industry literature may yield some means of
+reasonable assessment for the type of action we are performing ?
+
+That scope is accepted only against independently authored scalar obligations:
+arithmetic vectors, threshold tables, geometry, footprints, schedule,
+range/overflow proof, memory canaries, exceptional-value cases, and the pinned
+external oracle where applicable.
+
+After acceptance of the ReleaseSafe scalar oracle, every subsequent
+pixel-producing, frame-construction, copy/share, ReleaseFast scalar, v2, or v3
+scope must be differentially measured and validated against it.
+```
