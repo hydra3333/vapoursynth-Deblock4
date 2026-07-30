@@ -1,0 +1,70 @@
+Based on an audit of the provided scope, charter, and companion documents, the scope is **conceptually complete, highly detailed, and structurally ready** for an AI coder (W3C). 
+
+The scope is effective because it leaves no design decisions to the memoryless coder. It specifies exact bit contracts, architectural boundaries, and the structural inclusion patterns (G10) required to ensure release-build safety.
+
+To make the execution by an AI coder as direct and error-free as possible under Zig 0.16.0, there are three minor implementation-level details you may want to clarify or explicitly pin before handing it off.
+
+---
+
+### 1. Pin the Assembly/CPUID Implementation Pattern
+Zig 0.16.0 provides low-level target features, but since G6 requires safety to rest on explicit rather than implicit toolchain behavior, the coder must implement raw CPUID and XGETBV reads. AI coders sometimes write invalid inline assembly constraints or guess non-existent standard library wrappers. 
+
+To ensure the coder implements safe, standard-compliant assembly for x86-64, consider providing this standard block as the authorized baseline:
+
+```zig
+/// Inline assembly wrappers for CPUID and XGETBV under Zig 0.16.0
+const cpu_intrinsic = struct {
+    pub inline fn cpuid(eax_in: u32, ecx_in: u32) struct { eax: u32, ebx: u32, ecx: u32, edx: u32 } {
+        var eax: u32 = undefined;
+        var ebx: u32 = undefined;
+        var ecx: u32 = undefined;
+        var edx: u32 = undefined;
+        asm volatile (
+            "cpuid"
+            : [eax] "={eax}" (eax),
+              [ebx] "={ebx}" (ebx),
+              [ecx] "={ecx}" (ecx),
+              [edx] "={edx}" (edx)
+            : [eax_in] "{eax}" (eax_in),
+              [ecx_in] "{ecx}" (ecx_in)
+            : "cc"
+        );
+        return .{ .eax = eax, .ebx = ebx, .ecx = ecx, .edx = edx };
+    }
+
+    pub inline fn xgetbv(ecx_in: u32) u64 {
+        var eax: u32 = undefined;
+        var edx: u32 = undefined;
+        asm volatile (
+            "xgetbv"
+            : [eax] "={eax}" (eax),
+              [edx] "={edx}" (edx)
+            : [ecx_in] "{ecx}" (ecx_in)
+            : "cc"
+        );
+        return (@as(u64, edx) << 32) | eax;
+    }
+};
+```
+
+### 2. Pin the Force-Down Input Mechanism
+Section 5.1 of the scope notes: *"The forcing input mechanism (for example an environment variable read at construction) is defined inside the gated module."*
+
+An AI coder may invent a bespoke mechanism (like checking a specific file path or parsing registry keys) if not guided. To avoid drift and simplify verification, you can explicitly state the preferred input method. For example:
+> *"The force-down seam must check the environment variable `DEBLOCK4_FORCE_DOWN` at instance initialization. If the variable is present and parses to a valid target tier name (e.g. `"v2"`, `"v1"`), the capability record is masked accordingly."*
+
+### 3. Specify the Target File Name for the Detection Core
+In Section 9 (Deliverables), the list contains *"the detection core ... in an appropriately named source unit"*. 
+
+To keep the repository clean and prevent the coder from creating a generic or awkwardly named file, explicitly name this deliverable (e.g., `src/deblock4_detection.zig` or `src/cpu_detection.zig`).
+
+---
+
+### Summary Checklist for the Coder Prompt
+
+With these details appended, the scope is ready. You can instruct the AI coder with the following clear constraints:
+1. **Target:** Implement exactly the specified files (`deblock4_config.zig`, `print_helper_functions.zig`, `print_diag_helper_functions.zig`, and `src/cpu_detection.zig`).
+2. **Behavior:** Populate the capability record exactly once. Strictly follow the bit patterns and leaf guards defined in Section 1.2.
+3. **Safety:** Ensure `src/cpu_detection.zig` uses only baseline x86-64 instructions (no AVX or SSE4.1 instructions).
+4. **G10 Pattern:** Implement the Layer 1 (`if (enable) @import else struct{}`) declaration exactly as outlined in the standing rule.
+5. **Validation:** Compile and pass the build.zig panic check (`enable_force_down=true` on ReleaseSafe/ReleaseFast must fail the build).
