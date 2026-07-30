@@ -1,0 +1,13 @@
+I think we take GAIS responses as thoughts and gap-analysis rather than to do anything with
+it unless you consider that it adds real value - as we know, GAIS confidently gets things
+wrong from time to time but had been pretty good with research findings.   
+For now, the coder responded to the scope (attached) and while I was waiting for my usage
+limits to reset I asked GAIS to review the coder response and that result is also attached
+(as extra input only, definitely not binding). 
+
+Also, since this chat is now very very long I suggest that:
+1. for now, we update the Intro documents at least (any any other truly essential ones)
+2. after 1b3 then we update ALL relevant documents with latest findings and positions and
+decisions and architecture etc, especially the Intro documents, in case this highly valued
+chat dies - then, iI will attach a zip of the latest docs for you to consider and produce
+new versions as appropriate.
