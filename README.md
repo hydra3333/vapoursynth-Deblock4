@@ -43,16 +43,23 @@ Replace <LABEL>, <MESSAGE>, and <COLOR> with whatever text and named color you l
 
 # Deblock4 `Zig` Rewrite of `VapourSynth-Deblock` and more
 
-I am using the pinned stable `Zig` 0.16.0 release, with matching ZLS support, to redevelop (with targets `sse4.1`, `avx2`, and a dispatcher)
-updating to vapoursynth APIv4/fmparallel a single DEBLOCK4.DLL containing
+I am using the pinned stable `Zig` 0.16.0 release, with matching ZLS support, to build
+(with a v1/v2/v3 tier dispatcher, updating to VapourSynth API4/fmParallel) a single
+DEBLOCK4.DLL that registers two CORE filters, plus later QED workstreams:
 
-- `Deblock4` - based on the up to date `Deblock` already sse4 at <https://github.com/HolyWu/VapourSynth-Deblock>
-- `Deblock4_qed` - based on the vsjetpack script `Deblock_QED` (ignoring interlacing, assuming field separated) in <https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/blob/main/vsdenoise/deblock.py>
-- `Deblock4_qed_autoadjust` based on `Deblock4_qed` but auto recognising how blocky a frame is and applying "good" deblocking for that frame; parameters may change, to be decided later
+INITIAL CORE DELIVERY (this project):
 
-Development order: `Deblock4` first, bit by bit. `Deblock4_qed` next. `Deblock4_qed_autoadjust` is last on the list; not in initial scope.
+- `deblock4.Classic` - the H.264 in-loop deblocking algorithm, a faithful reproduction of HolyWu's `VapourSynth-Deblock` (<https://github.com/HolyWu/VapourSynth-Deblock>), including its luma-on-chroma behaviour. Built FIRST as a known, externally-referenceable algorithm that de-risks the shared infrastructure and verification harness.
+- `deblock4.Deblock4` - the MPEG-2-aware deblocking algorithm with the field-separation-aware primary/midpoint grid and proper chroma. The project's END GOAL. Built SECOND on the proven infrastructure.
 
-All three filters are strictly 1-in/1-out. No frame reordering, no cross-frame cache/pin machinery. This simplifies the fmParallel story considerably: no frame-lifecycle/ownership complexity beyond the standard VapourSynth API4 per-frame contract.
+LATER PLANNED WORKSTREAMS (separate; do not change the two-core sequence):
+
+- `deblock4.Deblock4_qed` - based on the vsjetpack script `Deblock_QED` (ignoring interlacing, assuming field separated) in <https://github.com/Jaded-Encoding-Thaumaturgy/vs-jetpack/blob/main/vsdenoise/deblock.py>
+- `deblock4.Deblock4_qed_autoadjust` - based on `Deblock4_qed` but auto-recognising how blocky a frame is and applying "good" deblocking for that frame; parameters may change, to be decided later.
+
+Development order: `Classic` first (it proves the harness against HolyWu as an external oracle), then the MPEG-2 `Deblock4`. `Deblock4_qed` and `Deblock4_qed_autoadjust` are later workstreams, not in initial scope. See section 1.0 for the architecture and rationale.
+
+`Classic` and `Deblock4` are DIFFERENT algorithms registered as two separate filter calls (not selected by a parameter). All filters are strictly 1-in/1-out. No frame reordering, no cross-frame cache/pin machinery. This simplifies the fmParallel story considerably: no frame-lifecycle/ownership complexity beyond the standard VapourSynth API4 per-frame contract.
 
 ---
 
@@ -64,8 +71,8 @@ This project is distributed under the GNU GENERAL PUBLIC LICENSE Version 2 or la
 
 # Architecture Decisions and Detailed Specification
 
-**Design specification revision:** 1.2  
-**Date:** 2026-07-24  
+**Design specification revision:** 1.9  
+**Date:** 2026-07-29  
 **Status:** accepted design-specification baseline; this is not a claim that the plugin binary is released.  
 **Toolchain:** Zig 0.16.0 pinned; exact object-link and runtime-detection syntax remains subject to compile/run proof.  
 **Schedule status:** Schedule A versus Schedule B quality gate remains open; Schedule C is deferred.  
@@ -106,27 +113,97 @@ This specification defines:
 
 # 1. Executive summary
 
+## 1.0 Two filters in one plugin
+
+`Deblock4.dll` registers TWO independent, separately callable filters that share
+one dispatch/backend infrastructure (revised v1.4):
+
+```text
+deblock4.Classic     the H.264 in-loop deblocking algorithm (a known, fully
+                     specified filter), on a 4-pixel grid. Implemented FIRST.
+
+deblock4.Deblock4    the project's canonical MPEG-2-aware deblocking algorithm,
+                     with the field-separation-aware primary/midpoint grid.
+                     The end goal; implemented SECOND, on the proven
+                     infrastructure.
+```
+
+The two are DIFFERENT algorithms, not two grids of one algorithm, so they are
+registered as two filters rather than selected by a parameter. Each filter is
+internally same-algorithm: its scalar/SSE4.1/AVX2 backends are equivalent to its
+own scalar oracle (charter G7). No cross-filter equivalence is claimed or
+required - `Classic` and `Deblock4` are simply different filters that ship
+together.
+
+SHARED infrastructure (built once, used by both): CPU capability detection
+(charter G1), the whole-level tier dispatch and fallback (charter G3), the
+backend-object / @extern / export-gate discipline proven in Stage 1B.1, and the
+DLL, its init, and registration.
+
+SEPARATE per filter: the algorithm kernels; the scalar/SSE4.1/AVX2 backend
+bodies (six backend bodies in total); the scalar oracle; the parameter surface
+and presets; the validation corpus; and the registered filter name and argument
+spec. Underlying backend symbol names are distinct per filter (e.g. a `_classic_`
+infix) so there is no linker collision - the Stage 1B.1 object pattern extends
+directly.
+
+SEQUENCING RATIONALE. `Classic` is built first deliberately, even though the
+MPEG-2 filter is the end goal. `Classic` is a KNOWN algorithm (H.264, fully
+specified, with HolyWu's plugin available as an external reference oracle), so
+building it first proves the infrastructure - backends, tiering, dispatch, the
+verification harness, and especially the R76-class miscompile guard (charter G9)
+- against a target with NO algorithm-design uncertainty and an independent
+ground truth to cross-check. The novel MPEG-2 algorithm is then built on proven
+machinery, leaving only its genuinely new parts (the midpoint/regime handling)
+to be worked out. Note `Classic`'s 4-pixel grid has MORE edge/tail boundaries
+than the MPEG-2 8-pixel grid and is exactly the small-block-edge filter class in
+which the R76 miscompile appeared, so building it first also stress-tests the G9
+guard early, when it matters most.
+
 ## 1.1 Primary objective
 
-Deblock4 shall define **one canonical deblocking algorithm** and implement it through:
+Each filter defines **one canonical deblocking algorithm** and implements it
+through:
 
 - a scalar reference backend;
 - an SSE4.1 backend;
 - an AVX2 backend.
 
-The required relationship is:
+(The statements in this section apply per-filter. `Deblock4` is the project's
+end-goal MPEG-2 algorithm; `Classic` is the H.264 algorithm built first. See
+section 1.0.)
+
+The required relationship is (revised v1.3; see charter G7 and
+Deblock4_Verification_And_Tiering_Decisions):
 
 ```text
-canonical scalar output
-        ==
-SSE4.1 output
-        ==
-AVX2 output
+INTEGER formats:  canonical scalar == v2 == v3   (byte-exact)
+FLOAT formats:    same specified algorithm, each backend (v2, v3) within a
+                  measured tolerance of the canonical scalar oracle
 ```
 
-For integer formats, `==` means byte-exact output.
+For INTEGER formats, `==` means byte-exact output across all backends: a
+defined integer algorithm has one correct result, and wider instructions
+compute the identical value, so exactness costs nothing and a difference
+indicates a bug.
 
-For 32-bit floating-point formats, byte-exact output is the target. Strict floating-point operation ordering shall be retained. Any exception for IEEE special values must be explicitly decided and documented; it must not arise accidentally from compiler optimisation.
+For 32-bit FLOATING-POINT formats, the backends implement the SAME specified
+algorithm and must agree with the scalar oracle within a measured,
+deterministic-per-backend tolerance. Byte-exact float output across backends is
+NOT required: legitimate backend evaluation differences (including any future
+EXPLICITLY APPROVED fused operation) are a FEATURE, not a defect. FMA is included in the v3 target but is not relied upon: under .strict, ordinary
+a*b+c must retain non-fused semantics; no @mulAdd is currently required, and
+Stage 1B.2 must not expect FMA emission. Strict floating-point operation ordering is retained
+(section 8.6). STRUCTURAL results (structural/finite masks, edge eligibility as
+GEOMETRY, lane mapping, tails, bounds, schedule) remain EXACT even under float
+tolerance. The one exception is the NUMERIC ACTIVATION decision (whether a
+computed float value falls below its threshold), which for FLOAT paths only may
+differ between backends when the controlling value lies within the approved
+decision-boundary tolerance; integer paths show zero activation differences.
+Tolerance applies to final float magnitudes and that near-threshold activation
+decision, never to a structural mask. Any exception for IEEE special values must be
+explicitly decided and documented; it must not arise accidentally from compiler
+optimisation.
 
 ## 1.2 Relationship to HolyWu
 
@@ -143,7 +220,7 @@ Deblock4 may deliberately produce a different result when:
 
 - the new result is demonstrably equal or better in quality;
 - the difference follows a documented canonical algorithm;
-- scalar, SSE4.1, and AVX2 all produce the same new result;
+- scalar, v2, and v3 produce the same result for integer paths, and the same algorithm within tolerance for float paths (structural results identical);
 - the change is validated rather than being an incidental SIMD side effect.
 
 The distinction is:
@@ -152,7 +229,12 @@ The distinction is:
 Deliberate canonical Deblock4 difference from HolyWu:
     potentially acceptable after quality validation.
 
-Accidental difference between scalar, SSE4.1, and AVX2:
+Accidental STRUCTURAL difference between scalar, v2, and v3
+(geometry, masks, bounds, tails, lane mapping, integer output):
+    never acceptable.
+Float MAGNITUDE difference within the approved tolerance:
+    acceptable (a rounding feature, not a defect - charter G7).
+Float difference EXCEEDING tolerance, or any integer difference:
     never acceptable.
 ```
 
@@ -201,7 +283,12 @@ The current working recommendation is:
 |---|---|---|
 | One canonical algorithm | Settled | Required |
 | Scalar reference oracle | Settled | First-class deliverable, written before SIMD |
-| Scalar/SSE4.1/AVX2 identity | Settled | Mandatory |
+| Scalar/SSE4.1/AVX2 identity | Revised v1.3 | INTEGER byte-exact across backends; FLOAT same-algorithm within a measured tolerance (charter G7) |
+| CPU tiers | Settled v1.3 | Named psABI levels x86_64_v1/v2/v3, used in full, no identity-driven exclusions (charter G3) |
+| Tier dispatch | Settled v1.3 | Whole-level detection; highest fully-satisfied level wins with v3->v2->v1 fallback |
+| FMA | Settled v1.3 | Part of the v3 level, not excluded; not required; .strict prevents auto-fusion (charter G8) |
+| Float tolerance values | Deferred | Derived analytically then stress-tested; frozen once real kernels exist (Stage 2) |
+| Version/tier stderr emission | Settled v1.3 | Always-on, ffmpeg-style; float cross-machine byte-identity not promised |
 | HolyWu bit-exactness | Settled | Desired baseline similarity, not absolute requirement |
 | Whole-frame pad/resize/crop | Settled | Rejected for Deblock4 core |
 | Algorithmic boundary rule | Settled | Process only complete-footprint candidate edges |
@@ -234,9 +321,9 @@ The current working recommendation is:
 | Recorder-brand default | Rejected | No defensible LG/JVC/brand-level DCT-mode rule |
 | Float exceptional-value policy | Settled | Per-edge-position finite check; leave that position unchanged on NaN/Inf; preserve unchanged bit patterns |
 | Public strength/offset ranges | Settled | `strength=0..60`; each offset must keep its independent resolved index within `0..60` |
-| Production backends | Settled | `auto`, `avx2`, `sse41`, and always-available `scalar` |
+| Production backends | Settled v1.5 | `auto`, `x86_64_v3_with_avx2`, `x86_64_v2_with_sse41`, always-available `x86_64_v1_baseline` |
 | Audit frame properties | Settled | Always-on resolved-grid/backend properties; see section 13.5 |
-| Zig 0.16 runtime CPU detection | Open implementation spike | Small explicit CPUID/XGETBV unit is expected |
+| Zig 0.16 runtime CPU detection | Open implementation spike | Prefer one named-level mechanism for target + detection; explicit CPUID/XGETBV is a possible canonical-descriptor fallback (section 12.4) |
 | SSE4.1/AVX2 build syntax | Open implementation spike | Separate target-specific objects linked into one DLL |
 | Future automatic-strength extensibility | Settled guards only | Shared kernels, separate driver; analyser is canonical and uses per-call pre-pass scratch |
 | AVX2 speed benefit | Open benchmark | Never assume 2x merely from register width |
@@ -445,12 +532,15 @@ The grid selection is required-there is no silent default. The token `grid_mode=
 Initial named modes are:
 
 ```text
-"h264"
 "mpeg2_progressive"
 "mpeg2_field_separated"
 "custom"
 "auto"  # reserved; currently rejected
 ```
+
+(grid_mode="h264" is REMOVED - the H.264 4-pixel-grid use case is owned by the
+separate deblock4.Classic filter, not a grid mode of Deblock4. See section 1.0
+and 3.15.)
 
 For field-separated MPEG-2 4:2:0:
 
@@ -630,7 +720,93 @@ Consequences:
 | `opt` | `backend` | runtime dispatch | Readable backend selection |
 | `grid` (design draft) | `grid_mode` | grid policy | Required named grid/policy selection |
 | `midpoint_strictness` (design draft) | `midpoint_threshold_scale` | midpoint `alpha`/`beta` | 0 disables midpoint activation; 1 gives parity |
-| `luma_midpoint` (design draft) | `luma_midpoint_enabled` | custom luma policy | Enables primary/midpoint classification for a custom luma grid |
+
+## 3.15 The Classic filter public API
+
+The two filters are invoked in VapourSynth as (exact spelling; the namespace is
+lowercase `deblock4`, the filter names are `Classic` and `Deblock4`):
+
+```python
+core.deblock4.Classic(clip, ...)
+core.deblock4.Deblock4(clip, grid_mode=..., ...)
+```
+
+Elsewhere this document writes `deblock4.Classic` / `deblock4.Deblock4` for the
+callable filters, and "Deblock4" (capitalised) only as the project/plugin name.
+
+`deblock4.Classic` implements the same H.264 in-loop deblocking algorithm as
+HolyWu's Deblock, on the standard fixed 4-pixel grid. It therefore shares the
+same canonical threshold tables and the same meaning-based strength controls as
+`deblock4.Deblock4`, but it has NO grid selection and NO midpoint machinery - its
+grid is the fixed H.264 4x4 boundary set, not a selectable MPEG-2-aware grid.
+
+```text
+deblock4.Classic(
+    clip                        : vnode         REQUIRED
+
+    strength                    : int           optional, default 25, range 0..60
+    boundary_strength_offset    : int           optional, default 0
+    side_activity_offset        : int           optional, default 0
+    planes                      : int[]         optional, default all
+    backend                     : data          optional, default "auto"
+)
+```
+
+Differences from `Deblock4`:
+
+- NO `grid_mode`: the grid is the fixed H.264 4-pixel boundary set, always.
+- NO `midpoint_threshold_scale` and no `custom` step parameters: there is no
+  primary/midpoint position-class distinction in the H.264 grid.
+- The strength controls (`strength`, `boundary_strength_offset`,
+  `side_activity_offset`), `planes`, and `backend` carry EXACTLY the meanings
+  defined in section 3.14, because Classic uses the same canonical tables.
+
+### Legacy HolyWu-to-Classic translation
+
+Because `Classic` reproduces HolyWu's algorithm, its parameter mapping is a
+subset of the section 3.14 table. A user migrating a `deblock.Deblock(...)` call
+translates it directly:
+
+| HolyWu `deblock.Deblock` | `deblock4.Classic` | Meaning |
+|---|---|---|
+| `quant` | `strength` | Base deblocking strength index (0..60, default 25) |
+| `aoffset` | `boundary_strength_offset` | Blockiness-detector threshold and correction-limit offset (drives `alpha` + `tc0`) |
+| `boffset` | `side_activity_offset` | Per-side detector/strength offset (drives `beta`) |
+| `planes` | `planes` | Planes to process |
+| `opt` | `backend` | Readable backend selection (replaces the numeric opt code) |
+
+The HolyWu "does nothing if `quant + aoffset < 16`" behaviour follows
+automatically from the shared threshold-table facts in section 3.14 (activation
+thresholds are zero below resolved index 16); Classic does not special-case it,
+it emerges from the same tables.
+
+### Classic oracle contract
+
+`Classic` is a FAITHFUL reproduction of HolyWu's Deblock (charter Part 0,
+D-CLASSIC-1), so HolyWu is the normative EXTERNAL algorithm oracle, not merely
+an optional cross-check. The operational contract (provisional default below,
+pending W3X ratification of the exact pin):
+
+```text
+HolyWu C/scalar at a PINNED commit/tag:
+    the normative external algorithm oracle for Classic, on ALL planes
+    (including luma-on-chroma). The exact commit/tag is recorded at Stage 2C.
+HolyWu SSE4.1 path:
+    optional corroborating implementation comparison (prior art), not the oracle.
+deblock4.Classic v2/v3 backends:
+    always accepted against deblock4.Classic's OWN ReleaseSafe scalar oracle
+    (integer-exact; float within the differential tolerance), exactly as the
+    Deblock4 filter's backends are.
+Comparison of deblock4.Classic scalar vs HolyWu C/scalar:
+    INTEGER planes - byte-exact is the target; any difference is investigated.
+    FLOAT planes - bounded by the same differential tolerance discipline
+    (structural results exact), since HolyWu's and Classic's float rounding
+    need not be bit-identical.
+```
+
+This is stronger and more precise than "equal-or-better / may be used": HolyWu
+C/scalar at a pinned commit IS the external oracle for Classic; the internal
+scalar-vs-SIMD proof is unchanged from the rest of the project.
 
 The production API should accept the new names only. The translation table is for migration and conceptual comparison, not a requirement to support duplicate aliases. Supporting both name sets would create avoidable precedence and conflict rules.
 
@@ -638,7 +814,6 @@ The production API should accept the new names only. The translation table is fo
 
 | Value | Luma steps | Chroma steps | Midpoint class | Status |
 |---|---:|---:|---|---|
-| `"h264"` | 4x4 | 4x4 | none | Initial |
 | `"mpeg2_progressive"` | 8x8 | 8x8 | none | Initial; valid for 4:2:0 and 4:2:2 |
 | `"mpeg2_field_separated"` | 8x4 | 8x4 | luma only | Initial; 4:2:0 only, error on 4:2:2 |
 | `"custom"` | explicit | explicit | from `luma_midpoint_enabled` | Initial expert/proof path |
@@ -654,12 +829,12 @@ Production `backend` values are:
 
 ```text
 "auto"    # highest available supported backend
-"avx2"    # error if unavailable
-"sse41"   # error if unavailable
-"scalar"  # always available canonical reference; substantially slower
+"x86_64_v3_with_avx2"    # the full v3 level; error if CPU lacks any v3 feature
+"x86_64_v2_with_sse41"   # the full v2 level; error if CPU lacks any v2 feature
+"x86_64_v1_baseline"     # always available canonical reference; substantially slower
 ```
 
-Forcing an unsupported hardware backend is an error. The scalar backend is production-visible because it is the most useful diagnostic for separating an algorithm problem from a backend-identity failure.
+Forcing an unsupported hardware backend is an error. The scalar backend is production-visible because it is the most useful diagnostic for separating an algorithm problem from a backend structural/differential-equivalence failure.
 
 The filter writes the always-on audit frame properties specified in section 13.5.
 
@@ -696,10 +871,21 @@ Validation must be divided into two independent questions.
 ### Algorithm/backend correctness
 
 ```text
-scalar == SSE4.1 == AVX2
+INTEGER:  scalar == v2 == v3        (byte-exact)
+FLOAT:    same specified algorithm; v2 and v3 within the measured tolerance
+          of the scalar oracle; structural results exact (charter G7)
 ```
 
-This is mandatory.
+This is mandatory per filter (integer exactness and the float differential
+contract; not universal float byte-identity).
+
+ORACLE SEQUENCING (charter G7 / Deblock4_Verification_And_Tiering_Decisions 20):
+the "compare against the ReleaseSafe scalar oracle" rule applies to every scope
+AFTER that oracle exists. The FIRST Stage 2C/2D scope that CONSTRUCTS a filter's
+scalar oracle cannot compare against a pre-existing oracle - it creates it - so
+it is accepted instead against independently authored scalar obligations plus a
+loose whole-image sanity gate (see decisions section 20.2). This closes the
+otherwise-circular "no deblocking code until the oracle exists" reading.
 
 ### Quality/regression comparison
 
@@ -716,7 +902,8 @@ Differences may be acceptable, but must be:
 
 ## 4.3 SIMD width must not define output
 
-Given identical input and parameters, the output must not depend on:
+For INTEGER formats, given identical input and parameters, the output must not
+depend on any of:
 
 - whether the CPU has AVX2;
 - whether the CPU only has SSE4.1;
@@ -725,6 +912,21 @@ Given identical input and parameters, the output must not depend on:
 - stride;
 - thread scheduling;
 - number of VapourSynth worker threads.
+
+For FLOAT formats, the STRUCTURAL result (the candidate GRID geometry - which
+edge POSITIONS are eligible - plus lane mapping, tail handling, and all
+structural masks) must not depend on any of the above. Final float MAGNITUDES,
+and the near-threshold NUMERIC ACTIVATION decision at an eligible position, may
+differ only between backends (scalar vs v2 vs v3) within the measured tolerance
+and decision-boundary bound of charter G7. Within one backend they are fixed.
+Batch-end position, alignment, stride, and thread count must NOT change even the
+float magnitude for a given backend - a single backend is deterministic. What is
+permitted is that a backend may compute a marginally different float result than
+scalar (a legitimate evaluation difference, not from any relied-upon fused
+operation - ordinary a*b+c stays non-fused under .strict), bounded by the
+tolerance. Cross-MACHINE float
+byte-identity is not promised (a different CPU may select a different backend);
+see section 12 and the reproducibility contract.
 
 ---
 
@@ -754,10 +956,11 @@ Any future automatic-strength analyser must clamp derived values to the paramete
 
 ### An analyser is part of the canonical algorithm
 
-If an analyser can affect output, its scalar and vector forms are subject to the same identity requirement:
+If an analyser can affect output, its scalar and vector forms are subject to the same per-type requirement as the filter kernels:
 
 ```text
-scalar == SSE4.1 == AVX2
+INTEGER:  scalar == v2 == v3        (byte-exact)
+FLOAT:    same algorithm within tolerance; structural classifications exact
 ```
 
 It belongs under `spec.zig`/canonical validation, not in an unproved convenience helper.
@@ -1164,7 +1367,7 @@ Complete footprint but incomplete AVX2/SSE batch:
     process it.
 ```
 
-This distinction is essential for backend identity.
+This distinction is essential for exact structural and integer equivalence (and float within tolerance).
 
 Otherwise the AVX2 backend could skip different pixels from the SSE4.1 backend, which would make output CPU-dependent.
 
@@ -1290,7 +1493,14 @@ Do not enable optimized/fast-math in the canonical float kernels because it may 
 - FMA contraction;
 - other result-changing transformations.
 
-An AVX2 object must not acquire FMA merely because AVX2 is enabled. Strict mode and the minimal target-feature closure shall reinforce one another.
+An AVX2 object targets the full x86_64_v3 level (charter G3), which INCLUDES
+FMA; FMA is not excluded. Contraction is prevented by explicit
+@setFloatMode(.strict) at kernel scope (charter G8), not by removing FMA from
+the target. Under .strict the compiler will not auto-fuse unless an explicit
+@mulAdd is used (not currently required), so an ordinary `a*b + c` retains its
+non-fused evaluation. (Revised v1.3: earlier text excluded FMA from the AVX2
+target and required a minimal closure; that is superseded by full declared tiers
+plus .strict.)
 
 Exceptional-value policy:
 
@@ -1298,13 +1508,13 @@ Exceptional-value policy:
    - six samples for luma/full normal filtering;
    - four samples for proper chroma filtering.
 2. If any sample in that footprint is NaN or positive/negative infinity, that edge position is left unmodified.
-3. The decision is independent for every edge position. SIMD backends implement it with per-lane masking and must never reject an entire backend batch because one lane is non-finite.
+3. The decision is independent for every edge position. SIMD backends implement it with per-lane masking and must never reject an entire backend batch because one lane is non-finite. This masking decision is a STRUCTURAL result and is EXACT across all backends (charter G7); the float tolerance never applies to it.
 4. Samples left unchanged preserve their original bit patterns, including NaN payloads, infinities, and signed zero.
-5. If finite arithmetic produces numerical zero, the canonical scalar expression and strict operation order define its sign; every backend must match that bit pattern.
+5. If finite arithmetic produces numerical zero, the canonical scalar expression and strict operation order define its sign. Integer paths match this exactly. For FLOAT paths, the sign of a computed zero may differ between backends only within the measured tolerance regime (charter G7); it is not a required cross-backend bit match, because IEEE-754 compares `-0.0` and `+0.0` as equal and any downstream activation comparison therefore does not depend on the sign.
 
-Strict floating-point mode fixes operation ordering and prevents reassociation/contraction. IEEE-754 compares `-0.0` and `+0.0` as equal, so activation comparisons require no backend-specific signed-zero rule.
+Strict floating-point mode fixes operation ordering and prevents reassociation/contraction within a backend. IEEE-754 compares `-0.0` and `+0.0` as equal, so activation comparisons require no backend-specific signed-zero rule. Structural results stay exact across backends; the numeric activation decision may differ only within the approved decision-boundary tolerance for float paths, and final float magnitudes may differ within the magnitude tolerance.
 
-Deblock4 does not set or modify MXCSR. Flush-to-zero and denormals-are-zero state is inherited from the host process. The algorithm and tests shall not depend on subnormal preservation; backend identity is required under the same inherited MXCSR state. Nominal-range float video values are far above the affected magnitudes.
+Deblock4 does not set or modify MXCSR. Flush-to-zero and denormals-are-zero state is inherited from the host process. The algorithm and tests shall not depend on subnormal preservation. Per-backend determinism and cross-backend differential validation are evaluated under the same inherited floating-point environment (including MXCSR); this is NOT a requirement for cross-backend float bit-identity. Nominal-range float video values are far above the affected magnitudes.
 
 Samples outside the nominal video range but still finite are processed under the same canonical formulas unless a later format policy states otherwise.
 
@@ -1352,7 +1562,7 @@ q0' = clip_to_sample_domain(q0 - delta)
 
 Only `p0` and `q0` are written. `p1` and `q1` are read for the decision/delta but are never modified; `p2` and `q2` are not read.
 
-`one_sample_scale` is one unit in the bit-depth-scaled arithmetic domain. At 8-bit it is 1. Higher-bit-depth and float forms must be defined by the scalar specification and included in the complete range/identity proof.
+`one_sample_scale` is one unit in the bit-depth-scaled arithmetic domain. At 8-bit it is 1. Higher-bit-depth and float forms must be defined by the scalar specification and included in the complete range and per-type differential proof.
 
 The production API shall not offer "filter chroma using the luma formula" as a normal quality option. A development-only HolyWu-compat switch is permitted solely for:
 
@@ -1843,19 +2053,18 @@ The conceptual build is:
 
 ```text
 generic objects
-    target: supported x86-64 baseline
+    target: x86_64_v1 (supported x86-64 baseline)
 
 SSE4.1 object(s)
-    target: baseline + required SSE4.1 feature closure
+    target: x86_64_v2 (the SSE4.1-class level, in full)
 
 AVX2 object(s)
-    target: explicit required AVX2 feature closure, established by the
-            Stage 1 compile and assembly spike
-            FMA is excluded from this closure
+    target: x86_64_v3 (the AVX2 level, in full), including FMA
 
-    Architecture-level shorthands such as x86_64_v3 must NOT be used as the
-    AVX2 target. x86_64_v3 includes FMA, which would permit floating-point
-    contraction and break the scalar/SSE4.1/AVX2 float identity requirement.
+    The named psABI level IS the target (charter G3). FMA is part of v3 and is
+    NOT excluded; float contraction is prevented by explicit .strict at kernel
+    scope (section 8.6, charter G8), not by removing FMA from the target.
+    Dispatch verifies the WHOLE v3 level (section 12.3), never just AVX2.
 
 link all objects into one DLL
 ```
@@ -1864,25 +2073,37 @@ The same shared source may be instantiated separately into SSE4.1 and AVX2 objec
 
 ## 12.3 Important `x86_64_v3` dispatch rule
 
-`x86_64_v3` is broader than "AVX2 exists".
+`x86_64_v3` is broader than "AVX2 exists". It includes AVX, AVX2, BMI1, BMI2,
+F16C, FMA, LZCNT, MOVBE, and OSXSAVE as level members. OSXSAVE is a v3 level
+member; SEPARATELY, the runtime AVX/YMM guard executes XGETBV and checks XCR0
+XMM+YMM state.
 
-It includes a feature set such as AVX2, FMA, BMI1, BMI2, and others.
+Deblock4 adopts the named psABI levels in full (charter G3): the AVX2 backend
+targets `x86_64_v3`, the SSE4.1 backend `x86_64_v2`, the scalar backend
+`x86_64_v1`. The level IS the tier's feature contract. Therefore:
 
-Therefore:
+- dispatch must verify the CPU satisfies the ENTIRE level, plus OS vector-state
+  support for the AVX tiers - never just the headline CPUID bit;
+- WHOLE-LEVEL selection: test v3, then v2, then v1, and use the highest FULLY
+  satisfied level, falling back down the chain; v1 always succeeds;
+- a CPU with AVX2 but missing any other v3 feature (e.g. BMI2) is NOT v3; dispatch selects the highest lower level fully satisfied, normally v2 else v1;
+  running the v3 backend on it would fault. This is the one genuinely dangerous
+  mistake and is prohibited;
+- FMA is PART of v3 and is not excluded; strict float mode (section 8.6, charter
+  G8) keeps ordinary a*b+c non-fused, so FMA is included in the target but not
+  relied upon (no @mulAdd currently required; 1B.2 must not expect FMA emission).
 
-- if the AVX2 object is compiled for `x86_64_v3`, dispatch must verify the complete required v3 feature set and OS vector-state support;
-- checking only the AVX2 CPUID bit is insufficient;
-- the preferred initial direction is a tested minimal explicit feature closure, expected to be the required SSE/v2 support plus AVX and AVX2, with dispatch checking the same closure;
-- FMA shall not be enabled merely because AVX2 is enabled; strict float mode remains mandatory.
-
-The README should not say:
+The README must NOT say:
 
 ```text
 compile x86_64_v3
 dispatch when has_avx2
 ```
 
-without reconciling this mismatch.
+The correct form is "compile x86_64_v3; dispatch when the CPU satisfies the
+whole v3 level (else fall back)". Stage 1B.2 confirms each object stays within
+its level and PRODUCES the whole-level feature requirements; Stage 1B.3
+implements and proves the guard that enforces them.
 
 ## 12.4 AVX operating-system state
 
@@ -1901,7 +2122,7 @@ The exact detection implementation may use:
 
 Build-time target resolution must not be confused with runtime detection of the end user's CPU.
 
-The current Zig 0.16.0 standard-library API is moving. A dedicated Zig 0.16.0 compile/run spike must confirm the chosen mechanism. The expected landing point is a small explicit CPUID/XGETBV unit unless a stable public Zig runtime-detection API proves simpler and equally auditable.
+The current Zig 0.16.0 standard-library API is moving. A dedicated Zig 0.16.0 compile/run spike must confirm the chosen mechanism. Because charter G3 requires that the compile TARGET and the runtime DETECTION derive from ONE mechanism (so a hand-written detector cannot drift from the object's target level), the Stage 1B.3 investigation order is: FIRST determine whether Zig 0.16 exposes one stable named-level definition usable for BOTH compile targeting and runtime satisfaction (prefer std.Target level-satisfaction); only if it does not, fall back to a project-owned canonical per-level descriptor from which both the target and an explicit CPUID/XGETBV detector are derived or validated, with a standing assertion/test that the object tier name and detector tier name cannot diverge. A small explicit CPUID/XGETBV unit is therefore a possible landing point, NOT the presumed one, and must not be adopted until this one-mechanism relationship is specified (see charter G3 and Deblock4_Verification_And_Tiering_Decisions 4.6). This does not block Stage 1B.2 assembly inspection; it is resolved before Stage 1B.3 is scoped.
 
 ## 12.5 Capability detection and per-instance backend resolution
 
@@ -1918,9 +2139,9 @@ The correct decomposition is:
     per filter instance, once, at filter creation
         resolve the requested backend against that capability record:
             "auto"   -> highest backend allowed by the capability record
-            "avx2"   -> AVX2 or creation error
-            "sse41"  -> SSE4.1 or creation error
-            "scalar" -> scalar
+            "x86_64_v3_with_avx2"  -> full v3 level, or creation error
+            "x86_64_v2_with_sse41" -> full v2 level, or creation error
+            "x86_64_v1_baseline"   -> baseline v1 level (scalar)
         store immutable entry points or a function table on the instance.
 
     per frame
@@ -1940,26 +2161,24 @@ Provide a test/debug selection mechanism:
 ```text
 auto
 scalar/reference
-force_sse41
-force_avx2
+force_x86_64_v2_with_sse41
+force_x86_64_v3_with_avx2
 ```
-
-Rules:
 
 Rules:
 
 - forced unsupported backend fails clearly at filter creation;
 - `auto` chooses the highest backend permitted by the capability record;
-- `"scalar"` is a PRODUCTION backend value, not a development-only selector;
+- `"x86_64_v1_baseline"` (scalar) is a PRODUCTION backend value, not a development-only selector;
 - test harness access to all backends is mandatory.
 
 The production `backend` parameter accepts exactly:
 
-    "auto" | "avx2" | "sse41" | "scalar"
+    "auto" | "x86_64_v3_with_avx2" | "x86_64_v2_with_sse41" | "x86_64_v1_baseline"
 
-`"scalar"` is exposed in production deliberately. When a user reports
-incorrect output, asking them to re-run with `backend="scalar"` separates an
-algorithm defect from a backend identity failure in a single step, with no
+`"x86_64_v1_baseline"` (scalar) is exposed in production deliberately. When a user reports
+incorrect output, asking them to re-run with `backend="x86_64_v1_baseline"` (scalar) separates an
+algorithm defect from a backend structural/differential-equivalence failure in a single step, with no
 custom build and no round trip. The scalar path exists in every build as the
 canonical reference regardless, so the exposure costs nothing.
 
@@ -1978,35 +2197,39 @@ capability guard of section 12.5, so an external caller could invoke AVX2 code
 on a CPU lacking AVX2 and fault. That is precisely the unguarded execution
 charter G5 forbids.
 
-Charter G6 governs how the requirement is met:
+Charter G6 (v1.10+) governs how the requirement is met. The ban is on
+PE-EXPORT, not on the Zig export keyword (this was corrected after Stage 1B.1
+build evidence; the earlier "never use the export keyword" form was falsified -
+see charter Part 7 and Deblock4_Toolchain_Findings F1/F2/F4/F5):
 
-- Target-specific backend functions are NOT declared with the export keyword.
-  In COFF/PE nothing enters the export table without positive declaration, so a
-  non-exported function is structurally incapable of appearing there. The safe
-  property therefore rests on an explicit/structural mechanism, not on the
-  absence of an unrequested toolchain behaviour.
+- Target-specific backend functions ARE declared `export fn`, in their own
+  single-target objects. In an OBJECT-mode compilation, `export` grants EMISSION
+  and linker visibility but does NOT create a PE export; only code in the DLL's
+  root compilation graph is PE-exported. So the gated objects are kept OUT of
+  the DLL root graph, and their `export` never reaches the export table.
 
 - The backend code is reached ONLY through the per-instance resolution of
-  section 12.5: the guarded capability check populates immutable entry points
-  or a function-pointer table, and the frame path calls through those. There is
-  no named public symbol for an external caller to reach.
+  section 12.5. The DLL root references each gated marker by `@extern`,
+  address-taken and stored in internal non-exported pointers, never called
+  before the capability guard. There is no named public symbol for an external
+  caller to reach.
 
-- Where a build must retain a target-specific object's code without a call path
-  (for example a linkage/isolation proof before dispatch exists), retention is
-  by an explicit mechanism - a genuine reference from guarded code, or an
-  explicit linker retention directive that does not export - never by the export
-  keyword and never by a substitute that does not actually retain the code.
+- Generic and scalar backends, by contrast, ARE imported into the DLL root
+  graph so their `export fn` declarations genuinely PE-export where required
+  (e.g. for the isolation smoke test). Duplicate-symbol rule: a source is in the
+  DLL root graph OR linked as a separate object, never both.
 
 - The absence of any target-specific symbol from the PE export table is verified
   by a STANDING build gate (a dumpbin /EXPORTS check that fails the build if a
   gated marker ever appears), so a future toolchain change cannot reintroduce an
-  export silently.
+  export silently. Where the toolchain offers an explicit export allowlist
+  (.def), that is the stronger tier-2 mechanism.
 
-The exact retention mechanism for the earliest isolation stage is a Stage 1
-implementation spike (does the selected Zig revision retain a non-exported
-symbol via its forced-undefined-symbol facility); if it cannot, the honest
-fallback is a real reference-graph anchor from guarded code, decided under
-review, never an export.
+This mechanism was proven in Stage 1B.1: the gated SSE4.1/AVX2 markers emit with
+non-zero .text, are externally linkable, are retained by the @extern anchors,
+and are absent from the DLL export table, while generic/scalar/build-probe are
+present. See Deblock4_DISPATCH_RELATED_Backend_Objects_Explained for the
+verbatim mechanism.
 
 ---
 
@@ -2060,21 +2283,68 @@ Stride is row spacing, not an invitation to process allocator padding.
 Every output frame shall record the resolved processing policy using plugin-specific property names without a leading underscore:
 
 ```text
+Deblock4Filter        : data    "Classic" | "Deblock4"   (which filter produced the frame)
+Deblock4Tier          : data    "x86_64_v3_with_avx2" | "x86_64_v2_with_sse41" | "x86_64_v1_baseline"
+Deblock4Version       : data    plugin version marker
+
+# Deblock4-filter-only grid properties (NOT written by Classic):
 Deblock4GridMode      : data    resolved mode, for example "mpeg2_field_separated"
 Deblock4LumaStepX     : int
 Deblock4LumaStepY     : int
 Deblock4ChromaStepX   : int
 Deblock4ChromaStepY   : int
 Deblock4MidpointScale : float   present only when a luma midpoint class applies
-Deblock4Backend       : data    "scalar" | "sse41" | "avx2"
 ```
 
 Rules:
 
-- `Deblock4Backend` records the backend actually used; `"auto"` is never written.
+- `Deblock4Filter` names which registered filter produced the frame.
+- `Deblock4Tier` records the named level actually used, using the exact tokens
+  of charter G1; `"auto"` is never written (the resolved level is). There is a
+  SINGLE tier/backend property (`Deblock4Tier`); the terms "backend" and "tier"
+  refer to the same selected named level, so no separate `Deblock4Backend`
+  property is written - one property removes any ambiguity about whether they
+  could differ.
+- The `Deblock4GridMode`/step/midpoint properties are written by the `Deblock4`
+  filter only. `Classic` has a fixed H.264 grid and omits all of them (a
+  consumer can rely on their absence to distinguish Classic output, in addition
+  to `Deblock4Filter`).
 - `Deblock4MidpointScale` is omitted when midpoint processing is not applicable, rather than written as zero.
 - Each scalar value has its own property so scripts and tests do not need to parse packed strings or arrays.
 - The properties are always enabled because they are the audit trail for grid selection, under-deblocking reports, and backend diagnosis.
+
+
+## 13.6 Version and tier emission; reproducibility contract
+
+Each filter instance emits its version marker, filter name, requested backend,
+selected tier, and (if a lower tier was chosen) the fallback reason to stderr,
+ONCE PER FILTER-INSTANCE CREATION (ffmpeg-style), not behind a debug flag and
+not per-frame. "Once per run" would be ambiguous in a graph with several filter
+instances; once-per-instance names each instance unambiguously. This makes
+"which filter selected which tier, and why" immediately visible for support and
+performance triage.
+
+Reproducibility contract:
+
+```text
+- a forced backend="x86_64_v1_baseline" (scalar) selection is available
+  (section 12.6) for reproducible reference output;
+- the selected backend/tier is recorded in frame properties (section 13.5) and
+  emitted once per filter instance to stderr;
+- INTEGER output is exact and reproducible across backends and machines;
+- a given backend is DETERMINISTIC for the same binary, backend, input,
+  parameters, and inherited floating-point environment (including MXCSR);
+- FLOAT output is NOT promised to be byte-identical across DIFFERENT machines,
+  because automatic dispatch may select a different backend on a different CPU,
+  and float backends may differ within the measured tolerance (charter G7).
+  This is stated honestly rather than implied.
+```
+
+The float cross-machine caveat is the principal cost of the same-algorithm
+model (charter G7) and is accepted deliberately: for the intended VHS/MPEG-2
+restoration material the differences are assessed as immaterial, integer output
+remains exact, and users needing byte-identical cross-machine float output can
+force backend="x86_64_v1_baseline".
 
 
 ---
@@ -2146,6 +2416,14 @@ Examples should include, but not be limited to:
 1919, 1920, 1921
 3839, 3840, 3841
 ```
+
+The corpus MUST include non-vector-width-multiple dimensions with strong
+boundary edges (e.g. 711x480) to force the tail/edge path, which is where
+compiler code-generation defects concentrate (charter G9, the R76-class
+guard). The scalar-vs-SIMD differential across these dimensions is a STANDING
+gate, re-run on every Zig or LLVM version bump - not a one-time check - because
+such miscompiles are toolchain-version dependent and produce gross edge
+corruption that any differential test catches immediately.
 
 ## 14.4 Format matrix
 
@@ -2231,9 +2509,26 @@ Test:
 - finite out-of-range values;
 - positive and negative zero;
 - subnormal values if preserved;
-- NaN and infinities after policy is defined.
+- NaN and infinities after policy is defined;
+- values engineered NEAR decision thresholds (to exercise the near-boundary
+  case where a small float difference could flip an activation decision).
 
-Compare bit patterns, not just decimal formatting.
+Float backends are compared against the scalar oracle within the measured
+tolerance of charter G7 - NOT by cross-backend bit-pattern equality. Record, per
+comparison: maximum absolute difference; maximum ULP difference for ordinary
+finite values; number and percentage of differing samples; exact
+finite/NaN/infinity classification agreement (which must match EXACTLY);
+structural-mask agreement (which must match EXACTLY); and, for the NUMERIC
+ACTIVATION decision on float paths, the count/rate of near-threshold flips with
+each controlling value's distance from its threshold and the max output effect
+(bounded, NOT required to match exactly - see charter G7 and decisions 3.4/3.5);
+plus the input, coordinates, backend, and branch for every worst case.
+Structural and classification results are exact; final float magnitudes and the
+near-threshold activation decision are subject to their tolerances. Integer
+paths show ZERO activation differences. (Tolerance values are frozen once real
+kernels exist - see the decisions document.)
+
+Integer paths are still compared by exact bit-pattern equality across backends.
 
 ## 14.8 Assembly inspection
 
@@ -2258,12 +2553,16 @@ Verify:
 Verify:
 
 - intended YMM operations;
-- no accidental AVX-512;
+- no accidental AVX-512 (nothing outside the x86_64_v3 level);
+- that every emitted instruction stays WITHIN the declared v3 level (charter G3);
+  the runtime guard that CHECKS the whole level is implemented and proved in
+  Stage 1B.3, not here;
 - expected widening/narrowing/shuffle sequence;
 - no large-vector decomposition caused by an incorrect lane count;
 - no unsafe aligned loads;
 - correct `vzeroupper` behaviour;
-- no FMA contraction in strict float kernels.
+- no FMA contraction in strict float kernels (FMA is available in v3 but must
+  not be auto-fused under .strict; its absence is legitimate).
 
 Generated assembly is a release gate, not an optional curiosity.
 
@@ -2356,6 +2655,166 @@ If the candidate schedule is not demonstrably equal or better:
 # 16. Revision history
 
 This section replaces the former "Proposed README corrections" list, which instructed this document to amend itself and became self-referential once those amendments were applied.
+
+## Revision v1.9
+
+Mechanical review correction: the decision-status table row for Zig runtime CPU
+detection no longer says an explicit CPUID/XGETBV unit is "expected" (which
+contradicted section 12.4 and F9); it now states the one-mechanism preference
+with the explicit detector as a possible fallback. This was the third location
+of that stale "expected detector" wording; 12.4 and F9 were fixed earlier.
+
+## Revision v1.8
+
+Post-re-audit cleanup (incl. final package review): FMA wording unified to
+"included in the v3 target but not relied upon; ordinary a*b+c non-fused under
+.strict; no @mulAdd required; 1B.2 must not expect FMA emission" (removed the
+"via FMA" example and "present-but-unused" at sections 1.1/4.4-area/12.3);
+section 12.3 inline v3 list now names OSXSAVE as a level member with the runtime
+XGETBV/XCR0 check stated separately; F9 no longer calls the explicit CPUID/XGETBV unit the
+"expected" landing point (it is a fallback; std.Target level-satisfaction is
+preferred), matching section 12.4; the F9 runtime check now confirms the WHOLE
+named v3 level rather than an "exact feature closure"; the std.zig.system note
+clarified against std.Target level-satisfaction.
+
+## Revision v1.7
+
+Independent re-audit corrections:
+- Section 4.2: added the oracle-construction sequencing note (the compare-against-
+  oracle rule applies after the oracle exists; the first Stage 2C/2D oracle-
+  building scope is accepted against independent obligations + a sanity gate) -
+  closing scope-blocker C2 in the README.
+- F10 / detection: v3 level member is OSXSAVE, not plain XSAVE, with the level-
+  membership vs runtime XGETBV/XCR0 distinction stated (H3.2).
+- F9 (section 12.4): the explicit CPUID/XGETBV unit is a POSSIBLE landing point,
+  not the presumed one; Stage 1B.3 must first seek one mechanism for both target
+  and detection (charter G3), reconciling F9 with the one-mechanism invariant (H4).
+- Fallback wording: "AVX2-but-not-v3 is v2" -> "highest lower level fully
+  satisfied, normally v2 else v1" (M3).
+- Section 19 concise baseline scoped explicitly to deblock4.Deblock4, with a note
+  that deblock4.Classic uses the section 3.15 oracle contract (HolyWu is Classic's
+  normative oracle) (M4).
+- Residual "identity" terminology reworded, including the MXCSR sentence, to
+  integer-exact / structural / float-differential language; per-backend
+  determinism is evaluated under the same inherited float environment and is NOT
+  a cross-backend float bit-identity requirement (M2).
+- Public call spelling: opening filter list lowercased to deblock4.Classic /
+  deblock4.Deblock4, and the exact core.deblock4.Classic(...) invocation shown
+  once in section 3.15; "Deblock4" capitalised only as the project name (M5).
+
+## Revision v1.6
+
+Second audit pass (W3C found residuals in v1.5):
+- Activation-mask contradiction fixed at every live spot (section 1.1 area, the
+  FLOAT structural paragraph, the strict-float paragraph, and the float
+  validation record list): structural results stay EXACT; the numeric activation
+  decision may differ for float paths only within the decision-boundary
+  tolerance; integer shows zero activation differences.
+- Stage 4 identity mandate ("prove scalar == SSE4.1 for all formats") replaced
+  with the integer-exact / float-differential split, matching Stage 5.
+- Stage 1B.2 wording corrected: it PRODUCES the whole-level feature requirements;
+  the runtime guard that CHECKS the level is a Stage 1B.3 artifact.
+- Frame properties: removed the duplicate Deblock4Backend (kept a single
+  Deblock4Tier); FMA reworded so 1B.2 is not read as needing to prove FMA
+  emission.
+- Classic oracle contract strengthened (section 3.15): HolyWu C/scalar at a
+  pinned commit is the normative external oracle, replacing "equal-or-better /
+  may be used".
+
+## Revision v1.5
+
+Consistency reconciliation after the document audit, plus the settled Classic
+rulings. No new direction; removes superseded live text and records decisions.
+
+- Opening (section 44-): filter list rewritten to the two CORE filters
+  (Classic first, Deblock4 second) plus QED-later; the old "Deblock4 = HolyWu,
+  Deblock4 first" opening is superseded (audit B1, P5).
+- Universal float bit-identity clauses replaced with the integer-exact /
+  float-tolerance split at sections 1.1-area, 4.2 (both identity code blocks),
+  the analyser section, the accidental-difference block, the section 19 concise
+  summary, and the Stage identity line (audit H4).
+- grid_mode="h264" REMOVED from Deblock4 everywhere (enum, grid table, the
+  later named-choices list); the H.264 grid use case is owned by Classic
+  (audit A1). Orphaned luma_midpoint table row removed (audit P1).
+- Backend tokens updated throughout to
+  auto / x86_64_v3_with_avx2 / x86_64_v2_with_sse41 / x86_64_v1_baseline -
+  in the decision table, the backend parameter, section 12.6 resolution, test
+  selectors, and error/prose references (audit H2).
+- Section 20 stages: explicit Classic-then-Deblock4 split (Stage 1 shared;
+  2C..5C Classic; 2D..5D Deblock4, whose content the existing stage bodies
+  define; Stage 6 both) (audit H3).
+- Section 13.5/13.6: per-filter frame properties (Deblock4Filter, Deblock4Tier,
+  Deblock4Version; Classic omits grid properties) and stderr emission changed to
+  once-per-filter-instance with filter name, requested backend, selected tier,
+  and fallback reason (audit A3). Determinism wording includes MXCSR (audit F2).
+- Duplicate "Rules:" heading removed (audit P2).
+- Header date set to 2026-07-29 (audit M4).
+
+Classic reproduces HolyWu faithfully including luma-on-chroma (D-CLASSIC-1);
+proper chroma is a Deblock4-only feature (D-CLASSIC-2). No change to integer
+exactness, structural/edge exactness, the tiering model, or the canonical
+algorithm.
+
+## Revision v1.4
+
+Two-filter architecture and Classic-first sequencing.
+
+- Section 1.0 (new): `Deblock4.dll` registers TWO filters - `deblock4.Classic`
+  (H.264, built first as a known/de-risking algorithm) and `deblock4.Deblock4`
+  (the end-goal MPEG-2 algorithm) - sharing one dispatch/backend infrastructure
+  but with separate kernels, backends, oracles, and presets. Different
+  algorithms are registered as two filters, not selected by a parameter.
+- Section 1.1: clarified that its statements apply per-filter.
+- Section 3.15 (new): the `deblock4.Classic` public API, reusing the meaning-
+  based strength names from 3.14 (Classic shares the canonical H.264 tables) but
+  with no grid_mode and no midpoint machinery, plus a HolyWu deblock.Deblock ->
+  deblock4.Classic translation table.
+- Section 20: development stages annotated - Stage 1 (infrastructure) is
+  filter-agnostic; Stages 2-5 (one algorithm) run twice, Classic first then
+  Deblock4; Stage 6 covers both.
+
+Rationale: Classic is a known, externally-referenceable algorithm (HolyWu's
+plugin as cross-check), so building it first proves the harness and the R76/G9
+miscompile guard before the novel MPEG-2 algorithm is attempted; Classic's
+4-pixel grid is also the higher R76-exposure case, so the guard is stress-tested
+early. The MPEG-2 `Deblock4` filter remains the end goal; this is a sequencing
+change only. No change to the verification model, tiering, or invariants.
+
+## Revision v1.3
+
+Adopted the verification and tiering decisions (charter G3 rewrite and new
+G7/G8/G9; see Deblock4_Verification_And_Tiering_Decisions). Changes:
+
+- Section 1.1: cross-backend relationship split - INTEGER byte-exact, FLOAT
+  same-algorithm within a measured tolerance; structural/decision results stay
+  exact even under float tolerance.
+- Section 4.3: SIMD-width-independence split by type; float magnitudes may
+  differ between backends within tolerance, but a single backend stays
+  deterministic and structural results are width-independent.
+- Section 8.6: FMA exclusion dropped; contraction prevented by explicit .strict
+  (not by removing FMA from the target); float computed-zero sign relaxed to the
+  tolerance regime while structural masking stays exact.
+- Section 12.3: adopted named psABI levels v1/v2/v3 in full with WHOLE-LEVEL
+  dispatch and v3->v2->v1 fallback; FMA is part of v3, not excluded.
+- Section 12.8: REWRITTEN to the corrected G6 (the ban is on PE-EXPORT, not the
+  export keyword). Gated backends ARE export fn in their own objects, kept out
+  of the DLL root graph, reached by @extern address-taken-never-called; the
+  earlier "never use the export keyword" wording was falsified by Stage 1B.1 and
+  is superseded.
+- Section 13.6 (new): always-on ffmpeg-style version+tier stderr emission and
+  the reproducibility contract (integer exact/reproducible; float not promised
+  byte-identical across machines; forced scalar available).
+- Sections 14.3, 14.7, 14.8: R76-class standing differential gate with
+  edge/tail-forcing dimensions; float validation records tolerance metrics
+  rather than requiring cross-backend bit equality; AVX2 assembly inspection
+  confirms within-level emission.
+- Decision-status table: identity row revised; tiering, dispatch, FMA,
+  tolerance, and emission rows added.
+
+No change to integer exactness, structural/edge exactness, G5 execution safety,
+the one-DLL object architecture, or the canonical algorithm. This revision
+relaxes only cross-backend FLOAT bit-identity and stops constraining instruction
+sets for identity.
 
 ## Revision v1.2
 
@@ -2572,9 +3031,15 @@ Exact `build.zig` syntax is deliberately **not** stated here, in accordance with
 
 ## F9. Runtime CPU detection (was Q9)
 
-`std.zig.system.resolveTargetQuery` and the surrounding `std.zig.system` surface are semi-internal, subject to change, and bring substantially more machinery than this task needs. They are not the normative mechanism.
+`std.zig.system.resolveTargetQuery` and the surrounding `std.zig.system` surface are semi-internal and bring more machinery than a runtime guard needs. Note this is distinct from std.Target level-satisfaction (section 12.4), which IS the preferred basis if it can serve both compile target and runtime check from one definition.
 
-The expected landing point is a small explicit CPUID/XGETBV unit. At minimum, AVX2 eligibility requires:
+A small explicit CPUID/XGETBV unit is a POSSIBLE landing point (a fallback), NOT
+the expected or presumed one. Per charter G3 and section 12.4, the Stage 1B.3
+investigation first seeks ONE mechanism serving both compile target and runtime
+detection (prefer std.Target level-satisfaction); the explicit unit is used only
+if that is unavailable, and then derived from one per-level descriptor so target
+and detector cannot drift. Whichever mechanism is chosen, AVX2 eligibility
+requires at minimum (whole-level checks apply beyond this subset):
 
 ```text
 SSE4.1 : CPUID leaf 1,          ECX bit 19
@@ -2586,17 +3051,28 @@ OS XMM/YMM state:
           XGETBV XCR0, bits 1 and 2 both set
 ```
 
-The final check must match the exact feature closure used to compile the AVX2 object, including any required baseline features beyond those listed above.
+The final check must confirm the WHOLE named v3 level used to compile the AVX2 object (every level feature, not only the subset above), plus the OS XMM/YMM state.
 
 The detector can be unit-tested by injecting synthetic CPUID/XCR0 words. Confirm exact Zig 0.16.0 intrinsic/assembly spellings in the implementation spike before freezing code.
 
 ## F10. AVX2 target features (was Q10)
 
-The complete `x86_64_v3` feature set is the `x86_64_v2` set (SSE3, SSSE3, SSE4.1, SSE4.2, POPCNT, CMPXCHG16B, LAHF/SAHF) plus AVX, AVX2, BMI1, BMI2, F16C, FMA, LZCNT, MOVBE, and XSAVE.
+The complete `x86_64_v3` feature set is the `x86_64_v2` set (SSE3, SSSE3, SSE4.1, SSE4.2, POPCNT, CMPXCHG16B, LAHF/SAHF) plus AVX, AVX2, BMI1, BMI2, F16C, FMA, LZCNT, MOVBE, and OSXSAVE. (OSXSAVE is the v3 level member; the runtime AVX/YMM guard additionally executes XGETBV and checks XCR0 XMM+YMM state. Do not substitute plain XSAVE for the OSXSAVE level member.)
 
-**The recommendation is the minimal explicit alternative offered in section 12.3**, not `x86_64_v3`: compile the AVX2 object for the `v2` baseline plus AVX and AVX2 only, and have dispatch check exactly that set plus OS YMM state.
+**The decision (v1.3) is to use the named `x86_64_v3` level in full** (charter
+G3), not a bespoke minimal closure: compile the AVX2 object for `x86_64_v3` and
+have dispatch verify the WHOLE v3 level plus OS YMM state (section 12.3),
+selecting the highest fully-satisfied level with v3->v2->v1 fallback.
 
-Beyond being simpler to verify, this choice has a second benefit that reinforces section 8.6 mechanically: **excluding FMA from the AVX2 object's target features removes the possibility of float contraction at the code generation level**, rather than relying solely on strict-mode flags to suppress it. The strict-float requirement and the target-feature choice then agree instead of one policing the other.
+FMA is part of v3 and is retained, not excluded. Float contraction is prevented
+by explicit `.strict` at kernel scope (section 8.6, charter G8): under `.strict`
+the compiler will not auto-fuse `a*b + c`, so the presence of FMA in the target
+does not break the same-algorithm float model. The earlier recommendation (a
+minimal v2+AVX+AVX2 closure with FMA excluded from the target) is superseded -
+identity-driven feature subtraction is dropped in favour of full declared tiers,
+because cross-backend float output is now same-algorithm-within-tolerance
+(charter G7), not byte-identical, so there is no float-identity requirement for
+FMA exclusion to protect.
 
 ## F11. Quality test sufficiency (was Q11)
 
@@ -2691,8 +3167,12 @@ Open to measurement:
 
 Open bounded implementation work:
 
-6. Zig 0.16.0 object-link syntax and one-DLL link.
-7. CPUID/XGETBV implementation and exact target-feature closure.
+6. Stage 1B.2 within-level object-code and assembly confirmation, including
+   `vzeroupper` inspection and production of the complete requirements that
+   Stage 1B.3 must enforce. (Zig 0.16.0 object-link syntax and one-DLL link.)
+7. Stage 1B.3 named-level runtime detection and guarded dispatch; strongly prefer
+   one shared target/detection mechanism, with explicit CPUID/XGETBV only as the
+   canonical-descriptor fallback described in section 12.4.
 8. VapourSynth frame-property write mechanics using the settled names in section 13.5.
 
 Deferred scope:
@@ -2754,11 +3234,53 @@ Evidence caution:
 
 The accepted design baseline is:
 
-> Deblock4 defines one canonical scalar-specified algorithm and requires byte-identical integer output, and targeted bit-identical floating-point output, from scalar, SSE4.1, and AVX2 backends. HolyWu remains the initial quality baseline but is not an absolute output oracle. SIMD is parameterised by backend register width-16 bytes for SSE4.1 and 32 bytes for AVX2-with lane counts derived from the actual element type. Luma and proper chroma use separate canonical formulas and footprint descriptors. Horizontal and vertical data movement may be backend-specific. Every candidate edge on the explicitly selected per-plane processing grid is processed when its complete filter-class footprint lies inside the plane; incomplete-footprint frame-edge candidates remain unchanged, while incomplete SIMD batches are still processed by smaller-vector or scalar cleanup. Deblock4 does not resize/pad/crop whole frames and does not rely on undocumented stride padding. The candidate canonical schedule is a deterministic whole-plane vertical pass followed by a horizontal pass; dependent luma edges retain canonical order, while independent same-orientation proper-chroma edges may be batched across edge positions without merging the two orientation passes. For field-separated MPEG-2 4:2:0, luma uses an 8-by-4 candidate grid with primary and midpoint classes, and chroma uses an 8-by-4 grid in chroma coordinates. Midpoint candidates select an immutable threshold set whose `alpha` and `beta` values were scaled once in `i64` at filter creation. The meaning-based `grid_mode` parameter is required; the `"auto"` token is reserved but rejected until automatic selection exists. Proper chroma is settled-by-design but must pass its quality corpus. Schedule A versus B, the default midpoint threshold scale, proper-chroma quality, actual AVX2 benefit, and the Zig build/detection mechanisms remain subject to their stated evidence gates. Float exceptional-value behaviour and the public parameter API are settled in this specification.
+> **This concise baseline describes the `deblock4.Deblock4` (MPEG-2) filter.**
+> For `deblock4.Classic`, the separate Classic oracle contract in section 3.15
+> applies: Classic faithfully reproduces HolyWu (including luma-on-chroma), and
+> the pinned HolyWu C/scalar implementation is its NORMATIVE external oracle (not
+> merely an initial baseline). The per-backend integer-exact / float-tolerance
+> contract below applies to both filters against their own scalar oracles.
+>
+> The `deblock4.Deblock4` filter defines one canonical scalar-specified algorithm and requires byte-identical INTEGER output, and same-algorithm FLOAT output within a measured differential tolerance (structural results exact), from scalar, v2, and v3 backends. For this MPEG-2 filter, HolyWu is an initial quality reference but is not an absolute output oracle (unlike Classic, where HolyWu IS the oracle). SIMD is parameterised by backend register width-16 bytes for the v2/SSE4.1-class backend and 32 bytes for the v3/AVX2-class backend-with lane counts derived from the actual element type. Luma and proper chroma use separate canonical formulas and footprint descriptors. Horizontal and vertical data movement may be backend-specific. Every candidate edge on the explicitly selected per-plane processing grid is processed when its complete filter-class footprint lies inside the plane; incomplete-footprint frame-edge candidates remain unchanged, while incomplete SIMD batches are still processed by smaller-vector or scalar cleanup. The Deblock4 filter does not resize/pad/crop whole frames and does not rely on undocumented stride padding. The candidate canonical schedule is a deterministic whole-plane vertical pass followed by a horizontal pass; dependent luma edges retain canonical order, while independent same-orientation proper-chroma edges may be batched across edge positions without merging the two orientation passes. For field-separated MPEG-2 4:2:0, luma uses an 8-by-4 candidate grid with primary and midpoint classes, and chroma uses an 8-by-4 grid in chroma coordinates. Midpoint candidates select an immutable threshold set whose `alpha` and `beta` values were scaled once in `i64` at filter creation. The meaning-based `grid_mode` parameter is required; the `"auto"` token is reserved but rejected until automatic selection exists. Proper chroma is settled-by-design but must pass its quality corpus. Schedule A versus B, the default midpoint threshold scale, proper-chroma quality, actual AVX2 benefit, and the Zig build/detection mechanisms remain subject to their stated evidence gates. Float exceptional-value behaviour and the public parameter API are settled in this specification.
 
 # 20. Proposed development stages
 
 The initial Deblock4 implementation uses six broad stages. These are intentionally much coarser than the CNR3 proof sequence because Deblock4 is stateless, 1-in/1-out, and has no cross-frame cache, pin, eviction, or recovery machinery.
+
+**Two filters, Classic first (v1.5).** The plugin ships two filters (section
+1.0): `Classic` (H.264) and `Deblock4` (MPEG-2). Stage 1 (scaffold, build,
+dispatch, tiering - the shared infrastructure) is filter-agnostic and comes
+first regardless. The per-algorithm stages then run as two labelled series -
+Classic (`2C..5C`) FIRST, then Deblock4 (`2D..5D`). The stage BODIES written
+below (Stage 2..5) define the Deblock4 (`2D..5D`) series, because Deblock4 is the
+richer algorithm; the Classic series reuses the same stage shape with a reduced,
+Classic-specific content noted per stage. Stage 6 (integration/release) covers
+both filters.
+
+```text
+Stage 1     shared DLL, objects, tiering, detection, registration scaffold
+            (Stage 1B.2 confirms objects stay within their named psABI level)
+
+Stage 2C    Classic scalar oracle + HolyWu external-reference differential
+            harness (no grid_mode, no midpoint, no Schedule A/B; faithful
+            HolyWu including luma-on-chroma per D-CLASSIC-1)
+Stage 3C    Classic compatibility/quality gate (short: confirm match to HolyWu
+            on the corpus; Classic has no open algorithm-selection decision)
+Stage 4C    Classic v2 (SSE4.1-class) backend + differential proof
+Stage 5C    Classic v3 (AVX2-class) backend + differential + performance proof
+
+Stage 2D    Deblock4 scalar core (grids, schedules, midpoint, proper chroma)
+Stage 3D    Deblock4 scalar quality decisions and canonical-algorithm freeze
+Stage 4D    Deblock4 v2 backend + differential proof
+Stage 5D    Deblock4 v3 backend + differential + performance proof
+
+Stage 6     VapourSynth integration and release validation for BOTH filters
+```
+
+The stage descriptions that follow (Stage 2..5) are the `2D..5D` Deblock4
+content. `Classic` runs its `2C..5C` series first, using the reduced content
+above. The MPEG-2 `Deblock4` filter remains the project's end goal; Classic-first
+is a de-risking SEQUENCE choice, not a change of objective.
 
 ## Stage 1 - Zig project scaffold and build/dispatch spikes
 
@@ -2796,7 +3318,10 @@ This spike does not block scalar algorithm work. Stage 2 may proceed if an exact
 
 - implement 16-byte vector arithmetic;
 - implement orientation-specific loads/transposes/stores;
-- prove scalar == SSE4.1 for all supported formats, grids, dimensions, and tails;
+- prove, for all supported formats, grids, dimensions, and tails:
+  INTEGER scalar == v2 (byte-exact); FLOAT v2 satisfies the differential
+  magnitude and decision-boundary contract against the scalar oracle, with all
+  structural results exact;
 - inspect assembly and reject scalarisation or accidental AVX;
 - benchmark against scalar.
 
@@ -2804,7 +3329,7 @@ This spike does not block scalar algorithm work. Stage 2 may proceed if an exact
 
 - implement 32-byte vector arithmetic and wider legal batches;
 - preserve all canonical dependency rules;
-- prove scalar == SSE4.1 == AVX2;
+- prove integer scalar == v2 == v3 (byte-exact) and float within the differential tolerance (structural results exact);
 - inspect widening/narrowing, transpose, target features, and `vzeroupper`;
 - benchmark actual AVX2 benefit without assuming a multiplier.
 
@@ -3171,10 +3696,12 @@ The required `grid_mode` prevents scripts from silently inheriting an inappropri
 
 Initial named choices are:
 
-- `h264`;
 - `mpeg2_progressive`;
 - `mpeg2_field_separated` for 4:2:0;
 - `custom`.
+
+(The H.264 4x4 grid is provided by the separate deblock4.Classic filter, not as
+a Deblock4 grid_mode - see section 1.0.)
 
 The `auto` token is reserved but rejected until implemented.
 

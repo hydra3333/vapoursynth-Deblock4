@@ -1,0 +1,94 @@
+SUPPLEMENTARY GAIS RESPONSE (v1_1) - conditional-namespace structural omission
+Filed as reference input for the Stage 1B.3 force-down mechanism decision.
+Follow-up to v1_0. Answers the "reference hygiene is fragile" concern with a
+compiler-ENFORCED boundary: debug_tools is an EMPTY STRUCT in release, so any
+stray reference is a hard compile error, not silent binary bloat. This is the
+strongest G6-aligned form (structurally impossible to violate, not merely
+discouraged).
+
+TWO ITEMS STILL NOT SETTLED by this response (carried to coder reconciliation):
+  1. RUNTIME CPUID: both GAIS answers sketch capability detection via
+     compile-time builtin.cpu-style reads. 1B.3 detection MUST use real runtime
+     CPUID, not the compile-time target. Not corrected here.
+  2. ANALYSIS-SKIP CLAIM (load-bearing): the pattern assumes a comptime-false
+     `if (config.enable_force_down)` causes the compiler to SKIP semantic
+     analysis of the gated body, so debug_tools.getEnvForceDownTier is never
+     resolved against the empty struct in release. If the body is still ANALYSED
+     (merely not emitted), an empty debug_tools would make even the GATED
+     reference fail to compile in release, breaking the pattern. Coder must
+     confirm this EMPIRICALLY for Zig 0.16.0.
+
+W3X DECISION (recorded): force-down is an EXPLICIT OPT-IN build option,
+defaulting OFF; NOT tied to Debug mode. See the decision note document.
+
+======================================================================
+SUPPLEMENTARY RESPONSE TEXT (as provided by W3X, pasted from GAIS)
+======================================================================
+
+The concern about relying solely on developer vigilance (reference hygiene) is
+valid. In any large or long-lived codebase, relying on maintainers to remember
+not to reference a "dead" symbol in an active code path is a fragility.
+
+Zig has a pattern that addresses this exact problem: conditional namespaces
+(anonymous structs). By defining the debug-only helper inside a struct that is
+conditionally populated on the build option, the compiler enforces the boundary.
+If the option is false, the struct is empty; any reference to its members outside
+a compile-time gated block is a compile-time error.
+
+--- Conditional Namespace Pattern ---
+
+const std = @import("std");
+const config = @import("config");
+
+// In Release, 'debug_tools' is an empty struct.
+// In Debug, 'debug_tools' contains the override helper.
+const debug_tools = if (config.enable_force_down) struct {
+    pub fn getEnvForceDownTier() ?CpuTier {
+        const env_val = std.process.getEnvVarOwned(std.heap.page_allocator, "FORCE_CPU_TIER") catch return null;
+        defer std.heap.page_allocator.free(env_val);
+        if (std.mem.eql(u8, env_val, "v1")) return .v1;
+        if (std.mem.eql(u8, env_val, "v2")) return .v2;
+        return null;
+    }
+} else struct {}; // Empty struct in release
+
+pub const CpuTier = enum { v1, v2, v3 };
+
+const CpuCapabilities = struct {
+    has_v3: bool,
+    has_v2: bool,
+    fn limitTo(self: *CpuCapabilities, tier: CpuTier) void {
+        switch (tier) {
+            .v1 => { self.has_v3 = false; self.has_v2 = false; },
+            .v2 => { self.has_v3 = false; },
+            .v3 => {},
+        }
+    }
+};
+
+inline fn applyForceDownOverride(caps: *CpuCapabilities) void {
+    if (config.enable_force_down) {
+        // comptime-false in release -> block skipped by semantic analysis;
+        // compiler does not look for getEnvForceDownTier inside debug_tools.
+        if (debug_tools.getEnvForceDownTier()) |forced_tier| {
+            caps.limitTo(forced_tier);
+        }
+    }
+}
+
+--- Why it is safe against human error ---
+
+Scenario A - maintainer accidentally references the helper in active code:
+    const helper_fn = &debug_tools.getEnvForceDownTier;
+  In Release (config.enable_force_down = false), debug_tools is an empty struct,
+  the compiler analyses this active line, and compilation FAILS immediately:
+    error: no member named 'getEnvForceDownTier' in struct
+
+Scenario B - normal Release compilation:
+  debug_tools is empty; applyForceDownOverride's if is false; the compiler skips
+  semantic analysis of that block, never resolves debug_tools.getEnvForceDownTier,
+  compilation succeeds, binary contains zero traces of the override.
+
+Summary: matches C++ #ifdef safety. Silent reference leaks (binary bloat) become
+hard compile-time errors, so future maintainers cannot accidentally pull the
+debug-only logic back into a release binary.
