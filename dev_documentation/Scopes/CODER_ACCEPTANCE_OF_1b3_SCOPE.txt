@@ -1,0 +1,157 @@
+Yes, that helps, and it restores the previously agreed Deblock4 rule:
+
+```text
+The attached source tree is the implementation base.
+No commit hash is pinned because W3X may commit documentation or other
+non-source material between coding scopes.
+```
+
+I will therefore treat `src(37).zip` as the exact Stage 1B.3 starting source. I no longer need the branch or commit commands.
+
+And your understanding of the three text files is correct.
+
+They are generated Zig 0.16.0 `builtin` captures showing what Zig actually assigned to each named CPU model on the Windows/MSVC target:
+
+```text
+std.Target.x86.cpu.x86_64
+std.Target.x86.cpu.x86_64_v2
+std.Target.x86.cpu.x86_64_v3
+```
+
+They are not themselves the formal x86-64 psABI specification. Each confirms Zig 0.16.0 and identifies the selected named model and its effective feature set.   
+
+Their roles are different:
+
+```text
+Formal psABI standard and the approved scope:
+    define which architectural features constitute v1, v2 and v3.
+
+Intel/AMD architecture documentation:
+    defines where those capabilities are detected through CPUID/XGETBV.
+
+These three Zig captures:
+    show what Zig 0.16.0 actually places in its named model feature sets.
+
+The Stage 1B.3 comptime cross-check:
+    reconciles the Zig sets with the formal membership through an explicit
+    name-mapping and exclusion table.
+```
+
+The captures also confirm why that reconciliation is necessary. Zig mixes formal architectural features with compiler tuning and code-generation properties.
+
+For example, the v1 capture includes the expected architectural entries such as `cmov`, `cx8`, `fxsr`, `mmx`, `sse`, `sse2`, and `x87`, but also entries such as:
+
+```text
+idivq_to_divl
+macrofusion
+nopl
+slow_3ops_lea
+slow_incdec
+vzeroupper
+```
+
+Those are not separate psABI v1 membership rows. 
+
+The v2 model adds the expected architectural features, plus tuning properties:
+
+```text
+Expected/mapped:
+    cx16
+    popcnt
+    sahf
+    sse3
+    sse4_1
+    sse4_2
+    ssse3
+
+Excluded or separately classified:
+    crc32
+    false_deps_popcnt
+    fast_15bytenop
+    fast_scalar_fsqrt
+    fast_shld_rotate
+    slow_unaligned_mem_32
+```
+
+
+
+The v3 model similarly contains the expected architectural additions:
+
+```text
+avx
+avx2
+bmi
+bmi2
+f16c
+fma
+lzcnt
+movbe
+```
+
+but also contains tuning/code-generation properties and `xsave`, which is not the formal psABI `OSXSAVE` membership row:
+
+```text
+allow_light_256_bit
+false_deps_lzcnt_tzcnt
+fast_variable_crosslane_shuffle
+fast_variable_perlane_shuffle
+xsave
+```
+
+
+
+The initial complete reconciliation indicated by these captures is therefore:
+
+```text
+Name mappings:
+    x87   <-> FPU
+    cx16  <-> CMPXCHG16B
+    sahf  <-> LAHF-SAHF
+    bmi   <-> BMI1
+
+Formal policy rows absent from Zig's model sets:
+    OSFXSR
+    SCE
+
+Non-membership exclusions:
+    64bit
+    crc32
+    xsave
+
+Tuning/code-generation exclusions:
+    allow_light_256_bit
+    false_deps_lzcnt_tzcnt
+    false_deps_popcnt
+    fast_15bytenop
+    fast_scalar_fsqrt
+    fast_shld_rotate
+    fast_variable_crosslane_shuffle
+    fast_variable_perlane_shuffle
+    idivq_to_divl
+    macrofusion
+    nopl
+    slow_3ops_lea
+    slow_incdec
+    slow_unaligned_mem_32
+    vzeroupper
+```
+
+The disappearing tuning entries between levels, such as `slow_incdec` disappearing at v2 and `slow_unaligned_mem_32` disappearing at v3, further demonstrate that the captures are complete compiler model descriptions rather than simple cumulative psABI membership lists.
+
+So the handoff package is now sufficient:
+
+```text
+Starting source:
+    src(37).zip
+
+Documentation and controlling material:
+    dev_documentation(4).zip
+
+Zig 0.16.0 named-model evidence:
+    zig_builtin_x86_64_v1.txt
+    zig_builtin_x86_64_v2.txt
+    zig_builtin_x86_64_v3.txt
+```
+
+No further commit identity or missing document is required before Stage 1B.3 implementation.
+
