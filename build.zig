@@ -30,6 +30,34 @@ pub fn build(b: *std.Build) void {
     // Allow explicit Debug, ReleaseSafe, ReleaseFast, or ReleaseSmall builds.
     const optimize = b.standardOptimizeOption(.{});
 
+    // G10 debug-only modules are explicit opt-ins and are structurally barred
+    // from every non-Debug optimisation mode.
+    const enable_force_down = b.option(
+        bool,
+        "enable_force_down",
+        "Include the Debug-only capability force-down seam",
+    ) orelse false;
+    const enable_verbose_detection = b.option(
+        bool,
+        "enable_verbose_detection",
+        "Include Debug-only verbose capability diagnostics",
+    ) orelse false;
+
+    if ((enable_force_down or enable_verbose_detection) and
+        optimize != .Debug)
+    {
+        @panic(
+            "Deblock4 debug-only capability options require -Doptimize=Debug",
+        );
+    }
+
+    const runtime_options = b.addOptions();
+    runtime_options.addOption(bool, "enable_force_down", enable_force_down);
+    runtime_options.addOption(
+        bool,
+        "enable_verbose_detection",
+        enable_verbose_detection,
+    );
     // ---------------------------------------------------------------------
     // VapourSynth API4 C-header translation.
     // ---------------------------------------------------------------------
@@ -168,6 +196,10 @@ pub fn build(b: *std.Build) void {
         .target = baseline_target,
         .optimize = optimize,
     });
+    dll_probe_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
 
     // The retained baseline root imports only baseline modules. Generic and
     // scalar exports are therefore part of the DLL compilation graph. Gated
@@ -208,6 +240,63 @@ pub fn build(b: *std.Build) void {
         "Compile the Deblock4 dynamic-library probe",
     );
     dll_check_step.dependOn(&dll.step);
+
+    // ---------------------------------------------------------------------
+    // First-class runtime-capability self-test and inspection object.
+    // ---------------------------------------------------------------------
+
+    const selftest_module = b.createModule(.{
+        .root_source_file = b.path("src/deblock4_selftest.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    selftest_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
+
+    const selftest = b.addExecutable(.{
+        .name = "deblock4_selftest",
+        .root_module = selftest_module,
+    });
+    b.installArtifact(selftest);
+
+    const selftest_step = b.step(
+        "selftest",
+        "Compile the first-class Deblock4 capability self-test",
+    );
+    selftest_step.dependOn(&selftest.step);
+
+    const run_selftest = b.addRunArtifact(selftest);
+    const selftest_run_step = b.step(
+        "selftest-run",
+        "Build and run the Deblock4 capability self-test",
+    );
+    selftest_run_step.dependOn(&run_selftest.step);
+
+    const detection_object_module = b.createModule(.{
+        .root_source_file = b.path("src/cpu_capability_detection.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    detection_object_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
+
+    const detection_object = b.addObject(.{
+        .name = "cpu_capability_detection",
+        .root_module = detection_object_module,
+    });
+    const install_detection_object = b.addInstallFile(
+        detection_object.getEmittedBin(),
+        "detection-objects/cpu_capability_detection.obj",
+    );
+    const detection_object_step = b.step(
+        "detection-object",
+        "Build the baseline-v1 CPU capability detection inspection object",
+    );
+    detection_object_step.dependOn(&install_detection_object.step);
 
     const dll_smoke_test = b.addExecutable(.{
         .name = "deblock4_dll_smoke_test",
@@ -319,15 +408,34 @@ pub fn build(b: *std.Build) void {
 
     const run_build_probe_tests = b.addRunArtifact(build_probe_tests);
 
+    const dll_probe_test_module = b.createModule(.{
+        .root_source_file = b.path("src/dll_probe.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    dll_probe_test_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
     const dll_probe_tests = b.addTest(.{
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/dll_probe.zig"),
-            .target = baseline_target,
-            .optimize = optimize,
-        }),
+        .root_module = dll_probe_test_module,
     });
 
     const run_dll_probe_tests = b.addRunArtifact(dll_probe_tests);
+
+    const capability_test_module = b.createModule(.{
+        .root_source_file = b.path("src/cpu_capability_detection.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    capability_test_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
+    const capability_tests = b.addTest(.{
+        .root_module = capability_test_module,
+    });
+    const run_capability_tests = b.addRunArtifact(capability_tests);
 
     const backend_probe_generic_tests = b.addTest(.{
         .root_module = backend_probe_generic.root_module,
@@ -351,10 +459,11 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step(
         "test",
-        "Run all current Deblock4 scaffold tests",
+        "Run all current Deblock4 tests",
     );
     test_step.dependOn(&run_build_probe_tests.step);
     test_step.dependOn(&run_dll_probe_tests.step);
+    test_step.dependOn(&run_capability_tests.step);
     test_step.dependOn(&run_backend_probe_generic_tests.step);
     test_step.dependOn(&run_backend_probe_scalar_tests.step);
     test_step.dependOn(&run_vs_header_tests.step);
