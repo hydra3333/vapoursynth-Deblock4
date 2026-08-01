@@ -39,14 +39,9 @@ rem not itself a failure signal.
 rem ============================================================================
 
 set "STAGE=1C_v1"
-set "DEBLOCK4_PROJECT_DIR=%~dp0"
+set "DEBLOCK4_PROJECT_PREFIX=%~dp0"
 set "DEBLOCK4_PROJECT_ROOT=%~dp0."
 set "VSDEVCMD=C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\VsDevCmd.bat"
-set "INSPECTION_DIR=zig-out\inspection_1C"
-set "BUILD_ROOT=zig-out\stage_1c"
-set "CACHE_ROOT=.zig-cache\stage_1c"
-set "CLASSIC_SCRIPT=%DEBLOCK4_PROJECT_DIR%tests\stage_1c_classic_passthrough.vpy"
-set "DEBLOCK4_SCRIPT=%DEBLOCK4_PROJECT_DIR%tests\stage_1c_deblock4_passthrough.vpy"
 
 set "FORCE_STRING=DEBLOCK4_FORCE_DOWN_DEBUG_MARKER_FD00D001"
 set "FORCE_ENV=DEBLOCK4_FORCE_DOWN"
@@ -87,11 +82,26 @@ set "MARKER=Restore project directory after VsDevCmd"
 set "CMD=cd /d "!DEBLOCK4_PROJECT_ROOT!""
 call :run
 
+rem Define all runner-owned filesystem state only after VsDevCmd returns. The
+rem DEBLOCK4_ prefix prevents collisions with Visual Studio environment names.
+set "DEBLOCK4_INSPECTION_DIR=zig-out\inspection_1C"
+set "DEBLOCK4_BUILD_ROOT=zig-out\stage_1c"
+set "DEBLOCK4_CACHE_ROOT=.zig-cache\stage_1c"
+set "DEBLOCK4_CLASSIC_SCRIPT=!DEBLOCK4_PROJECT_PREFIX!tests\stage_1c_classic_passthrough.vpy"
+set "DEBLOCK4_FILTER_SCRIPT=!DEBLOCK4_PROJECT_PREFIX!tests\stage_1c_deblock4_passthrough.vpy"
+
+echo === Runner paths after VsDevCmd
+echo project_root=!DEBLOCK4_PROJECT_ROOT!
+echo cache_root=!DEBLOCK4_CACHE_ROOT!
+echo build_root=!DEBLOCK4_BUILD_ROOT!
+echo inspection_dir=!DEBLOCK4_INSPECTION_DIR!
+
 where zig >nul 2>nul || (echo ERROR: zig.exe not found & exit /b 1)
 where dumpbin >nul 2>nul || (echo ERROR: dumpbin.exe not found & exit /b 1)
+where powershell >nul 2>nul || (echo ERROR: powershell.exe not found & exit /b 1)
 if not exist "tools\run_vs.cmd" (echo ERROR: tools\run_vs.cmd missing & exit /b 1)
-if not exist "%CLASSIC_SCRIPT%" (echo ERROR: Classic .vpy missing & exit /b 1)
-if not exist "%DEBLOCK4_SCRIPT%" (echo ERROR: Deblock4 .vpy missing & exit /b 1)
+if not exist "%DEBLOCK4_CLASSIC_SCRIPT%" (echo ERROR: Classic .vpy missing & exit /b 1)
+if not exist "%DEBLOCK4_FILTER_SCRIPT%" (echo ERROR: Deblock4 .vpy missing & exit /b 1)
 
 for /f "usebackq delims=" %%V in (`zig version`) do set "OBSERVED_ZIG_VERSION=%%V"
 echo === Observed Zig version !OBSERVED_ZIG_VERSION!
@@ -100,14 +110,16 @@ if /I not "!OBSERVED_ZIG_VERSION!"=="0.16.0" (
     exit /b 1
 )
 
-call :remove_tree "%CACHE_ROOT%"
+echo === Prepare Stage 1C proof directories
+call :remove_tree "!DEBLOCK4_CACHE_ROOT!"
 if errorlevel 1 goto :fail
-call :remove_tree "%BUILD_ROOT%"
+call :remove_tree "!DEBLOCK4_BUILD_ROOT!"
 if errorlevel 1 goto :fail
-call :remove_tree "%INSPECTION_DIR%"
+call :remove_tree "!DEBLOCK4_INSPECTION_DIR!"
 if errorlevel 1 goto :fail
-call :make_dir "%INSPECTION_DIR%"
+call :make_dir "!DEBLOCK4_INSPECTION_DIR!"
 if errorlevel 1 goto :fail
+echo === Stage 1C proof directories ready
 
 rem Extract the single-homed identity without introducing a second literal.
 for /f "usebackq delims=" %%V in (`powershell -NoProfile -Command "$s=[IO.File]::ReadAllText('src/deblock4_version.zig'); if($s -notmatch 'semantic_version\s*=\s*\x22([^\x22]+)\x22'){exit 2}; $Matches[1]"`) do set "SEMANTIC_VERSION=%%V"
@@ -149,9 +161,9 @@ rem Debug build with all three G10 seams explicitly enabled.
 rem ============================================================================
 
 set "MODE=Debug"
-set "MODE_DIR=!INSPECTION_DIR!\Debug"
-set "MODE_PREFIX=!BUILD_ROOT!\Debug"
-set "MODE_CACHE=!CACHE_ROOT!\Debug"
+set "MODE_DIR=!DEBLOCK4_INSPECTION_DIR!\Debug"
+set "MODE_PREFIX=!DEBLOCK4_BUILD_ROOT!\Debug"
+set "MODE_CACHE=!DEBLOCK4_CACHE_ROOT!\Debug"
 call :make_dir "!MODE_DIR!"
 if errorlevel 1 goto :fail
 
@@ -193,19 +205,19 @@ if errorlevel 1 goto :fail
 
 rem E3 Debug force-down: v1 and v2, plus invalid input.
 set "DEBLOCK4_FORCE_DOWN=v1"
-call :run_vpy_case "!CLASSIC_SCRIPT!" valid_auto x86_64_v1_baseline STAGE_1C_CLASSIC_PASS "!MODE_DIR!\classic_force_v1.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" valid_auto x86_64_v1_baseline STAGE_1C_DEBLOCK4_PASS "!MODE_DIR!\deblock4_force_v1.txt"
+call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" valid_auto x86_64_v1_baseline STAGE_1C_CLASSIC_PASS "!MODE_DIR!\classic_force_v1.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" valid_auto x86_64_v1_baseline STAGE_1C_DEBLOCK4_PASS "!MODE_DIR!\deblock4_force_v1.txt"
 set "DEBLOCK4_FORCE_DOWN=v2"
-call :run_vpy_case "!CLASSIC_SCRIPT!" valid_auto x86_64_v2_with_sse41 STAGE_1C_CLASSIC_PASS "!MODE_DIR!\classic_force_v2.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" valid_auto x86_64_v2_with_sse41 STAGE_1C_DEBLOCK4_PASS "!MODE_DIR!\deblock4_force_v2.txt"
+call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" valid_auto x86_64_v2_with_sse41 STAGE_1C_CLASSIC_PASS "!MODE_DIR!\classic_force_v2.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" valid_auto x86_64_v2_with_sse41 STAGE_1C_DEBLOCK4_PASS "!MODE_DIR!\deblock4_force_v2.txt"
 set "DEBLOCK4_FORCE_DOWN=V2"
-call :run_vpy_case "!CLASSIC_SCRIPT!" error_invalid_force_down x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\classic_force_invalid.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" error_invalid_force_down x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\deblock4_force_invalid.txt"
+call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" error_invalid_force_down x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\classic_force_invalid.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" error_invalid_force_down x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\deblock4_force_invalid.txt"
 
 rem E4 above-effective refusal is made observable by the valid force-down seam.
 set "DEBLOCK4_FORCE_DOWN=v1"
-call :run_vpy_case "!CLASSIC_SCRIPT!" error_above_effective x86_64_v1_baseline STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\classic_above_effective.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" error_above_effective x86_64_v1_baseline STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\deblock4_above_effective.txt"
+call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" error_above_effective x86_64_v1_baseline STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\classic_above_effective.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" error_above_effective x86_64_v1_baseline STAGE_1C_EXPECTED_ERROR_PASS "!MODE_DIR!\deblock4_above_effective.txt"
 set "DEBLOCK4_FORCE_DOWN="
 
 rem E6 lifecycle proof and S1 runtime proof from one captured run per filter.
@@ -246,17 +258,17 @@ set "MARKER=Show final git working tree status"
 set "CMD=git status --short"
 call :run
 
->"!INSPECTION_DIR!\proof_matrix_summary.txt" echo B1 B2 G1 G2 E1 E2 E3 E4 E5 E6 V1 S1 S2 S3 N1 PASS
->>"!INSPECTION_DIR!\proof_matrix_summary.txt" echo IDENTITY=!IDENTITY_STRING!
->>"!INSPECTION_DIR!\proof_matrix_summary.txt" echo ZIG_VERSION=!OBSERVED_ZIG_VERSION!
+>"!DEBLOCK4_INSPECTION_DIR!\proof_matrix_summary.txt" echo B1 B2 G1 G2 E1 E2 E3 E4 E5 E6 V1 S1 S2 S3 N1 PASS
+>>"!DEBLOCK4_INSPECTION_DIR!\proof_matrix_summary.txt" echo IDENTITY=!IDENTITY_STRING!
+>>"!DEBLOCK4_INSPECTION_DIR!\proof_matrix_summary.txt" echo ZIG_VERSION=!OBSERVED_ZIG_VERSION!
 
->"!INSPECTION_DIR!\manual_review_required.txt" echo W3D must independently review raw exports, strings, disassembly, e2e output, properties, lifecycle traces, sweep and S1 evidence.
->>"!INSPECTION_DIR!\manual_review_required.txt" echo W3C concurrence and W3X acceptance remain required; this batch does not self-accept the stage.
+>"!DEBLOCK4_INSPECTION_DIR!\manual_review_required.txt" echo W3D must independently review raw exports, strings, disassembly, e2e output, properties, lifecycle traces, sweep and S1 evidence.
+>>"!DEBLOCK4_INSPECTION_DIR!\manual_review_required.txt" echo W3C concurrence and W3X acceptance remain required; this batch does not self-accept the stage.
 
 echo.
 echo ================================================================================
 echo STAGE %STAGE% FULL PROOF MATRIX COMPLETED SUCCESSFULLY
-echo Evidence retained under !INSPECTION_DIR!
+echo Evidence retained under !DEBLOCK4_INSPECTION_DIR!
 echo W3D ARTIFACT REVIEW AND W3X ACCEPTANCE ARE STILL REQUIRED
 echo ================================================================================
 echo.
@@ -268,9 +280,9 @@ rem ============================================================================
 
 :run_release_mode
 set "MODE=%~1"
-set "MODE_DIR=!INSPECTION_DIR!\!MODE!"
-set "MODE_PREFIX=!BUILD_ROOT!\!MODE!"
-set "MODE_CACHE=!CACHE_ROOT!\!MODE!"
+set "MODE_DIR=!DEBLOCK4_INSPECTION_DIR!\!MODE!"
+set "MODE_PREFIX=!DEBLOCK4_BUILD_ROOT!\!MODE!"
+set "MODE_CACHE=!DEBLOCK4_CACHE_ROOT!\!MODE!"
 call :make_dir "!MODE_DIR!"
 if errorlevel 1 exit /b 1
 
@@ -328,12 +340,12 @@ rem ============================================================================
 :run_release_e2e
 set "E2E_DIR=%~1"
 set "DEBLOCK4_FORCE_DOWN="
-call :run_vpy_case "!CLASSIC_SCRIPT!" valid_auto x86_64_v3_with_avx2 STAGE_1C_CLASSIC_PASS "!E2E_DIR!\classic_valid_auto.txt"
-call :run_vpy_case "!CLASSIC_SCRIPT!" valid_full x86_64_v2_with_sse41 STAGE_1C_CLASSIC_PASS "!E2E_DIR!\classic_valid_full.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" valid_auto x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_valid_auto.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" valid_full x86_64_v2_with_sse41 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_valid_full.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" midpoint_present x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_midpoint_present.txt"
-call :run_vpy_case "!DEBLOCK4_SCRIPT!" midpoint_absent x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_midpoint_absent.txt"
+call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" valid_auto x86_64_v3_with_avx2 STAGE_1C_CLASSIC_PASS "!E2E_DIR!\classic_valid_auto.txt"
+call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" valid_full x86_64_v2_with_sse41 STAGE_1C_CLASSIC_PASS "!E2E_DIR!\classic_valid_full.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" valid_auto x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_valid_auto.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" valid_full x86_64_v2_with_sse41 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_valid_full.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" midpoint_present x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_midpoint_present.txt"
+call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" midpoint_absent x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_midpoint_absent.txt"
 call :run_validation_error_cases "!E2E_DIR!"
 exit /b !ERRORLEVEL!
 
@@ -344,17 +356,17 @@ exit /b !ERRORLEVEL!
 :run_validation_error_cases
 set "E2E_DIR=%~1"
 for %%C in (error_strength error_wrong_type error_duplicate_planes error_empty_planes error_unknown_backend error_variable_format) do (
-    call :run_vpy_case "!CLASSIC_SCRIPT!" %%C x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!E2E_DIR!\classic_%%C.txt"
+    call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" %%C x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!E2E_DIR!\classic_%%C.txt"
     if errorlevel 1 exit /b 1
 )
 for %%C in (error_strength error_wrong_type error_duplicate_planes error_empty_planes error_step_low error_step_high error_unknown_backend error_variable_format) do (
-    call :run_vpy_case "!DEBLOCK4_SCRIPT!" %%C x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!E2E_DIR!\deblock4_%%C.txt"
+    call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" %%C x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!E2E_DIR!\deblock4_%%C.txt"
     if errorlevel 1 exit /b 1
 )
 exit /b 0
 
 :run_vpy_case
-set "DEBLOCK4_PLUGIN_PATH=!DEBLOCK4_PROJECT_DIR!!DLL_FILE!"
+set "DEBLOCK4_PLUGIN_PATH=!DEBLOCK4_PROJECT_PREFIX!!DLL_FILE!"
 set "DEBLOCK4_TEST_CASE=%~2"
 set "DEBLOCK4_EXPECTED_TIER=%~3"
 set "VPY_MARKER=%~4"
@@ -490,10 +502,10 @@ rem S1 frame objects and retained detector proof.
 rem ============================================================================
 
 :inspect_frame_path_objects
-set "OBJECT_PREFIX=!BUILD_ROOT!\InspectionObjects"
-set "OBJECT_CACHE=!CACHE_ROOT!\InspectionObjects"
+set "OBJECT_PREFIX=!DEBLOCK4_BUILD_ROOT!\InspectionObjects"
+set "OBJECT_CACHE=!DEBLOCK4_CACHE_ROOT!\InspectionObjects"
 set "OBJECT_DIR=!OBJECT_PREFIX!\frame-path-objects"
-set "EVIDENCE_DIR=!INSPECTION_DIR!\S1_frame_path"
+set "EVIDENCE_DIR=!DEBLOCK4_INSPECTION_DIR!\S1_frame_path"
 call :make_dir "!EVIDENCE_DIR!"
 set "MARKER=Build stable frame-path inspection objects"
 set "CMD=zig build frame-path-objects --prefix "!OBJECT_PREFIX!" --cache-dir "!OBJECT_CACHE!" -Doptimize=ReleaseFast -Denable_force_down=false -Denable_verbose_detection=false -Denable_trace_lifecycle=false --error-style verbose"
@@ -519,10 +531,10 @@ echo S1 frame-path object symbol/disassembly proof PASS
 exit /b 0
 
 :inspect_detection_object
-set "DET_PREFIX=!BUILD_ROOT!\DetectionInspection"
-set "DET_CACHE=!CACHE_ROOT!\DetectionInspection"
+set "DET_PREFIX=!DEBLOCK4_BUILD_ROOT!\DetectionInspection"
+set "DET_CACHE=!DEBLOCK4_CACHE_ROOT!\DetectionInspection"
 set "DETECTION_OBJ=!DET_PREFIX!\detection-objects\cpu_capability_detection.obj"
-set "DET_DIR=!INSPECTION_DIR!\detection"
+set "DET_DIR=!DEBLOCK4_INSPECTION_DIR!\detection"
 call :make_dir "!DET_DIR!"
 set "MARKER=Build retained baseline-v1 detection object"
 set "CMD=zig build detection-object --prefix "!DET_PREFIX!" --cache-dir "!DET_CACHE!" -Doptimize=ReleaseFast -Denable_force_down=false -Denable_verbose_detection=false -Denable_trace_lifecycle=false --error-style verbose"
@@ -563,9 +575,9 @@ if !copy_code! GTR 7 (set "MARKER=Copy perturbation tree" & set "CMD=robocopy" &
 set "PERTURB_FILE=!PERTURB_DIR!\src\cpu_capability_detection.zig"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$p='!PERTURB_FILE!'; $s=[IO.File]::ReadAllText($p); $old='.allow_light_256_bit, .avx, .avx2, .bmi, .bmi2,'; $new='.allow_light_256_bit, .avx, .avx2, .bmi,'; if(-not $s.Contains($old)){exit 2}; [IO.File]::WriteAllText($p,$s.Replace($old,$new),[Text.Encoding]::ASCII)"
 if errorlevel 1 exit /b 1
-set "OUT=!INSPECTION_DIR!\named_model_perturbation_expected_failure.txt"
+set "OUT=!DEBLOCK4_INSPECTION_DIR!\named_model_perturbation_expected_failure.txt"
 pushd "!PERTURB_DIR!"
-zig build detection-object -Doptimize=ReleaseFast > "!DEBLOCK4_PROJECT_DIR!!OUT!" 2>&1
+zig build detection-object -Doptimize=ReleaseFast > "!DEBLOCK4_PROJECT_PREFIX!!OUT!" 2>&1
 set "perturb_code=!ERRORLEVEL!"
 popd
 if "!perturb_code!"=="0" (set "MARKER=Named-model perturbation expected failure" & set "CMD=zig build detection-object" & set "exit_code=1" & goto :fail)
@@ -581,6 +593,7 @@ rem ============================================================================
 
 :audit_source_structure
 set "MARKER=S1 structural dependency audit"
+echo === !MARKER!
 set "CMD=powershell structural source scan"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$frame=@('src/classic_callback_router.zig','src/deblock4_callback_router.zig','src/classic_ar_initial.zig','src/deblock4_ar_initial.zig','src/classic_ar_all_frames_ready.zig','src/deblock4_ar_all_frames_ready.zig'); $bad=@(); foreach($f in $frame){$s=[IO.File]::ReadAllText($f); if($s -match '@import\(\"(?:backend_tier_selection|cpu_capability_detection)\.zig\"\)|DEBLOCK4_FORCE_DOWN'){ $bad += $f }}; $pure=@('src/backend_tier_selection.zig','src/filter_call_parameters.zig','src/common_instance_data_structure.zig','src/deblock4_version.zig'); foreach($f in $pure){$s=[IO.File]::ReadAllText($f); if($s -match 'vapoursynth_api4|zig_vsh_|VSAPI'){ $bad += $f }}; $cpu=[IO.File]::ReadAllText('src/cpu_capability_detection.zig'); if($cpu -match 'classic_|deblock4_(?:plugin|instance|callback|ar_|frame_)'){ $bad += 'src/cpu_capability_detection.zig' }; if($bad){$bad | %% {Write-Host $_}; exit 1}; Write-Host 'S1_STRUCTURAL_PASS'"
@@ -597,6 +610,7 @@ exit /b 0
 
 :audit_sweep
 set "MARKER=S2 retired-file and reference sweep"
+echo === !MARKER!
 set "CMD=powershell sweep scan"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ret=@('build_1B1_v7_3.bat','build_1B2_v5_REDEVELOPED.bat','build_1B3_v5.bat','src/backend_isolation_smoke_test.zig','src/backend_probe_avx2.zig','src/backend_probe_generic.zig','src/backend_probe_scalar.zig','src/backend_probe_sse41.zig','src/backend_retention_anchor.zig','src/build_probe.zig','src/dll_probe.zig','src/dll_smoke_test.zig','src/vapoursynth_header_probe.zig'); foreach($f in $ret){if(Test-Path -LiteralPath $f){Write-Host ('retired file remains: '+$f);exit 1}}; $roots=@('build.zig','build.zig.zon','src','tests','tools'); $files=@(); foreach($r in $roots){if(Test-Path $r){$i=Get-Item $r; if($i.PSIsContainer){$files+=Get-ChildItem $r -Recurse -File}else{$files+=$i}}}; $names=$ret | %% {[IO.Path]::GetFileName($_)}; foreach($f in $files){if($f.Name -eq 'build_1C_v1.bat'){continue}; $s=[IO.File]::ReadAllText($f.FullName); foreach($n in $names){if($s.Contains($n)){Write-Host ('retired reference '+$n+' in '+$f.FullName);exit 1}}}; Write-Host 'S2_SWEEP_PASS'"
@@ -606,6 +620,7 @@ exit /b 0
 
 :audit_eol
 set "MARKER=S3 repository text CRLF and US-ASCII audit"
+echo === !MARKER!
 set "CMD=powershell tracked/untracked text scan"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ext=@('.zig','.zon','.c','.h','.bat','.cmd','.vpy','.md','.txt','.patch','.diff','.py','.ps1','.json','.yml','.yaml'); $paths=git ls-files -co --exclude-standard; $bad=@(); foreach($r in $paths){if(-not(Test-Path -LiteralPath $r)){continue}; $f=Get-Item -LiteralPath $r; if($f.PSIsContainer){continue}; if(($ext -notcontains $f.Extension.ToLowerInvariant()) -and $f.Name -ne '.gitignore'){continue}; $b=[IO.File]::ReadAllBytes($f.FullName); for($i=0;$i -lt $b.Length;$i++){if($b[$i] -gt 127){$bad+=($r+' non-ASCII');break}; if($b[$i] -eq 10 -and ($i -eq 0 -or $b[$i-1] -ne 13)){$bad+=($r+' bare-LF');break}}}; if($bad){$bad | %% {Write-Host $_};exit 1}; Write-Host 'S3_ZERO_LF_TEXT_FILES_PASS'"
@@ -615,6 +630,7 @@ exit /b 0
 
 :audit_version_sources
 set "MARKER=V1 source and manifest single-home audit"
+echo === !MARKER!
 set "CMD=powershell version scan"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$zon=[IO.File]::ReadAllText('build.zig.zon'); if($zon -notmatch ('\.version\s*=\s*\"'+[regex]::Escape('!SEMANTIC_VERSION!')+'\"')){exit 1}; $plugin=[IO.File]::ReadAllText('src/deblock4_plugin.zig'); if(-not $plugin.Contains('version.vs_packed_version')){exit 2}; $classic=[IO.File]::ReadAllText('src/classic_frame_properties.zig'); $deb=[IO.File]::ReadAllText('src/deblock4_frame_properties.zig'); $self=[IO.File]::ReadAllText('src/deblock4_selftest.zig'); if(-not($classic.Contains('version.identity_string') -and $deb.Contains('version.identity_string') -and $self.Contains('version.identity_string'))){exit 3}; $dupes=Get-ChildItem src -File | ? {$_.Name -ne 'deblock4_version.zig'} | Select-String -SimpleMatch '!IDENTITY_STRING!'; if($dupes){$dupes;exit 4}; Write-Host 'V1_SOURCE_MANIFEST_PASS'"
@@ -627,7 +643,7 @@ rem N1 negative build controls.
 rem ============================================================================
 
 :run_negative_build_controls
-set "NEG_DIR=!INSPECTION_DIR!\negative_controls"
+set "NEG_DIR=!DEBLOCK4_INSPECTION_DIR!\negative_controls"
 call :make_dir "!NEG_DIR!"
 set "MARKER=Reject command-line CPU override"
 set "CMD=zig build -Dcpu=x86_64_v3"
@@ -809,6 +825,8 @@ if not "!exit_code!"=="0" goto :fail
 exit /b 0
 
 :fail
+if not defined exit_code set "exit_code=1"
+if "!exit_code!"=="0" set "exit_code=1"
 echo.
 echo ================================================================================
 echo STAGE %STAGE% VALIDATION COMMAND SET FAIL
@@ -817,6 +835,4 @@ echo CMD !CMD!
 echo Exit code !exit_code!
 echo ================================================================================
 echo.
-if "!exit_code!"=="" set "exit_code=1"
-if "!exit_code!"=="0" set "exit_code=1"
 exit !exit_code!
