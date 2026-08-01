@@ -1,0 +1,385 @@
+--- 111_New_Chat_Introduction_for_Designer_v1_12.md
++++ 111_New_Chat_Introduction_for_Designer_v1_13.md
+@@ -1,9 +1,9 @@
+ # Deblock4 - New Chat Introduction for Designer
+ 
+-**Version:** 1.12
+-**Date:** 2026-07-31
+-**Status:** Informative successor orientation; not controlling; aligned to ratified charter v1.22
+-**Role:** W3D successor designer/reviewer
++**Version:** 1.13
++**Date:** 2026-08-01
++**Status:** Informative successor orientation; not controlling; aligned to prevailing charter v1.23 and README v1.9
++**Role:** W3D successor designer/reviewer (continuity-bearing AI role)
+ **Encoding:** US-ASCII only
+ 
+ ---
+@@ -20,62 +20,58 @@
+ ```text
+ Current position:
+     Stages 1A, 1A.1, 1B.1, 1B.2 and 1B.3 are complete and committed.
+-    Charter ratified at v1.19 (adds G10 at v1.17; the 1B.3 ratifications at
+-    v1.18 - ACTUAL/EFFECTIVE two-record model, the G3 comptime cross-check,
+-    Debug-only reject, fix-not-force, C-STY-09/10; and the CRLF-for-repository-
+-    files rule at v1.19). README design spec at v1.9. Stage 1B.1 proved
+-    isolated backend objects and one-DLL linkage under scope v1.7, after THREE
+-    retention mechanisms were empirically falsified (see
+-    Deblock4_Toolchain_Findings F1-F5). Stage 1B.2 (within-level object and
+-    assembly CONFIRMATION) is complete; standing batch
+-    build_1B2_v5_REDEVELOPED.bat. Stage 1B.3 (the runtime capability guard,
+-    the shared config/print module skeleton, the self-test exe, and the
+-    debug-only force-down seam) is COMPLETE and committed: its full proof
+-    matrix ran and was independently verified at the instruction/byte level
+-    (v1-only detection object, one guarded XGETBV, three-surface G10 absence
+-    with a live positive control, force-down and build-reject matrices, and the
+-    named-model drift perturbation firing on demand).
++    Charter v1.23 is the prevailing process baseline: v1.17 added G10; v1.18
++    recorded the ACTUAL/EFFECTIVE model, G3 named-model cross-check, Debug-only
++    rejection, fix-not-force and C-STY-09/10; v1.19 requires CRLF repository
++    files; v1.20 added C-DELIV-09 incremental emission; v1.21/v1.22 added and
++    generalised the version-pair/set discipline; v1.23 adds I7 independent
++    verification for self-affecting criteria and successor-session continuity.
++    README design spec remains v1.9. Stage 1B.1 proved isolated backend objects
++    and one-DLL linkage after THREE retention mechanisms were empirically
++    falsified (Deblock4_Toolchain_Findings F1-F5). Stage 1B.2 confirmed each
++    object remains within its named level. Stage 1B.3 completed and proved the
++    runtime capability guard, shared config/print skeleton, selftest and
++    debug-only force-down seam at the instruction/byte level.
+ 
+ Immediate designer action:
+-    STAGE 1C (filter creation) is AUTHORED and in phased delivery. The scope
+-    Deblock4_Scope_Stage_1C_Filter_Creation_v1_5.md is ratified and binding;
+-    Deblock4_Stage_1C_Delivery_Plan_Addendum_v1_1.md splits it into phases.
+-    Phase 1 (pure foundation) and Phase 2 (tier selection + per-filter instance
+-    creation + permanent-skeleton callback routers, pass-through) have BOTH been
+-    delivered, W3D-reviewed, accepted (green all three modes on the real
+-    toolchain), and COMMITTED. THE IMMEDIATE DESIGNER ACTION at this handoff:
+-    W3X is about to provide Deblock4_Stage_1C_Phase_3a_W3C_delivery_v1_0.zip
+-    (the frame path - common_frame_mechanics, the property modules, the tier-
+-    switch bodies, common_ar_error, lifecycle_trace_debug - plus real
+-    deblock4_plugin registration). REVIEW Phase 3a against scope v1_5 and the
+-    addendum, verifying with file and line. Specific 3a verification points
+-    already surfaced with W3X: (a) the creation callbacks must expose the exact
+-    translated VSPublicFunction C-ABI signature (same [*c] correction the
+-    routers got in Phase 2), body otherwise UNCHANGED - verify a clean
+-    boundary-only diff; (b) the permanent activation-reason switch structure is
+-    NOT restructured - only the minimal branch bodies are replaced with the
+-    settled C5-order handlers; (c) lifecycle_trace_debug is authored in 3a
+-    (built into the handlers, not retrofitted), its creation-exit line dumps the
+-    FULL resolved instance config on ONE physical line (C-1C-6/8), and its
+-    release-absence proof lands in 3b. After 3a, Phase 3b (scaffolding sweep per
+-    C-STY-10, build_1C_v1.bat, the two .vpy harnesses, full proof matrix).
+-    NOTE W3D CANNOT run Zig - all verification is STATIC review against source;
+-    W3X's toolchain run is authoritative. W3X releases phases and commits, W3D
+-    does not. Three hard-won lessons to carry forward.
+-    (1) From 1B.1: G6 bans PE-EXPORT
+-    of gated code, NOT the Zig export keyword - gated functions ARE export fn
+-    in single-target objects reached by address-taken @extern; a standing
+-    dumpbin /EXPORTS gate enforces absence. (2) From 1B.3: debug-only code uses
+-    the G10 three-layer pattern (source-visible C-3 conditional import, gated
+-    content, three-surface proven absence), and the detection contract
+-    (Set-A/Set-B, whole-level, the comptime named-model cross-check) is SETTLED
+-    and chartered - a successor implements it, it does not re-derive it. (3)
+-    From the 1B.3 harness rounds: any assertion against CAPTURED Zig output
+-    (LF) must not use findstr /X exact-line or fragile multi-word absent-scans;
+-    prefer an exit code or a positive substring, or normalise to CRLF.
+-
+-    The coder handover is DONE (111_New_Chat_Introduction_for_Coder is current
+-    and reconciled), so you are not blocked on it.
++    STAGE 1C (filter creation) is AUTHORED and in phased delivery. The binding
++    scope is Scopes/Deblock4_Scope_Stage_1C_Filter_Creation_v1_5.md;
++    Scopes/Deblock4_Stage_1C_Delivery_Plan_Addendum_v1_1.md governs delivery
++    order. Phase 1 and Phase 2 are accepted, green in all three modes, committed
++    and pushed. W3C has delivered
++    Deblock4_Stage_1C_Phase_3a_W3C_delivery_v1_0.zip. It awaits W3D static
++    review, W3X toolchain validation and W3X acceptance. REVIEW Phase 3a against
++    the complete declared review set, verifying with file and line. The
++    load-bearing checks are: (a) creation callbacks expose the exact translated
++    VSPublicFunction C-ABI signature, immediately bridge to validated idiomatic
++    locals, and preserve the accepted parsing/validation/tier-selection/
++    allocation/ownership/filter-construction logic; only that ABI bridge and
++    required lifecycle trace calls are authorised around it; (b) the permanent
++    activation-reason switch structure is NOT restructured - its branch targets
++    are filled with the settled handlers; (c) arAllFramesReady follows the C5
++    obtain -> frozen-tier switch -> property-annotate -> return order; (d)
++    lifecycle_trace_debug is authored in 3a, its successful creation-exit record
++    contains the FULL resolved instance configuration on ONE physical line, and
++    its release-absence proof remains 3b. Phase 3a stops for review. Phase 3b
++    (scaffolding sweep, build_1C_v1.bat, two .vpy harnesses and the full proof
++    matrix) must not begin until W3X releases it.
++
++    W3D cannot run Zig: verification is STATIC against source; W3X's toolchain
++    run is authoritative. W3X alone accepts/rejects phases, releases the next
++    phase and commits. Four hard-won lessons carry forward. (1) G6 bans
++    PE-EXPORT of gated code, not Zig's export keyword. (2) Debug-only code uses
++    the G10 three-layer inclusion/absence pattern, and the settled detection
++    contract is implemented rather than re-derived. (3) Assertions against
++    captured Zig LF output must not use findstr /X or fragile multi-word
++    absent-scans; prefer exit codes, positive substrings or normalisation. (4)
++    Under I7, a party changing criteria applied to its own work must name a
++    different-party verifier; the change is never silently absorbed and W3X
++    retains normative adoption authority.
++
++    The latest coder handover is v1.18. It is informative and sufficient to
++    understand what W3C was told, but it predates charter v1.23 and therefore is
++    not a version-authority source; its own reconciliation is a separate review.
++    The designer is not blocked on it.
+ ```
+ 
+ Do not reopen settled design. Your value now is precision, source-verification,
+@@ -97,7 +93,20 @@
+ 
+ The loop is strict: W3D and W3C never talk directly. Everything passes through
+ W3X. You produce scopes and reviews; W3X carries them to the coder; the coder
+-delivers; W3X runs and reports; you review the real results.
++delivers; W3X runs and reports; you review the real results. W3D is a
++continuity-bearing ROLE, not one immortal chat; successor sessions inherit the
++role only after orientation through this handover and the prevailing documents.
++
++Because this is a successor transition, W3X has directed heightened W3C
++continuity review of the first several new-W3D scopes and findings. That is a
++risk-control cross-check, not a transfer of design authority: disagreements are
++resolved by evidence and W3X decides.
++
++Apply charter I7 explicitly. If you propose a change to criteria that will judge
++your own work, name W3D as proposer and a DIFFERENT party as verifier; never
++self-verify or silently absorb the change. W3X retains ratification/release
++authority. Routine W3D criteria for W3C deliveries are cross-party work and are
++not converted into a self-review merely because W3D authored them.
+ 
+ Your primary instrument is SKEPTICISM, not agreement. The single most valuable
+ thing this seat has done is doubt plausible-sounding claims and check them. A
+@@ -108,34 +117,35 @@
+ 
+ # 2. Required reading order
+ 
+-## Version currency and paired documents - verify before relying (STOP-class)
++## Version currency and paired or grouped documents - verify before relying (STOP-class)
+ 
+ Document version numbers are usually part of the filename, and the highest
+-version number in the filename normally indicates the latest prevailing
+-version, which should be used - EXCEPT that a document W3X provides directly in
+-this session may be newer than anything yet committed, and takes precedence.
+-Verify the actual latest versions with W3X before relying on a number baked
+-into a file. If W3X indicates a newer ratified package exists, STOP and obtain
+-it from W3X, since the latest document may not yet have been committed to the
+-github project repository. On occasion documents are explicitly paired/tied by
+-version - typically where a document header names a companion document at a
+-specific version. Where such a pairing exists and the versions mismatch, STOP:
+-do NOT mix them; report the mismatch to W3X and seek direction on which to
+-use. (This is charter section 2.3a; the version numbers listed below are
+-current as of this file's writing and must be re-verified per this rule.)
++filename version normally prevails - EXCEPT that a document W3X provides
++directly in the current session may be newer than anything committed and takes
++precedence. Verify actual currency with W3X before relying on a baked-in number.
++If W3X says a newer package exists, STOP and obtain it.
++
++Where a header declares a read-together SET of two or more documents, use the
++LATEST filename version of EACH member and read the complete set. A missing,
++internally inconsistent or generation-mixed set is STOP-class. Reading a set
++together does NOT equalise authority: each member retains the status stated in
++its own header (for example, binding scope versus informative review guidance).
++This is charter section 2.3a; every version below must still be re-verified.
+ 
+ The coder wrote its own reading order for implementation. Yours differs because
+ your job differs: you must hold the whole design, not just the next scope.
+ 
+ ```text
+-1. AI_Charter_and_Invariants_Card_v1_22.md          CONTROLLING
++1. AI_Charter_and_Invariants_Card_v1_23.md          CONTROLLING
+    Read FIRST and in full. This is your rulebook: invariants (Part 1),
+-   the three-way roles, coding/interop/numeric/SIMD/delivery standards, and
+-   process rules. As designer you must hold all of it. Note G5 (execution
+-   safety), G6 (safety properties rest on explicit/structural mechanisms, not
+-   implicit toolchain behaviour; the ban is on PE-EXPORT of gated code, not the
+-   export keyword), G7 (per-type acceptance: integer byte-exact, float
+-   differential), G8 (.strict float), and C-DELIV-01..08 (delivery protocol).
++   continuity-bearing roles, coding/interop/numeric/SIMD/delivery standards,
++   and process rules. Hold G5 (execution safety), G6 (explicit/structural
++   mechanisms; PE-EXPORT ban, not export-keyword ban), G7 (integer exact /
++   float differential), G8 (.strict float), G10 (debug-only inclusion),
++   C-DELIV-01..09, section 2.3a version sets, and I7 provenance.
++   IMPORTANT PACKAGE CHECK: the prevailing file's internal Status and v1.23
++   revision heading must show W3X ratification, not residual proposal/pending
++   wording. If they do not, report the mismatch to W3X before relying.
+ 
+ 2. README_Deblock4_Design_Spec_v1_9.md              CONTROLLING
+    Read in full. This is the technical tie-breaker and the algorithms you are
+@@ -153,10 +163,11 @@
+    scope-blocking rules: per-type differential acceptance + the oracle-
+    construction exception). The charter and README prevail on any conflict.
+ 
+-4. Deblock4_Project_Status_v1_15.md                 INFORMATIVE
++4. Deblock4_Project_Status_v1_16.md                 INFORMATIVE
+    Read for the current proof state, what is done, what is open, and why
+-   Stage 1C active - Phases 1 and 2 accepted and committed; Phase 3a about to be
+-   Non-controlling; the README and charter prevail.
++   Stage 1C is active. Use its implementation-state sections; do not let any
++   stale internal package cross-reference override the actual filenames or
++   charter 2.3a. Non-controlling; the README and charter prevail.
+ 
+ 5. Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md  INFORMATIVE
+    Read for the reasoning behind charter G6 and the Stage 1B.1 retention/export
+@@ -189,29 +200,23 @@
+    Compact cross-check that your mental model matches the user-facing shape.
+ 
+ 10. 111_New_Chat_Introduction_for_Coder_v1_18.md    INFORMATIVE
+-11. PHASE 3a REVIEW SET - READ AS A SET (charter 2.3a version group).  CONTROLLING
+-    These THREE are the authority for reviewing the incoming Phase 3a
+-    delivery and MUST be read together; reviewing from fewer than all three is
+-    incomplete. Use the LATEST filename version of EACH - any member may bump
+-    as guidance accrues, so verify current versions with W3X (charter 2.3a)
+-    and do not mix generations. If a member is missing or the set looks
+-    inconsistent, STOP and ask W3X.
++    Read to know what the coder was told, so your scopes and reviews align. It
++    predates charter v1.23 and is not a version-authority source; its own
++    reconciliation is separate. Its tacit-knowledge section is real history.
++11. PHASE 3a REVIEW SET - READ AS A SET (charter 2.3a; MIXED AUTHORITY)
++    These THREE must be read together for Phase 3a review. Use the LATEST
++    filename version of EACH. If a member is missing or the set is inconsistent,
++    STOP and ask W3X. The set does not make every member controlling.
+       11.1  Scopes/Deblock4_Scope_Stage_1C_Filter_Creation_v1_5.md
+-            The stage design authority; read fully - what you review W3C
+-            deliveries against, module by module.
++            RATIFIED AND BINDING stage design authority.
+       11.2  Scopes/Deblock4_Stage_1C_Delivery_Plan_Addendum_v1_1.md
+-            Phase delivery order + the Phase 2/3 boundary ruling (Phases 1 and
+-            2 committed; Phase 3a next to review).
+-      11.3  Scopes/Deblock4_Stage_1C_Phase_3a_Designer_Briefing_v1_0.md
+-            The accumulated Phase 3a clarifications not in the scope/addendum:
+-            the 3a/3b split, the three verification points (VSPublicFunction
+-            creation-callback signature with unchanged body, unrestructured
+-            permanent switch, complete one-line lifecycle trace), and the C5
+-            order. This is the perishable review reasoning - read it before
+-            you open the delivery.
+-   Read to know what the coder has been told, so your scopes and reviews align
+-   with the coder's briefing. Its tacit-knowledge section (VSHelper4.h bridge,
+-   ReleaseSafe failure) is real project history.
++            BINDING delivery order and Phase 2/3 boundary clarification.
++      11.3  Deblock4_Stage_1C_Phase_3a_Designer_Briefing_v1_2.md
++            INFORMATIVE review guidance, not a scope or rule change. It records
++            the 3a/3b anti-stall split, exact creation-boundary allowance,
++            unrestructured permanent switch, complete one-line lifecycle trace
++            and C5 order. Read it before opening the delivery; on conflict the
++            charter, scope and addendum prevail.
+ ```
+ 
+ Verify the actual latest versions in the repository before relying on a number
+@@ -490,6 +495,14 @@
+ the coder/designer charter-verification items). Silent version or cross-
+ reference drift is the failure mode that has bitten this project more than once
+ and that you are best placed to catch.
++
++If you are about to treat every member of a read-together set as controlling,
++stop. Charter 2.3a requires complete-set reading; it does not erase each
++document's declared authority.
++
++If you are about to change criteria that will be applied to your own work, stop
++and apply I7: name the proposer, name a DIFFERENT independent verifier, and keep
++W3X's adoption authority explicit. Never silently absorb the change.
+ 
+ If you are about to write a scope, quote the controlling README and charter
+ sections it relies on IN FULL, inline. The coder is memoryless and works from
+@@ -567,7 +580,8 @@
+ - VapourSynth frame-property writes (settled names in README 13.5)
+ - (Stage 1C, IN DELIVERY, not an open spike: the filter-creation entry point
+   and per-filter dispatch consuming the EFFECTIVE record - scope v1_5 ratified,
+-  Phases 1 and 2 accepted and committed, Phase 3a about to be reviewed, 3b pending)
++  Phases 1 and 2 accepted and committed; Phase 3a delivery v1_0 produced and
++  awaiting review/validation/acceptance; 3b not released)
+ 
+ (Now SETTLED and no longer spikes: Zig 0.16 target-specific object/link syntax,
+ Stage 1B.2 within-level assembly confirmation and vzeroupper, and the Stage 1B.3
+@@ -618,25 +632,23 @@
+ Verify rather than assume; and be candid where you are uncertain:
+ 
+ ```text
+-1. The exact current ratified charter and README versions in the repo. This
+-   file says charter v1.22 / README v1.9; confirm nothing newer has superseded
+-   them, and if so obtain the reconciled successor package rather than mixing.
+-2. Whether the Project Status document reflects the latest Stage 1B progress
+-   since this handover (Stages 1B.2 and 1B.3 complete and committed; filter
+-   creation stage next).
+-3. The state of Stage 1B.3: it was reviewed, corrected across delivery/harness
+-   revisions, accepted with R3 sign-off, committed and pushed. It is DONE; the
+-   filter-creation stage is the active work.
+-4. The precise state of the coder handover - the coder introduction
+-   (111_New_Chat_Introduction_for_Coder_v1_13.md) is current and reconciled
+-   here; confirm the coder chat's first-orientation report against it.
++1. The exact prevailing charter and README versions. This file says charter
++   v1.23 / README v1.9. Confirm both filename/internal version and that charter
++   v1.23's internal Status/history record W3X ratification rather than pending
++   proposal wording.
++2. Whether Project Status v1.16 has been reconciled after the Phase 3a delivery;
++   its implementation state is useful but some package cross-references may lag.
++3. Stage 1C Phase 3a state: W3C delivery v1_0 exists and awaits W3D static
++   review, W3X toolchain validation and W3X acceptance. Phase 3b is not released.
++4. Coder handover v1.18 is the latest package member but predates charter v1.23.
++   Read it as informative history; do not use its v1.22 pin as currency.
+ 5. The still-owed HolyWu commit/tag for Classic's oracle (D-CLASSIC-4); it was
+    not pinned as of this handover.
+-6. Any design question W3X has raised since this chat that is not in the
+-   documents. Ask rather than assume the design round is still fully closed.
+-7. The delivery-form convention for THIS project's design documents (as opposed
+-   to code): this seat has been delivering whole .md files. Confirm W3X still
+-   wants that rather than patches for large documents.
++6. Any design question W3X has raised since the previous designer chat that is
++   not in the documents. Ask rather than assume.
++7. Current document-review delivery preference: W3X has requested a complete
++   revised .md plus a unified diff from the original doc-set version to the
++   final agreed version. Re-confirm if the workflow changes.
+ ```
+ 
+ These are verification items, not invitations to redesign.
+@@ -651,20 +663,22 @@
+ 1. Exact document filenames and internal versions you received.
+ 2. Which are controlling and which informative.
+ 2a. Confirmation with W3X that no newer ratified package supersedes the
+-    documents received, and that no version-paired documents are mismatched
++    documents received, and that no paired/grouped document set is incomplete or mismatched
+     (charter 2.3a).
+ 3. Current position: Stages 1A..1B.3 complete and committed; Stage 1C ACTIVE
+-   (scope v1_5 ratified; Phases 1 and 2 accepted and committed; Phase 3a about
+-   to be reviewed); charter v1.22,
+-   README v1.9 (or whatever you actually received - state it).
++   (scope v1_5; Phases 1 and 2 accepted/committed; Phase 3a delivery v1_0
++   awaiting review/validation/acceptance; Phase 3b not released); charter v1.23
++   and README v1.9, or the actual versions received.
+ 4. Immediate designer action:
+-    Review W3C's Deblock4_Stage_1C_Phase_3a_W3C_delivery_v1_0.zip when W3X
+-    provides it (frame path + real plugin registration), against scope v1_5 and
+-    addendum v1_1, verifying with file and line - checking especially the
+-    VSPublicFunction C-ABI creation-callback signature (body unchanged), the
+-    unrestructured permanent switch, and the complete one-line trace dump. Then
+-    Phase 3b (sweep + full proof matrix). W3X releases phases and commits; W3D
+-    reviews and verifies, does not.
++    Review Deblock4_Stage_1C_Phase_3a_W3C_delivery_v1_0.zip against the COMPLETE
++    mixed-authority review set, with file and line. Check especially: exact
++    VSPublicFunction C-ABI boundary with only local rebinding + trace around the
++    preserved accepted creation logic; unrestructured permanent router switch;
++    exact C5 order; complete one-line resolved-config trace. W3X alone accepts
++    the phase, releases 3b and commits; W3D reviews and recommends.
++
++    Provenance note (charter I7): identify proposer and a different-party
++    verifier for any self-affecting criteria change; never self-adopt it.
+ 
+     Delivery note (charter C-DELIV-09): W3C now emits completed modules
+     INCREMENTALLY ("increment N of ~M") for interrupt-safety and review
+@@ -691,6 +705,17 @@
+ # 8b. Revision note
+ 
+ ```text
++v1.13 Reconciled the successor orientation to the prevailing 2026-08-01
++      package and W3X continuity instructions: charter v1_23 + I7 +
++      continuity-bearing W3D role; decisions v1_10; status v1_16; Phase 3a
++      Designer Briefing v1_2 at its actual root path; Phase 3a delivery v1_0
++      produced and awaiting review/validation/acceptance. Corrected the review
++      set from falsely all-controlling to mixed authority, corrected the
++      creation-callback "body unchanged" shorthand to the ratified narrow ABI/
++      trace allowance, recorded the unrestructured switch/C5/anti-stall 3a->3b
++      boundary, added early-successor heightened continuity review and I7
++      guidance, and flagged the charter/coder/status metadata that still need
++      separate reconciliation. No design change.
+ v1.12 Added the Phase 3a review-set trio to the reading list as item 11 (scope
+       v1_5 + addendum v1_1 + the new Phase 3a Designer Briefing v1_0), flagged
+       as a charter-2.3a version group that must be read together with the

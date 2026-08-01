@@ -2,7 +2,28 @@
 
 **Version:** 1.23
 **Date:** 2026-08-01
-**Status:** W3C-revised v1.23 proposal; I7 and its section 2.2 placement were independently verified by W3D, with W3X ratification pending. Part 1 carries invariants G1-G10. v1.14 corrects the mandatory bootstrap (per-type acceptance + oracle-construction exception, closing the reinstated byte-identity and the circular oracle rule), splits Stage 1B.2/1B.3 in G3, clarifies OSXSAVE level-membership vs runtime safety, and softens FMA wording. v1.17 adds G10: the ratified debug-only code inclusion pattern. v1.18 records the Stage 1B.3 ratifications: the ACTUAL/EFFECTIVE two-record model (G1), the G3 one-mechanism reconciliation (comptime membership cross-check, compile-FAIL), the Debug-only hard-reject for debug options and the fix-not-force rule (G10), the nothing-above-v1 tightening for generic/dispatch/detection code (G2), the module single-homes and one-way-dependency/sweep standing rules (C-STY-09/10), and the attached-source-tree session-base alternative. v1.19 replaces the C-DELIV-06 LF default with the ratified CRLF-for-repository-files rule plus the pinned git whitespace configuration. v1.20 adds C-DELIV-09: incremental emission for interrupt-safety and review continuity, with the honest only-delivered-work-survives limit and the unchanged final packaged deliverable; the rule is copied verbatim into every scope header. v1.21 adds section 2.3a: version-currency and paired-document discipline (verify latest with W3X; a directly-provided document beats the latest committed; STOP on a version-paired mismatch). v1.22 generalises 2.3a from pairs to version SETS of two or more (latest of each member prevails; read the set together; STOP on an incomplete or inconsistent declared set). v1.23 proposes I7: a change to criteria applied to the proposer's own work must name a different-party verifier and must never be silently absorbed; it also makes the bootstrap charter reference self-referential, updates the W3D role wording for successor-session continuity, and normalises this repository document to CRLF. No Part 1 invariant or project-design change.
+**Status:** W3X-ratified. Part 1 carries invariants G1-G10. v1.14 corrects
+the mandatory bootstrap (per-type acceptance + oracle-construction exception,
+closing the reinstated byte-identity and the circular oracle rule), splits
+Stage 1B.2/1B.3 in G3, clarifies OSXSAVE level-membership vs runtime safety,
+and softens FMA wording. v1.17 adds G10: the ratified debug-only code inclusion pattern.
+v1.18 records the Stage 1B.3 ratifications: the ACTUAL/EFFECTIVE two-record model (G1),
+the G3 one-mechanism reconciliation (comptime membership cross-check, compile-FAIL),
+the Debug-only hard-reject for debug options and the fix-not-force rule (G10), 
+the nothing-above-v1 tightening for generic/dispatch/detection code (G2), 
+the module single-homes and one-way-dependency/sweep standing rules (C-STY-09/10), and
+the attached-source-tree session-base alternative. v1.19 replaces the C-DELIV-06 LF default
+with the ratified CRLF-for-repository-files rule plus the pinned git whitespace configuration.
+v1.20 adds C-DELIV-09: incremental emission for interrupt-safety and review continuity, with 
+the honest only-delivered-work-survives limit and the unchanged final packaged deliverable; 
+the rule is copied verbatim into every scope header. v1.21 adds section 2.3a: version-currency and paired-document 
+discipline (verify latest with W3X; a directly-provided document beats the latest committed; STOP on a
+version-paired mismatch). v1.22 generalises 2.3a from pairs to version SETS of two or more
+(latest of each member prevails; read the set together; STOP on an incomplete or inconsistent declared set).
+v1.23 adds I7: a change to criteria applied to the proposer's own work must name a different-party verifier
+and must never be silently absorbed; it also makes the bootstrap charter reference self-referential,
+updates the W3D role wording for successor-session continuity, and normalises this repository document to CRLF.
+No Part 1 invariant or project-design change.
 **Companion specification:** `README_Deblock4_Design_Spec_v1_9.md`
 **Companion internal revision:** `Design specification revision: 1.9`
 **Encoding:** US-ASCII only. See C-STY-01.
@@ -1837,14 +1858,14 @@ backend                      "auto" | "x86_64_v3_with_avx2"
 
 # Part 7 - Revision history
 
-## v1.23 (2026-08-01) - W3C revised proposal; W3D independently verified; W3X ratification pending
+## v1.23 (2026-08-01) - W3C-proposed, W3D-verified, W3X-ratified 2026-08-01
 
 Provenance for this self-affecting criteria change:
 
 ```text
 proposer:  W3C
 verifier:  W3D (Deblock4_W3D_Verification_of_Charter_v1_23_Proposal_v1_0.md)
-ratifier:  W3X (pending)
+ratifier:  W3X (ratified 2026-08-01)
 ```
 
 - Added I7 in section 2.2: when a party proposes a change to criteria that will
