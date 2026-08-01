@@ -1,11 +1,12 @@
-# Stage 1C Phase 3b v1.3 - Apply, Resume and Validate
+# Stage 1C Phase 3b v1.4 - Apply, Resume and Validate
 
-This v1.3 package supersedes every earlier Phase 3b delivery (`v1.0`, `v1.1` and `v1.2`). Use only v1.3.
+This v1.4 package supersedes every earlier Phase 3b delivery (`v1.0`, `v1.1`, `v1.2` and `v1.3`). Use only v1.4.
 
-The project source, deletion set, `.vpy` harnesses and proof obligations are unchanged from v1.0. v1.3 corrects the permanent proof runner in two places:
+The project source, deletion set, `.vpy` harnesses and proof obligations are unchanged from v1.0. v1.4 retains the permanent proof-runner corrections and also fixes the recovery helper:
 
 1. the parent launches the `--worker` child without the broken outer `/C` quote wrapper;
-2. every directory-change operation uses the quote-safe `%~dp0.` project root rather than the trailing-backslash path prefix.
+2. every directory-change operation uses the quote-safe `%~dp0.` project root rather than the trailing-backslash path prefix;
+3. the resume helper no longer requires an old `build_1C_v1.bat` to exist before installing the corrected production runner. It verifies the rest of the applied Phase 3b shape, then installs and byte-checks the runner.
 
 The Visual Studio handoff remains the proven:
 
@@ -18,7 +19,7 @@ The Visual Studio handoff remains the proven:
 Extract this delivery outside the repository. From any command prompt, run:
 
 ```bat
-call "<EXTRACTED_V1_3_DELIVERY>\apply_phase3b_and_validate.bat" "<REPOSITORY_ROOT>"
+call "<EXTRACTED_V1_4_DELIVERY>\apply_phase3b_and_validate.bat" "<REPOSITORY_ROOT>"
 ```
 
 The helper is fail-closed. It verifies branch `main` and a clean Phase 3a working tree, checks and applies the deletion-only patch, copies every complete repository file, runs `git -c core.whitespace=cr-at-eol diff --check`, and then runs `build_1C_v1.bat`.
@@ -29,13 +30,13 @@ Do not use this fresh-application command on a repository where Phase 3b has alr
 
 Do **not** reset the repository and do **not** rerun the apply helper.
 
-Extract v1.3 outside the repository, then run:
+Extract v1.4 outside the repository, then run:
 
 ```bat
-call "<EXTRACTED_V1_3_DELIVERY>\resume_phase3b_validation_after_applied_state.bat" "<REPOSITORY_ROOT>"
+call "<EXTRACTED_V1_4_DELIVERY>\resume_phase3b_validation_after_applied_state.bat" "<REPOSITORY_ROOT>"
 ```
 
-The resume helper verifies the applied Phase 3b shape, overwrites only the repository's `build_1C_v1.bat` with the v1.3 production runner, runs `git diff --check`, and starts the complete proof matrix.
+The resume helper verifies the applied Phase 3b shape, installs or overwrites only the repository's `build_1C_v1.bat` with the v1.4 production runner, runs `git diff --check`, and starts the complete proof matrix.
 
 Before committing, delete any temporary loose fix downloads accidentally placed in the repository root, including:
 
