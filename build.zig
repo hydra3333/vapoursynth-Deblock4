@@ -1,37 +1,18 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    // Stage 1B.2 fixes baseline units to the complete x86_64_v1 psABI level.
-    // No command-line CPU or target option can replace this target.
+    // Stage 1C fixes every production and inspection unit to the complete
+    // x86_64_v1 psABI baseline. No command-line target or CPU override exists.
     const baseline_target = b.resolveTargetQuery(.{
         .cpu_arch = .x86_64,
         .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
         .os_tag = .windows,
         .abi = .msvc,
     });
-
-    // The separately compiled backend objects use the complete named psABI
-    // levels. x86_64_v3 includes FMA; strict float semantics prevent implicit
-    // result-changing contraction rather than removing FMA from the target.
-    const sse41_probe_target = b.resolveTargetQuery(.{
-        .cpu_arch = .x86_64,
-        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v2 },
-        .os_tag = .windows,
-        .abi = .msvc,
-    });
-
-    const avx2_probe_target = b.resolveTargetQuery(.{
-        .cpu_arch = .x86_64,
-        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v3 },
-        .os_tag = .windows,
-        .abi = .msvc,
-    });
-
-    // Allow explicit Debug, ReleaseSafe, ReleaseFast, or ReleaseSmall builds.
     const optimize = b.standardOptimizeOption(.{});
 
-    // G10 debug-only modules are explicit opt-ins and are structurally barred
-    // from every non-Debug optimisation mode.
+    // G10 debug-only modules are source-visible opt-ins and are structurally
+    // barred from every non-Debug optimisation mode.
     const enable_force_down = b.option(
         bool,
         "enable_force_down",
@@ -42,12 +23,18 @@ pub fn build(b: *std.Build) void {
         "enable_verbose_detection",
         "Include Debug-only verbose capability diagnostics",
     ) orelse false;
+    const enable_trace_lifecycle = b.option(
+        bool,
+        "enable_trace_lifecycle",
+        "Include the Debug-only plugin lifecycle trace",
+    ) orelse false;
 
-    if ((enable_force_down or enable_verbose_detection) and
-        optimize != .Debug)
+    if ((enable_force_down or
+        enable_verbose_detection or
+        enable_trace_lifecycle) and optimize != .Debug)
     {
         @panic(
-            "Deblock4 debug-only capability options require -Doptimize=Debug",
+            "Deblock4 debug-only options require -Doptimize=Debug",
         );
     }
 
@@ -58,20 +45,21 @@ pub fn build(b: *std.Build) void {
         "enable_verbose_detection",
         enable_verbose_detection,
     );
-    // ---------------------------------------------------------------------
-    // VapourSynth API4 C-header translation.
-    // ---------------------------------------------------------------------
+    runtime_options.addOption(
+        bool,
+        "enable_trace_lifecycle",
+        enable_trace_lifecycle,
+    );
 
+    // VapourSynth API4 is translated once and shared by every VS-facing root.
     const vapoursynth_api4_translate = b.addTranslateC(.{
         .root_source_file = b.path("src/vapoursynth_api4.h"),
         .target = baseline_target,
         .optimize = optimize,
     });
-
     vapoursynth_api4_translate.addIncludePath(
         b.path("third_party/vapoursynth/include"),
     );
-
     const vapoursynth_api4_module =
         vapoursynth_api4_translate.createModule();
 
@@ -81,179 +69,43 @@ pub fn build(b: *std.Build) void {
     );
     vs_translate_step.dependOn(&vapoursynth_api4_translate.step);
 
-    // ---------------------------------------------------------------------
-    // Standalone Zig build probe.
-    // ---------------------------------------------------------------------
-
-    const build_probe = b.addExecutable(.{
-        .name = "deblock4_build_probe",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/build_probe.zig"),
-            .target = baseline_target,
-            .optimize = optimize,
-        }),
-    });
-
-    b.installArtifact(build_probe);
-
-    const check_step = b.step(
-        "check",
-        "Compile the standalone Deblock4 build probe",
-    );
-    check_step.dependOn(&build_probe.step);
-
-    const run_build_probe = b.addRunArtifact(build_probe);
-    run_build_probe.step.dependOn(b.getInstallStep());
-
-    if (b.args) |args| {
-        run_build_probe.addArgs(args);
-    }
-
-    const run_step = b.step(
-        "run",
-        "Build and run the standalone Deblock4 build probe",
-    );
-    run_step.dependOn(&run_build_probe.step);
-
-    // ---------------------------------------------------------------------
-    // Separately targeted backend probe objects.
-    // ---------------------------------------------------------------------
-
-    const backend_probe_generic_module = b.createModule(.{
-        .root_source_file = b.path("src/backend_probe_generic.zig"),
+    // Real Stage 1C plugin DLL. The root is registration-only; all runtime
+    // behaviour remains in the settled purpose-grouped modules.
+    const dll_module = b.createModule(.{
+        .root_source_file = b.path("src/deblock4_plugin.zig"),
         .target = baseline_target,
         .optimize = optimize,
+        .link_libc = true,
     });
-
-    const backend_probe_generic = b.addObject(.{
-        .name = "deblock4_backend_probe_generic",
-        .root_module = backend_probe_generic_module,
+    dll_module.addOptions("deblock4_build_options", runtime_options);
+    dll_module.addImport("vapoursynth_api4", vapoursynth_api4_module);
+    dll_module.addIncludePath(b.path("third_party/vapoursynth/include"));
+    dll_module.addIncludePath(b.path("src"));
+    dll_module.addCSourceFile(.{
+        .file = b.path("src/vapoursynth_helper_bridge.c"),
+        .flags = &.{"-std=c11"},
     });
-
-    const backend_probe_scalar_module = b.createModule(.{
-        .root_source_file = b.path("src/backend_probe_scalar.zig"),
-        .target = baseline_target,
-        .optimize = optimize,
-    });
-
-    const backend_probe_scalar = b.addObject(.{
-        .name = "deblock4_backend_probe_scalar",
-        .root_module = backend_probe_scalar_module,
-    });
-
-    const backend_probe_sse41_module = b.createModule(.{
-        .root_source_file = b.path("src/backend_probe_sse41.zig"),
-        .target = sse41_probe_target,
-        .optimize = optimize,
-    });
-
-    const backend_probe_sse41 = b.addObject(.{
-        .name = "deblock4_backend_probe_sse41",
-        .root_module = backend_probe_sse41_module,
-    });
-
-    const backend_probe_avx2_module = b.createModule(.{
-        .root_source_file = b.path("src/backend_probe_avx2.zig"),
-        .target = avx2_probe_target,
-        .optimize = optimize,
-    });
-
-    const backend_probe_avx2 = b.addObject(.{
-        .name = "deblock4_backend_probe_avx2",
-        .root_module = backend_probe_avx2_module,
-    });
-
-    // Stable object copies are required for ReleaseFast dumpbin /SYMBOLS
-    // inspection. Do not inspect Zig cache paths.
-    const install_backend_probe_generic = b.addInstallFile(
-        backend_probe_generic.getEmittedBin(),
-        "backend-objects/deblock4_backend_probe_generic.obj",
-    );
-    const install_backend_probe_scalar = b.addInstallFile(
-        backend_probe_scalar.getEmittedBin(),
-        "backend-objects/deblock4_backend_probe_scalar.obj",
-    );
-    const install_backend_probe_sse41 = b.addInstallFile(
-        backend_probe_sse41.getEmittedBin(),
-        "backend-objects/deblock4_backend_probe_sse41.obj",
-    );
-    const install_backend_probe_avx2 = b.addInstallFile(
-        backend_probe_avx2.getEmittedBin(),
-        "backend-objects/deblock4_backend_probe_avx2.obj",
-    );
-
-    b.getInstallStep().dependOn(&install_backend_probe_generic.step);
-    b.getInstallStep().dependOn(&install_backend_probe_scalar.step);
-    b.getInstallStep().dependOn(&install_backend_probe_sse41.step);
-    b.getInstallStep().dependOn(&install_backend_probe_avx2.step);
-
-    // ---------------------------------------------------------------------
-    // Deblock4 dynamic-library probe.
-    // ---------------------------------------------------------------------
-
-    const dll_probe_module = b.createModule(.{
-        .root_source_file = b.path("src/dll_probe.zig"),
-        .target = baseline_target,
-        .optimize = optimize,
-    });
-    dll_probe_module.addOptions(
-        "deblock4_build_options",
-        runtime_options,
-    );
-
-    // The retained baseline root imports only baseline modules. Generic and
-    // scalar exports are therefore part of the DLL compilation graph. Gated
-    // modules stay outside that graph and are referenced across the linker
-    // seam by @extern declarations in backend_retention_anchor.zig.
-    const dll_root_module = b.createModule(.{
-        .root_source_file = b.path("src/backend_retention_anchor.zig"),
-        .target = baseline_target,
-        .optimize = optimize,
-    });
-    dll_root_module.addImport("dll_probe", dll_probe_module);
-    dll_root_module.addImport(
-        "backend_probe_generic",
-        backend_probe_generic_module,
-    );
-    dll_root_module.addImport(
-        "backend_probe_scalar",
-        backend_probe_scalar_module,
-    );
 
     const dll = b.addLibrary(.{
         .name = "Deblock4",
         .linkage = .dynamic,
-        .root_module = dll_root_module,
+        .root_module = dll_module,
     });
-
-    // Generic and scalar are compiled through the DLL root graph and must not
-    // also be linked as separate objects. Their standalone object artifacts
-    // remain inspection outputs only. Gated objects cross the target boundary
-    // only at the linker seam.
-    dll.root_module.addObject(backend_probe_sse41);
-    dll.root_module.addObject(backend_probe_avx2);
-
     b.installArtifact(dll);
 
     const dll_check_step = b.step(
         "dll-check",
-        "Compile the Deblock4 dynamic-library probe",
+        "Compile the real Stage 1C Deblock4 plugin DLL",
     );
     dll_check_step.dependOn(&dll.step);
 
-    // ---------------------------------------------------------------------
-    // First-class runtime-capability self-test and inspection object.
-    // ---------------------------------------------------------------------
-
+    // First-class runtime-capability and Stage 1C pure-contract self-test.
     const selftest_module = b.createModule(.{
         .root_source_file = b.path("src/deblock4_selftest.zig"),
         .target = baseline_target,
         .optimize = optimize,
     });
-    selftest_module.addOptions(
-        "deblock4_build_options",
-        runtime_options,
-    );
+    selftest_module.addOptions("deblock4_build_options", runtime_options);
 
     const selftest = b.addExecutable(.{
         .name = "deblock4_selftest",
@@ -263,17 +115,19 @@ pub fn build(b: *std.Build) void {
 
     const selftest_step = b.step(
         "selftest",
-        "Compile the first-class Deblock4 capability self-test",
+        "Compile the first-class Deblock4 self-test",
     );
     selftest_step.dependOn(&selftest.step);
 
     const run_selftest = b.addRunArtifact(selftest);
     const selftest_run_step = b.step(
         "selftest-run",
-        "Build and run the Deblock4 capability self-test",
+        "Build and run the first-class Deblock4 self-test",
     );
     selftest_run_step.dependOn(&run_selftest.step);
 
+    // Retained baseline-v1 detection inspection object. This is independent
+    // of the retired backend probes and remains the G3/7.4 safety regression.
     const detection_object_module = b.createModule(.{
         .root_source_file = b.path("src/cpu_capability_detection.zig"),
         .target = baseline_target,
@@ -283,7 +137,6 @@ pub fn build(b: *std.Build) void {
         "deblock4_build_options",
         runtime_options,
     );
-
     const detection_object = b.addObject(.{
         .name = "cpu_capability_detection",
         .root_module = detection_object_module,
@@ -294,177 +147,234 @@ pub fn build(b: *std.Build) void {
     );
     const detection_object_step = b.step(
         "detection-object",
-        "Build the baseline-v1 CPU capability detection inspection object",
+        "Build the baseline-v1 CPU detection inspection object",
     );
     detection_object_step.dependOn(&install_detection_object.step);
 
-    const dll_smoke_test = b.addExecutable(.{
-        .name = "deblock4_dll_smoke_test",
+    // Stable baseline-v1 frame-path objects support the structural/symbolic
+    // proof that no callback or activation module performs tier selection.
+    const classic_router_object_module = b.createModule(.{
+        .root_source_file = b.path("src/classic_callback_router.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    classic_router_object_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
+    classic_router_object_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
+    );
+    const classic_router_object = b.addObject(.{
+        .name = "classic_callback_router",
+        .root_module = classic_router_object_module,
+    });
+
+    const deblock4_router_object_module = b.createModule(.{
+        .root_source_file = b.path("src/deblock4_callback_router.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    deblock4_router_object_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
+    deblock4_router_object_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
+    );
+    const deblock4_router_object = b.addObject(.{
+        .name = "deblock4_callback_router",
+        .root_module = deblock4_router_object_module,
+    });
+
+    const classic_initial_object_module = b.createModule(.{
+        .root_source_file = b.path("src/classic_ar_initial.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    classic_initial_object_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
+    );
+    const classic_initial_object = b.addObject(.{
+        .name = "classic_ar_initial",
+        .root_module = classic_initial_object_module,
+    });
+
+    const deblock4_initial_object_module = b.createModule(.{
+        .root_source_file = b.path("src/deblock4_ar_initial.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    deblock4_initial_object_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
+    );
+    const deblock4_initial_object = b.addObject(.{
+        .name = "deblock4_ar_initial",
+        .root_module = deblock4_initial_object_module,
+    });
+
+    const classic_ready_object_module = b.createModule(.{
+        .root_source_file = b.path("src/classic_ar_all_frames_ready.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    classic_ready_object_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
+    );
+    const classic_ready_object = b.addObject(.{
+        .name = "classic_ar_all_frames_ready",
+        .root_module = classic_ready_object_module,
+    });
+
+    const deblock4_ready_object_module = b.createModule(.{
+        .root_source_file = b.path("src/deblock4_ar_all_frames_ready.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    deblock4_ready_object_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
+    );
+    const deblock4_ready_object = b.addObject(.{
+        .name = "deblock4_ar_all_frames_ready",
+        .root_module = deblock4_ready_object_module,
+    });
+
+    const frame_path_object_step = b.step(
+        "frame-path-objects",
+        "Build stable Stage 1C callback and activation inspection objects",
+    );
+    const frame_path_objects = .{
+        .{ classic_router_object, "classic_callback_router.obj" },
+        .{ deblock4_router_object, "deblock4_callback_router.obj" },
+        .{ classic_initial_object, "classic_ar_initial.obj" },
+        .{ deblock4_initial_object, "deblock4_ar_initial.obj" },
+        .{ classic_ready_object, "classic_ar_all_frames_ready.obj" },
+        .{ deblock4_ready_object, "deblock4_ar_all_frames_ready.obj" },
+    };
+    inline for (frame_path_objects) |entry| {
+        const install_object = b.addInstallFile(
+            entry[0].getEmittedBin(),
+            b.fmt("frame-path-objects/{s}", .{entry[1]}),
+        );
+        frame_path_object_step.dependOn(&install_object.step);
+    }
+
+    // Pure-module tests remain independent of VapourSynth.
+    const version_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/dll_smoke_test.zig"),
+            .root_source_file = b.path("src/deblock4_version.zig"),
             .target = baseline_target,
             .optimize = optimize,
         }),
     });
+    const run_version_tests = b.addRunArtifact(version_tests);
 
-    dll_smoke_test.root_module.linkLibrary(dll);
-    b.installArtifact(dll_smoke_test);
-
-    const dll_smoke_check_step = b.step(
-        "dll-smoke-check",
-        "Compile the executable that calls the Deblock4 DLL",
-    );
-    dll_smoke_check_step.dependOn(&dll_smoke_test.step);
-
-    // ---------------------------------------------------------------------
-    // Backend-isolation smoke test: generic and scalar only.
-    // ---------------------------------------------------------------------
-
-    const backend_isolation_smoke_test = b.addExecutable(.{
-        .name = "deblock4_backend_isolation_smoke_test",
+    const common_instance_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/backend_isolation_smoke_test.zig"),
+            .root_source_file = b.path(
+                "src/common_instance_data_structure.zig",
+            ),
             .target = baseline_target,
             .optimize = optimize,
         }),
     });
+    const run_common_instance_tests = b.addRunArtifact(common_instance_tests);
 
-    backend_isolation_smoke_test.root_module.linkLibrary(dll);
-    b.installArtifact(backend_isolation_smoke_test);
-
-    const backend_isolation_check_step = b.step(
-        "backend-isolation-check",
-        "Compile the four-object DLL and safe backend smoke test",
-    );
-    backend_isolation_check_step.dependOn(&backend_isolation_smoke_test.step);
-
-    const run_backend_isolation_smoke_test =
-        b.addRunArtifact(backend_isolation_smoke_test);
-    run_backend_isolation_smoke_test.step.dependOn(b.getInstallStep());
-
-    const backend_isolation_run_step = b.step(
-        "backend-isolation-run",
-        "Run the generic/scalar backend-isolation smoke test",
-    );
-    backend_isolation_run_step.dependOn(
-        &run_backend_isolation_smoke_test.step,
-    );
-
-    // ---------------------------------------------------------------------
-    // VapourSynth translated-header probe.
-    // ---------------------------------------------------------------------
-
-    const vs_header_probe = b.addExecutable(.{
-        .name = "deblock4_vs_header_probe",
+    const parameter_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/vapoursynth_header_probe.zig"),
+            .root_source_file = b.path("src/filter_call_parameters.zig"),
             .target = baseline_target,
             .optimize = optimize,
-            .link_libc = true,
-            .imports = &.{
-                .{
-                    .name = "vapoursynth_api4",
-                    .module = vapoursynth_api4_module,
-                },
-            },
         }),
     });
+    const run_parameter_tests = b.addRunArtifact(parameter_tests);
 
-    // VSHelper4.h is header-only C helper code. Compile it through a stable
-    // bridge rather than translating its Windows CRT dependencies into Zig.
-    vs_header_probe.root_module.addIncludePath(
+    const tier_selection_test_module = b.createModule(.{
+        .root_source_file = b.path("src/backend_tier_selection.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+    });
+    tier_selection_test_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
+    const tier_selection_tests = b.addTest(.{
+        .root_module = tier_selection_test_module,
+    });
+    const run_tier_selection_tests = b.addRunArtifact(tier_selection_tests);
+
+    // Clip-dependent validation tests live in the two creation modules and
+    // compile against the real translated API and bridge.
+    const classic_creation_test_module = b.createModule(.{
+        .root_source_file = b.path("src/classic_instance_creation.zig"),
+        .target = baseline_target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    classic_creation_test_module.addOptions(
+        "deblock4_build_options",
+        runtime_options,
+    );
+    classic_creation_test_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
+    );
+    classic_creation_test_module.addIncludePath(
         b.path("third_party/vapoursynth/include"),
     );
-
-    vs_header_probe.root_module.addCSourceFile(.{
+    classic_creation_test_module.addIncludePath(b.path("src"));
+    classic_creation_test_module.addCSourceFile(.{
         .file = b.path("src/vapoursynth_helper_bridge.c"),
         .flags = &.{"-std=c11"},
     });
-
-    b.installArtifact(vs_header_probe);
-
-    const vs_header_check_step = b.step(
-        "vs-header-check",
-        "Compile the VapourSynth API4 translated-header probe",
-    );
-    vs_header_check_step.dependOn(&vs_header_probe.step);
-
-    const run_vs_header_probe = b.addRunArtifact(vs_header_probe);
-    run_vs_header_probe.step.dependOn(b.getInstallStep());
-
-    const vs_header_run_step = b.step(
-        "vs-header-run",
-        "Build and run the VapourSynth API4 header probe",
-    );
-    vs_header_run_step.dependOn(&run_vs_header_probe.step);
-
-    // ---------------------------------------------------------------------
-    // Zig unit tests.
-    // ---------------------------------------------------------------------
-
-    const build_probe_tests = b.addTest(.{
-        .root_module = build_probe.root_module,
+    const classic_creation_tests = b.addTest(.{
+        .root_module = classic_creation_test_module,
     });
+    const run_classic_creation_tests =
+        b.addRunArtifact(classic_creation_tests);
 
-    const run_build_probe_tests = b.addRunArtifact(build_probe_tests);
-
-    const dll_probe_test_module = b.createModule(.{
-        .root_source_file = b.path("src/dll_probe.zig"),
+    const deblock4_creation_test_module = b.createModule(.{
+        .root_source_file = b.path("src/deblock4_instance_creation.zig"),
         .target = baseline_target,
         .optimize = optimize,
+        .link_libc = true,
     });
-    dll_probe_test_module.addOptions(
+    deblock4_creation_test_module.addOptions(
         "deblock4_build_options",
         runtime_options,
     );
-    const dll_probe_tests = b.addTest(.{
-        .root_module = dll_probe_test_module,
-    });
-
-    const run_dll_probe_tests = b.addRunArtifact(dll_probe_tests);
-
-    const capability_test_module = b.createModule(.{
-        .root_source_file = b.path("src/cpu_capability_detection.zig"),
-        .target = baseline_target,
-        .optimize = optimize,
-    });
-    capability_test_module.addOptions(
-        "deblock4_build_options",
-        runtime_options,
+    deblock4_creation_test_module.addImport(
+        "vapoursynth_api4",
+        vapoursynth_api4_module,
     );
-    const capability_tests = b.addTest(.{
-        .root_module = capability_test_module,
+    deblock4_creation_test_module.addIncludePath(
+        b.path("third_party/vapoursynth/include"),
+    );
+    deblock4_creation_test_module.addIncludePath(b.path("src"));
+    deblock4_creation_test_module.addCSourceFile(.{
+        .file = b.path("src/vapoursynth_helper_bridge.c"),
+        .flags = &.{"-std=c11"},
     });
-    const run_capability_tests = b.addRunArtifact(capability_tests);
-
-    const backend_probe_generic_tests = b.addTest(.{
-        .root_module = backend_probe_generic.root_module,
+    const deblock4_creation_tests = b.addTest(.{
+        .root_module = deblock4_creation_test_module,
     });
-
-    const run_backend_probe_generic_tests =
-        b.addRunArtifact(backend_probe_generic_tests);
-
-    const backend_probe_scalar_tests = b.addTest(.{
-        .root_module = backend_probe_scalar.root_module,
-    });
-
-    const run_backend_probe_scalar_tests =
-        b.addRunArtifact(backend_probe_scalar_tests);
-
-    const vs_header_tests = b.addTest(.{
-        .root_module = vs_header_probe.root_module,
-    });
-
-    const run_vs_header_tests = b.addRunArtifact(vs_header_tests);
+    const run_deblock4_creation_tests =
+        b.addRunArtifact(deblock4_creation_tests);
 
     const test_step = b.step(
         "test",
-        "Run all current Deblock4 tests",
+        "Run the complete Stage 1C unit-test suite",
     );
-    test_step.dependOn(&run_build_probe_tests.step);
-    test_step.dependOn(&run_dll_probe_tests.step);
-    test_step.dependOn(&run_capability_tests.step);
-    test_step.dependOn(&run_backend_probe_generic_tests.step);
-    test_step.dependOn(&run_backend_probe_scalar_tests.step);
-    test_step.dependOn(&run_vs_header_tests.step);
+    test_step.dependOn(&run_version_tests.step);
+    test_step.dependOn(&run_common_instance_tests.step);
+    test_step.dependOn(&run_parameter_tests.step);
+    test_step.dependOn(&run_tier_selection_tests.step);
+    test_step.dependOn(&run_classic_creation_tests.step);
+    test_step.dependOn(&run_deblock4_creation_tests.step);
 }

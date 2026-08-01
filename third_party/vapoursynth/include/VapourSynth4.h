@@ -299,7 +299,7 @@ typedef enum VSActivationReason {
 
 typedef enum VSMessageType {
     mtDebug = 0,
-    mtInformation = 1, 
+    mtInformation = 1,
     mtWarning = 2,
     mtCritical = 3,
     mtFatal = 4 /* also terminates the process, should generally not be used by normal filters */
@@ -326,7 +326,7 @@ typedef enum VSRequestPattern {
     rpGeneral = 0, /* General pattern */
     rpNoFrameReuse = 1, /* When requesting all output frames from the filter no frame will be requested more than once from this input clip, never requests frames beyond the end of the clip */
     rpStrictSpatial = 2 /* Always (and only) requests frame n from the input clip when generating output frame n, never requests frames beyond the end of the clip */
-#if VAPOURSYNTH_API_MINOR >= 1   
+#if VAPOURSYNTH_API_MINOR >= 1
     ,
     rpFrameReuseLastOnly = 3 /* Added in API 4.1, This modes is basically identical rpNoFrameReuse except that it hints the last frame may be requested multiple times */
 #endif
@@ -499,7 +499,7 @@ struct VSAPI {
     void (VS_CC *logMessage)(int msgType, const char *msg, VSCore *core) VS_NOEXCEPT;
     VSLogHandle *(VS_CC *addLogHandler)(VSLogHandler handler, VSLogHandlerFree free, void *userData, VSCore *core) VS_NOEXCEPT; /* free and userData can be NULL, returns a handle that can be passed to removeLogHandler, handlers must only pass the message on and return quickly, calling logMessage is allowed but no other api function and a handler must never add or remove log handlers or wait for frame requests to complete */
     int (VS_CC *removeLogHandler)(VSLogHandle *handle, VSCore *core) VS_NOEXCEPT; /* returns non-zero if successfully removed */
-    
+
     /* Added in API 4.1, mostly graph and node inspection, PLEASE DON'T USE INSIDE FILTERS */
 #if VAPOURSYNTH_API_MINOR >= 1
     /* Additional cache management to free memory */
@@ -524,7 +524,7 @@ struct VSAPI {
 
 #if defined(VS_GRAPH_API)
     /* !!! Experimental/expensive graph information, these function require both the major and minor version to match exactly when using them !!!
-     * 
+     *
      * These functions only exist to retrieve internal details for debug purposes and graph visualization
      * They will only only work properly when used on a core created with ccfEnableGraphInspection and are
      * not safe to use concurrently with frame requests or other API functions. Because of this they are
