@@ -1,0 +1,173 @@
+Microsoft Windows [Version 10.0.26200.8973]
+(c) Microsoft Corporation. All rights reserved.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>build_1c1.bat
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM Debug:
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>call :do_prep
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_cache=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\.zig-cache"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_cache!" rmdir /s /q "!zig_cache!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_out=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\zig-out"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_out!" rmdir /s /q "!zig_out!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>goto :eof
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\deblock4_version.zig -target x86_64-windows-msvc -mcpu=x86_64 -O Debug
+All 1 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\common_instance_data_structure.zig -target x86_64-windows-msvc -mcpu=x86_64 -O Debug
+All 2 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\filter_call_parameters.zig -target x86_64-windows-msvc -mcpu=x86_64 -O Debug
+All 9 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\classic_instance_data.zig -target x86_64-windows-msvc -mcpu=x86_64 -O Debug
+All 0 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\deblock4_instance_data.zig -target x86_64-windows-msvc -mcpu=x86_64 -O Debug
+All 0 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>pause
+Press any key to continue . . .
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM ReleaseSafe:
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>call :do_prep
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_cache=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\.zig-cache"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_cache!" rmdir /s /q "!zig_cache!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_out=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\zig-out"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_out!" rmdir /s /q "!zig_out!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>goto :eof
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\deblock4_version.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseSafe
+All 1 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\common_instance_data_structure.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseSafe
+All 2 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\filter_call_parameters.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseSafe
+All 9 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\classic_instance_data.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseSafe
+All 0 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\deblock4_instance_data.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseSafe
+All 0 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>pause
+Press any key to continue . . .
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM ReleaseFast:
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>call :do_prep
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_cache=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\.zig-cache"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_cache!" rmdir /s /q "!zig_cache!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_out=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\zig-out"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_out!" rmdir /s /q "!zig_out!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>goto :eof
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\deblock4_version.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseFast
+All 1 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\common_instance_data_structure.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseFast
+All 2 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\filter_call_parameters.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseFast
+All 9 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\classic_instance_data.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseFast
+All 0 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig test src\deblock4_instance_data.zig -target x86_64-windows-msvc -mcpu=x86_64 -O ReleaseFast
+All 0 tests passed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>pause
+Press any key to continue . . .
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM Existing first-class regression (unchanged build graph):
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>call :do_prep
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_cache=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\.zig-cache"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_cache!" rmdir /s /q "!zig_cache!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>set "zig_out=E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4\zig-out"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>if exist "!zig_out!" rmdir /s /q "!zig_out!"
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>goto :eof
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig build selftest -Doptimize=Debug
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig build selftest -Doptimize=ReleaseSafe
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>zig build selftest -Doptimize=ReleaseFast
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM Expected result:
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - every zig test command exits 0;
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - the version module reports 1 test passed;
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - the common-instance module reports 2 tests passed;
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - filter_call_parameters reports 7 tests passed;
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - the two instance-data roots compile and report no failures;
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - all three existing selftest builds exit 0;
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - no VS core or VS-facing module is required;
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM - no existing file is modified or removed.
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>pause
+Press any key to continue . . .
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM Final repository checks:
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>git diff --check
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>git status --short
+?? build_1c1.bat
+?? dev_documentation/Scopes/Deblock4_Stage_1C_Phase_1_W3D_Acceptance_v1_0.md
+?? src/classic_instance_data.zig
+?? src/common_instance_data_structure.zig
+?? src/deblock4_instance_data.zig
+?? src/deblock4_version.zig
+?? src/filter_call_parameters.zig
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM Expected git status --short additions only:
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM ?? src/classic_instance_data.zig
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM ?? src/common_instance_data_structure.zig
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM ?? src/deblock4_instance_data.zig
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM ?? src/deblock4_version.zig
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>REM ?? src/filter_call_parameters.zig
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>pause
+Press any key to continue . . .
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>goto :eof
+
+E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4>

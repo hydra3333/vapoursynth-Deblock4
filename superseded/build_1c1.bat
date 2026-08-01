@@ -2,6 +2,8 @@
 @setlocal ENABLEEXTENSIONS
 @setlocal ENABLEDELAYEDEXPANSION
 
+cd /d "E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4"
+
 REM Debug:
 
 call :do_prep
