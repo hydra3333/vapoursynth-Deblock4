@@ -1,11 +1,19 @@
-// Stage 1C Phase 2 Deblock4 callback router.
+// Stage 1C Deblock4 callback router.
 //
-// The callback signatures and activation switch are permanent. Phase 3
-// replaces only the minimal branch bodies with the settled per-filter
-// activation handlers; it must not restructure this switch.
+// The activation-reason switch is permanent. Phase 3a fills its branch
+// targets but does not restructure the switch.
 const std = @import("std");
 const vs = @import("vapoursynth_api4");
+const config = @import("deblock4_config.zig");
 const instance_module = @import("deblock4_instance_data.zig");
+const ar_initial = @import("deblock4_ar_initial.zig");
+const ar_all_frames_ready = @import("deblock4_ar_all_frames_ready.zig");
+const common_ar_error = @import("common_ar_error.zig");
+
+const lifecycle_dbg = if (config.debug.enable_trace_lifecycle)
+    @import("lifecycle_trace_debug.zig")
+else
+    struct {};
 
 pub fn getFrame(
     n: c_int,
@@ -17,30 +25,51 @@ pub fn getFrame(
     vsapi: [*c]const vs.VSAPI,
 ) callconv(.c) ?*const vs.VSFrame {
     _ = frame_data;
-    _ = core;
 
     const raw_instance = instance_data orelse return null;
     const instance: *instance_module.Deblock4InstanceData =
         @ptrCast(@alignCast(raw_instance));
-    const raw_source = instance.common.source_node_handle orelse return null;
-    const source: *vs.VSNode = @ptrCast(raw_source);
 
-    return switch (activation_reason) {
-        vs.arInitial => phase2Initial(
+    if (config.debug.enable_trace_lifecycle) {
+        lifecycle_dbg.tools.getFrame(
+            "enter",
+            "Deblock4",
+            instance.common.instance_id,
             n,
-            source,
+            activation_reason,
+            false,
+        );
+    }
+
+    const result = switch (activation_reason) {
+        vs.arInitial => ar_initial.handle(
+            n,
+            instance,
             frame_context,
             vsapi,
         ),
-        vs.arAllFramesReady => phase2AllFramesReady(
+        vs.arAllFramesReady => ar_all_frames_ready.handle(
             n,
-            source,
+            instance,
             frame_context,
+            core,
             vsapi,
         ),
-        vs.arError => phase2Error(),
+        vs.arError => common_ar_error.handle(),
         else => null,
     };
+
+    if (config.debug.enable_trace_lifecycle) {
+        lifecycle_dbg.tools.getFrame(
+            "exit",
+            "Deblock4",
+            instance.common.instance_id,
+            n,
+            activation_reason,
+            result != null,
+        );
+    }
+    return result;
 }
 
 pub fn free(
@@ -53,33 +82,12 @@ pub fn free(
     const raw_instance = instance_data orelse return;
     const instance: *instance_module.Deblock4InstanceData =
         @ptrCast(@alignCast(raw_instance));
+    if (config.debug.enable_trace_lifecycle) {
+        lifecycle_dbg.tools.free("Deblock4", instance.common.instance_id);
+    }
     if (instance.common.source_node_handle) |raw_source| {
         const source: *vs.VSNode = @ptrCast(raw_source);
         vs.zig_vs_free_node(vsapi, source);
     }
     std.heap.c_allocator.destroy(instance);
-}
-
-fn phase2Initial(
-    n: c_int,
-    source: *vs.VSNode,
-    frame_context: ?*vs.VSFrameContext,
-    vsapi: [*c]const vs.VSAPI,
-) ?*const vs.VSFrame {
-    vs.zig_vs_request_frame_filter(vsapi, n, source, frame_context);
-    return null;
-}
-
-fn phase2AllFramesReady(
-    n: c_int,
-    source: *vs.VSNode,
-    frame_context: ?*vs.VSFrameContext,
-    vsapi: [*c]const vs.VSAPI,
-) ?*const vs.VSFrame {
-    // Phase 2 pass-through: return the requested source frame unchanged.
-    return vs.zig_vs_get_frame_filter(vsapi, n, source, frame_context);
-}
-
-fn phase2Error() ?*const vs.VSFrame {
-    return null;
 }

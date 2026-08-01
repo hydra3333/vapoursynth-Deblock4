@@ -78,6 +78,84 @@ const VSFrame *zig_vs_get_frame_filter(const VSAPI *vsapi, int n, VSNode *node, 
     return vsapi->getFrameFilter(n, node, frame_context);
 }
 
+
+VSFrame *zig_vs_copy_frame(const VSAPI *vsapi, const VSFrame *frame, VSCore *core) {
+    return vsapi->copyFrame(frame, core);
+}
+void zig_vs_free_frame(const VSAPI *vsapi, const VSFrame *frame) {
+    vsapi->freeFrame(frame);
+}
+VSMap *zig_vs_get_frame_properties_rw(const VSAPI *vsapi, VSFrame *frame) {
+    return vsapi->getFramePropertiesRW(frame);
+}
+int zig_vs_map_set_data_utf8_replace(
+    const VSAPI *vsapi,
+    VSMap *map,
+    const char *key,
+    const char *value,
+    int size
+) {
+    return vsapi->mapSetData(map, key, value, size, dtUtf8, maReplace);
+}
+int zig_vs_map_set_int_replace(
+    const VSAPI *vsapi,
+    VSMap *map,
+    const char *key,
+    int64_t value
+) {
+    return vsapi->mapSetInt(map, key, value, maReplace);
+}
+int zig_vs_map_set_float_replace(
+    const VSAPI *vsapi,
+    VSMap *map,
+    const char *key,
+    double value
+) {
+    return vsapi->mapSetFloat(map, key, value, maReplace);
+}
+void zig_vs_set_filter_error(
+    const VSAPI *vsapi,
+    const char *message,
+    VSFrameContext *frame_context
+) {
+    vsapi->setFilterError(message, frame_context);
+}
+int zig_vsp_config_plugin(
+    const VSPLUGINAPI *vspapi,
+    const char *identifier,
+    const char *plugin_namespace,
+    const char *name,
+    int plugin_version,
+    VSPlugin *plugin
+) {
+    return vspapi->configPlugin(
+        identifier,
+        plugin_namespace,
+        name,
+        plugin_version,
+        VAPOURSYNTH_API_VERSION,
+        0,
+        plugin
+    );
+}
+int zig_vsp_register_function(
+    const VSPLUGINAPI *vspapi,
+    const char *name,
+    const char *arguments,
+    const char *return_type,
+    VSPublicFunction function,
+    VSPlugin *plugin
+) {
+    return vspapi->registerFunction(
+        name,
+        arguments,
+        return_type,
+        function,
+        0,
+        plugin
+    );
+}
+
 int deblock4_vsh_bridge_self_test(void) {
     VSVideoInfo video_info = { 0 };
     VSVideoFormat format = { 0 };

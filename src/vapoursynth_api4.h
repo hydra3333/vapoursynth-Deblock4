@@ -52,6 +52,52 @@ void zig_vs_free_node(const VSAPI *vsapi, VSNode *node);
 void zig_vs_request_frame_filter(const VSAPI *vsapi, int n, VSNode *node, VSFrameContext *frame_context);
 const VSFrame *zig_vs_get_frame_filter(const VSAPI *vsapi, int n, VSNode *node, VSFrameContext *frame_context);
 
+
+/* Stage 1C Phase 3a frame, property, error, and plugin wrappers. */
+VSFrame *zig_vs_copy_frame(const VSAPI *vsapi, const VSFrame *frame, VSCore *core);
+void zig_vs_free_frame(const VSAPI *vsapi, const VSFrame *frame);
+VSMap *zig_vs_get_frame_properties_rw(const VSAPI *vsapi, VSFrame *frame);
+int zig_vs_map_set_data_utf8_replace(
+    const VSAPI *vsapi,
+    VSMap *map,
+    const char *key,
+    const char *value,
+    int size
+);
+int zig_vs_map_set_int_replace(
+    const VSAPI *vsapi,
+    VSMap *map,
+    const char *key,
+    int64_t value
+);
+int zig_vs_map_set_float_replace(
+    const VSAPI *vsapi,
+    VSMap *map,
+    const char *key,
+    double value
+);
+void zig_vs_set_filter_error(
+    const VSAPI *vsapi,
+    const char *message,
+    VSFrameContext *frame_context
+);
+int zig_vsp_config_plugin(
+    const VSPLUGINAPI *vspapi,
+    const char *identifier,
+    const char *plugin_namespace,
+    const char *name,
+    int plugin_version,
+    VSPlugin *plugin
+);
+int zig_vsp_register_function(
+    const VSPLUGINAPI *vspapi,
+    const char *name,
+    const char *arguments,
+    const char *return_type,
+    VSPublicFunction function,
+    VSPlugin *plugin
+);
+
 /* Deblock4-specific validation of the helper bridge. */
 int deblock4_vsh_bridge_self_test(void);
 

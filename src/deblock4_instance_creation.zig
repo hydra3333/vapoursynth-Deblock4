@@ -4,11 +4,17 @@
 // selection, and immutable instance construction occur exactly once here.
 const std = @import("std");
 const vs = @import("vapoursynth_api4");
+const config = @import("deblock4_config.zig");
 const backend_tier_selection = @import("backend_tier_selection.zig");
 const common_instance = @import("common_instance_data_structure.zig");
 const deblock4_callback_router = @import("deblock4_callback_router.zig");
 const deblock4_instance_data = @import("deblock4_instance_data.zig");
 const filter_call_parameters = @import("filter_call_parameters.zig");
+
+const lifecycle_dbg = if (config.debug.enable_trace_lifecycle)
+    @import("lifecycle_trace_debug.zig")
+else
+    struct {};
 
 const empty_integer_array = [_]i64{};
 
@@ -21,8 +27,23 @@ pub const CreationError = error{
     AllocationFailed,
 };
 
-pub fn create(in: *const vs.VSMap, out: *vs.VSMap, user_data: ?*anyopaque, core: *vs.VSCore, vsapi: *const vs.VSAPI) callconv(.c) void {
+pub fn create(
+    in_optional: ?*const vs.VSMap,
+    out_optional: ?*vs.VSMap,
+    user_data: ?*anyopaque,
+    core_optional: ?*vs.VSCore,
+    vsapi_c: [*c]const vs.VSAPI,
+) callconv(.c) void {
     _ = user_data;
+    if (vsapi_c == null) return;
+    const in = in_optional orelse return;
+    const out = out_optional orelse return;
+    const core = core_optional orelse return;
+    const vsapi: *const vs.VSAPI = @ptrCast(vsapi_c);
+
+    if (config.debug.enable_trace_lifecycle) {
+        lifecycle_dbg.tools.creationEnter("Deblock4");
+    }
     var map_error: c_int = 0;
     const source_optional = vs.zig_vs_map_get_node(vsapi, in, "clip", 0, &map_error);
     if (map_error != vs.peSuccess or source_optional == null) {
@@ -83,6 +104,14 @@ pub fn create(in: *const vs.VSMap, out: *vs.VSMap, user_data: ?*anyopaque, core:
         },
         .parameters = parameters,
     };
+    if (config.debug.enable_trace_lifecycle) {
+        lifecycle_dbg.tools.creationExitDeblock4(
+            instance.common.instance_id,
+            instance.common.video_info,
+            instance.parameters,
+            instance.common.backend_selection,
+        );
+    }
     vs.zig_vs_create_video_filter_single_dependency(
         vsapi, out, "Deblock4", video_info,
         &deblock4_callback_router.getFrame, &deblock4_callback_router.free,

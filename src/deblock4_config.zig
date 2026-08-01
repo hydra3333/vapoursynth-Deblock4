@@ -3,12 +3,18 @@
 // Keep namespaces shallow. This production module contains no functions and
 // no gated bodies; it only names values consumed by first-class modules.
 const deblock4_build_options = @import("deblock4_build_options");
+const deblock4_version = @import("deblock4_version.zig");
 
 pub const debug = struct {
     pub const enable_force_down =
         deblock4_build_options.enable_force_down;
     pub const enable_verbose_detection =
         deblock4_build_options.enable_verbose_detection;
+    pub const enable_trace_lifecycle =
+        if (@hasDecl(deblock4_build_options, "enable_trace_lifecycle"))
+            deblock4_build_options.enable_trace_lifecycle
+        else
+            false;
 };
 
 pub const tier = struct {
@@ -22,6 +28,5 @@ pub const diag = struct {
 };
 
 pub const plugin = struct {
-    // W3X updates this single source when the plugin version advances.
-    pub const version_string = "0.1.0-dev";
+    pub const version_string = deblock4_version.identity_string;
 };
