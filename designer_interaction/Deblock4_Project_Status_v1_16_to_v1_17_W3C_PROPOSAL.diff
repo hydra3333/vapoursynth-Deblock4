@@ -1,0 +1,727 @@
+--- Deblock4_Project_Status_v1_16.md
++++ Deblock4_Project_Status_v1_17.md
+@@ -1,7 +1,7 @@
+ # Deblock4 - Project Status
+ 
+-**Version:** 1.16
+-**Date:** 2026-07-31
++**Version:** 1.17
++**Date:** 2026-08-01
+ **Status:** Current implementation and proof-state record. Informative, not controlling.
+ **Project:** Deblock4
+ **Repository:** https://github.com/hydra3333/vapoursynth-Deblock4
+@@ -13,81 +13,120 @@
+ # 1. Purpose and authority
+ 
+ This document records where Deblock4 implementation currently stands, what has
+-been proved, what remains open, and the next bounded development scope.
++been proved, what remains open, and the next bounded review or development
++step.
+ 
+ It does not define the algorithm, amend an invariant, or replace an active
+ coding scope.
+ 
+-Document authority is:
++Document authority and current orientation are:
+ 
+ ```text
+ README_Deblock4_Design_Spec_v1_9.md
+     controlling technical and algorithmic design specification
+ 
+-AI_Charter_and_Invariants_Card_v1_19.md
+-    controlling invariants, roles, coding standards, and process rules
+-    (v1.11 rewrote G3 for named psABI tiers and added G7/G8/G9; v1.12 reconciled
+-     A1/A2 and Part 3.2 to the integer-exact/float-tolerance and named-tier
+-     models and recorded the two-core-filter architecture. See
+-     Deblock4_Verification_And_Tiering_Decisions for the reasoning.)
++AI_Charter_and_Invariants_Card_v1_26.md
++    controlling invariants, roles, coding standards, delivery rules, version-
++    set discipline (2.3a), and scope-currency decisions (2.3b)
++
++Deblock4_Verification_And_Tiering_Decisions_v1_10.md
++    informative durable record of the verification / tiering / two-filter
++    decisions and their reasoning; charter and README prevail on conflict
+ 
+ Deblock4_Concise_Project_Summary_v1.2.md
+     concise orientation and user-facing companion
+ 
+-Deblock4_Forward_Roadmap_v1_12.md
+-    informative forward stage sequence
+-
+-Deblock4_Verification_And_Tiering_Decisions_v1_10.md
+-    durable record of the verification / tiering / two-filter decisions
++Deblock4_Forward_Roadmap_v1_13.md
++    informative forward stage sequence; its narrow Phase 3a status line predates
++    production of the delivery candidate and is queued for a separate currency
++    check
++
++111_New_Chat_Introduction_for_Coder_v1_19.md
++    current informative W3C successor orientation
++
++111_New_Chat_Introduction_for_Designer_v1_13.md
++    current informative W3D successor orientation
++
++Scopes/Deblock4_Scope_Stage_1C_Filter_Creation_v1_5.md
++    ratified and binding Stage 1C design authority
++
++Scopes/Deblock4_Stage_1C_Delivery_Plan_Addendum_v1_1.md
++    binding Stage 1C delivery order and phase-boundary clarification
++
++Deblock4_Stage_1C_Phase_3a_Designer_Briefing_v1_2.md
++    informative Phase 3a review guidance; one member of the mixed-authority
++    Phase 3a review set
++
++Deblock4_Scope_Header_CDELIV09_Reminder_Block_v1_1.md
++    current verbatim C-DELIV-09 reminder block for scopes and delivery-plan
++    addenda issued henceforth
+ 
+ Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md
+     informative research record behind the G6 retention/export decision
+ 
+ Deblock4_Toolchain_Findings_v1_1.md
+-    informative durable record of empirical Zig/linker facts (F1-F5):
+-    emission is per compilation unit; cross-compilation references do not
+-    force emission; object-mode export fn does not PE-export; the proven
+-    multi-feature-level dispatch idiom
++    informative durable record of empirical Zig/linker facts (F1-F5)
+ 
+ Deblock4_MPEG2_Grid_Field_DCT_Knowledge_v1_0.md
+     informative consolidated MPEG-2 grid / frame-vs-field-DCT knowledge
+ 
+-Deblock4_Project_Status_v1_14.md
+-    current implementation/proof state and next-step record
+-```
+-
+-Where this status document conflicts with the README specification or charter,
+-the README specification and charter prevail.
+-
+-Before a W3C session begins, W3X verifies that each controlling document's
+-filename version agrees with the version recorded inside the document.
+-
+----
++Deblock4_Project_Status_v1_17.md
++    this informative implementation/proof-state and next-action record
++```
++
++The Phase 3a review set is a declared read-together set under charter 2.3a but
++has MIXED AUTHORITY: scope v1_5 is the binding design authority, addendum v1_1
++governs delivery order and boundaries, and briefing v1_2 is informative review
++guidance. Read-together status does not equalise authority.
++
++Charter 2.3b compatibility decision:
++
++```text
++scope v1_5 + addendum v1_1 / charter v1.26: compatible, grandfathered to next issuance, W3X 2026-08-01.
++```
++
++Scope v1_5 and addendum v1_1 therefore stand unchanged for the remainder of
++Stage 1C unless a real material reason requires reissue. Their historical
++charter pins and absence of the later C-DELIV-09 reminder block are not a STOP
++condition. The prevailing charter governs; the reminder-block requirement
++applies at their next natural issuance.
++
++Where this status document conflicts with the README specification, charter,
++or binding scope/addendum, those documents prevail.
++
++Before a W3C or W3D session relies on a package, W3X verifies document currency
++and any declared version set under charter 2.3a, and applies recorded scope-
++currency decisions under charter 2.3b.
+ 
+ # 2. Evidence basis
+ 
+-The status below records the builds, tests, and repository actions reported by
+-W3X from the initial Zig 0.16.0 scaffold work through the completed Stage 1B.3
+-runtime-capability-guard proof and commit.
+-
+-It does not claim that W3D independently executed the repository. Under the
+-charter, W3X remains the authority for builds, runs, measurements, commits, and
+-pushes.
+-
+-The current committed baseline is the accepted Stage 1B.3 infrastructure (the
+-scaffold plus backend objects, within-level confirmation, and the proven
+-capability guard). The exact starting commit for the next bounded scope must be
+-recorded in that scope's session bootstrap header.
+-
+----
++The status below records builds, tests, repository actions, document decisions,
++and delivery state reported by W3X from the initial Zig 0.16.0 scaffold through
++the accepted Stage 1C Phase 2 commit and production of the Phase 3a delivery
++candidate.
++
++It does not claim that W3D or W3C independently executed the repository. Under
++the charter, W3X remains the authority for builds, runs, measurements, commits,
++pushes, and acceptance.
++
++The current accepted and committed implementation baseline is Stage 1C Phase 2:
++the proven Stage 1B.3 capability infrastructure plus the accepted Phase 1 pure
++foundation and Phase 2 tier-selection, instance-creation, and permanent-router
++modules. Phase 3a delivery v1.0 exists as a candidate against that baseline but
++is not yet accepted or committed.
++
++For any Phase 3a review, correction, or re-integration, W3X supplies the
++prevailing branch-main source or an exact attached source tree together with
++the delivery artifacts and review findings. Do not infer or require an old HEAD
++SHA merely because earlier status text did so.
+ 
+ # 3. Current position
+ 
+-Deblock4 has completed Stages 1A, 1A.1, 1B.1, 1B.2 and 1B.3, and is now well
+-into Stage 1C (filter creation): Phases 1 and 2 are delivered, accepted, and
+-committed; Phase 3a (frame path + real plugin registration) is about to be
+-received for review. Stage 1 as a whole is not yet complete (Stage 1C Phase 3
+-and the per-filter algorithm stages remain).
++Deblock4 has completed Stages 1A, 1A.1, 1B.1, 1B.2 and 1B.3 and is well into
++Stage 1C (filter creation). Phases 1 and 2 are accepted and committed. W3C has
++produced Phase 3a delivery v1.0 (frame path plus real plugin registration); it
++awaits W3D static review, W3X toolchain validation, and W3X acceptance. Phase
++3b has not been released. Stage 1 as a whole is not complete.
+ 
+ Milestone:
+ 
+@@ -105,32 +144,33 @@
+                       G10 debug seams, first-class selftest; fully proved and
+                       committed.
+ Stage 1C ACTIVE     - filter creation, phased delivery (scope v1_5, addendum
+-                      v1_1). Phase 1 (pure foundation) and Phase 2 (tier
+-                      selection + instance creation + permanent-skeleton
+-                      callback routers, pass-through) delivered, accepted, and
+-                      committed, green all three modes. Phase 3a (frame path +
+-                      real plugin registration) about to be received for W3D
+-                      review; Phase 3b (scaffolding sweep, build_1C batch, .vpy
+-                      harnesses, full proof matrix) follows.
+-```
+-
+-The project is not yet a functional VapourSynth deblocking filter (no pixel
+-processing exists; that is the per-filter 2C/2D+ work). As of the frozen
+-handoff point, the committed tree includes the Stage 1B.3 detector, the
+-first-class deblock4_selftest, and the accepted Stage 1C Phase 1+2 modules
+-(version identity, instance records, pure parameter validation, tier
+-selection, per-filter instance creation, and permanent-skeleton callback
+-routers that pass frames through unmodified). Real plugin registration and the
+-frame path arrive with Phase 3a (about to be reviewed); no deblocking
+-arithmetic exists yet.
++                      v1_1; both grandfathered under charter 2.3b). Phase 1
++                      (pure foundation) and Phase 2 (tier selection + instance
++                      creation + permanent-skeleton callback routers) are
++                      accepted and committed, green all three modes. Phase 3a
++                      delivery v1.0 exists and awaits W3D static review, W3X
++                      toolchain validation, and W3X acceptance. Phase 3b
++                      (scaffolding sweep, build_1C batch, .vpy harnesses, full
++                      proof matrix) is not released.
++```
++
++The accepted committed tree is not yet a functional VapourSynth deblocking
++filter: no deblocking arithmetic exists. The unaccepted Phase 3a candidate adds
++the real plugin entry/registration path, the API4 frame path, writable
++copyFrame pass-through, frame properties, tier-switch bodies that all target
++the same inert pass-through placeholder, common error handling, and the third
++G10 lifecycle-trace seam. It does not add real Classic or Deblock4 algorithm
++backends and does not execute gated v2/v3 arithmetic.
+ 
+ Stage 1B.1 complete - isolated backend objects and one-DLL linkage proved.
+ Four separately compiled probe objects (generic, scalar, SSE4.1, AVX2) link
+ into the one Deblock4.dll; the gated SSE4.1/AVX2 markers are emitted with
+ non-zero .text and externally linkable, retained by internal @extern address
+-anchors, never called, and absent from the PE export table. Debug, ReleaseSafe
+-and ReleaseFast all pass, all existing scaffold regressions pass, and both
+--Dcpu=native and -Dtarget=native are rejected. Scope of record: v1.7.
++anchors, never called, and absent from the PE export table. Their export-table
++absence is enforced by the standing loud-failing dumpbin /EXPORTS gate, not
++assumed from implicit toolchain behaviour. Debug, ReleaseSafe and ReleaseFast
++all pass, all existing scaffold regressions pass, and both -Dcpu=native and
++-Dtarget=native are rejected. Scope of record: v1.7.
+ 
+ Three retention mechanisms were empirically FALSIFIED before the working one
+ was found, and the evidence is preserved (see Deblock4_Toolchain_Findings):
+@@ -143,9 +183,7 @@
+ emission in a separately compiled object.
+ The working mechanism is object-mode export fn (emission + linkage, and NOT a
+ PE export) referenced from the DLL root by @extern, address-taken and never
+-called. Charter v1.10 revised the G6 corollary accordingly.
+-
+----
++called before guarded dispatch. Charter G6 carries the controlling rule.
+ 
+ # 4. Completed and proved
+ 
+@@ -169,10 +207,15 @@
+ | Vendored headers | Updated to VapourSynth R78; API 4.2 pin survives; bridge decision confirmed still needed |
+ | Stage 1A.1 name reconciliation | Accepted: zig_vsh_isConstantVideoFormat, zig_vsh_areValidDimensions, deblock4_vsh_bridge_self_test; C-INT-04 comments added |
+ | R78 build baseline | Debug/ReleaseSafe/ReleaseFast + build probe + header probe (API 4.2) + DLL smoke (0x44423401) + tests, accepted |
++| Stage 1B.1 backend isolation/linkage | Accepted and committed; one DLL, separately targeted objects, gated markers absent from PE exports |
++| Stage 1B.2 within-level confirmation | Accepted and committed; generated instructions confirmed within named v1/v2/v3 levels |
++| Stage 1B.3 capability guard | Accepted and committed; ACTUAL/EFFECTIVE records, CPUID/XGETBV, drift check, G10 seams, selftest |
++| Stage 1C Phase 1 | Accepted and committed; pure foundation green in Debug/ReleaseSafe/ReleaseFast |
++| Stage 1C Phase 2 | Accepted and committed; tier selection, instance creation, permanent routers green in all three modes |
+ | Zig-facing helper naming | Settled as `zig_vsh_originalName` for direct compatibility wrappers |
+-| Zig/C ownership and lifetime policy | Recorded in charter (current v1.19) |
+-| Numeric and SIMD helper policy | Recorded in charter (current v1.19) |
+-| External-source provenance policy | Recorded in charter (current v1.19) |
++| Zig/C ownership and lifetime policy | Recorded in prevailing charter v1.26 |
++| Numeric and SIMD helper policy | Recorded in prevailing charter v1.26 |
++| External-source provenance policy | Recorded in prevailing charter v1.26 |
+ 
+ Important translation result:
+ 
+@@ -190,53 +233,60 @@
+ 
+ ---
+ 
+-# 5. Not implemented or not yet proved
+-
+-The project does not yet have (grouped by filter where relevant):
++# 5. Not implemented, not accepted, or not yet proved
++
++The distinction between the accepted committed baseline and the Phase 3a
++delivery candidate is load-bearing.
++
++Present in Phase 3a delivery v1.0 but NOT YET W3D-reviewed, W3X-validated,
++accepted, or committed:
++
++- real VapourSynth plugin entry and registration for both filters;
++- `arInitial` / `arAllFramesReady` frame mechanics and common error handling;
++- standard API4 copyFrame writable pass-through with plane data unchanged;
++- Deblock4Filter, Deblock4Tier, Deblock4Version, and related frame properties;
++- per-filter tier-switch bodies in the settled C5 order, with every tier branch
++  calling the shared inert pass-through placeholder;
++- debug-only `enable_trace_lifecycle`, the third G10 seam.
++
++Still not delivered because Phase 3b is not released:
++
++- C-STY-10 scaffolding sweep;
++- `build_1C_v1.bat`;
++- the two `tests/stage_1c_*_passthrough.vpy` harnesses;
++- the full Stage 1C proof matrix, including release-absence and end-to-end gates.
++
++Still not implemented in any accepted or candidate algorithm path:
+ 
+ Shared / infrastructure:
+-- a real VapourSynth plugin entry and registration path (filter-creation stage);
+-- dispatch WIRING that consumes the EFFECTIVE record to call a backend (the
+-  capability detection and the ACTUAL/EFFECTIVE records themselves are DONE in
+-  Stage 1B.3; only the consumption/wiring remains);
+-- frozen vector widths or lane organisations;
+-- frame-property writes (Deblock4Filter/Deblock4Tier/etc.).
+-
+-(Whole-level CPU/OS capability detection, per-filter-instance backend
+-resolution, and within-level assembly confirmation are COMPLETE - Stages 1B.2
+-and 1B.3 - and are recorded in sections 6/7, not here.)
+-
+-deblock4.Classic (H.264, to be built FIRST):
+-- Classic filter registration and creation function;
+-- the Classic scalar oracle (faithful HolyWu, incl. luma-on-chroma);
++- callable real Classic/Deblock4 backend tables and execution of algorithmic
++  backend arithmetic;
++- frozen production vector widths or lane organisations;
++- the independent full differential-correctness and safety harness.
++
++deblock4.Classic (H.264, built FIRST):
++- the Classic scalar oracle (faithful HolyWu, including luma-on-chroma);
+ - the Classic v2 and v3 backends and their differential proof;
+ - the HolyWu external-reference cross-check harness.
+ 
+-deblock4.Deblock4 (MPEG-2, to be built SECOND):
+-- Deblock4 filter registration and creation function;
++deblock4.Deblock4 (MPEG-2, built SECOND):
+ - the canonical scalar deblocking implementation (grids, schedules, midpoint,
+   proper chroma), threshold tables/expansion, and scalar range proofs;
+ - the Deblock4 ReleaseSafe scalar oracle;
+ - the Deblock4 v2 and v3 backends and their differential proof;
+ - quality decisions for Schedule A versus B, midpoint scale, and proper chroma.
+ 
+-Cross-cutting:
+-- an `arInitial` / `arAllFramesReady` frame path;
+-- frame allocation or final plane-construction policy;
+-- the independent differential correctness and safety harness.
+-
+-After a filter's ReleaseSafe scalar oracle has been accepted, no subsequent
+-pixel-producing or frame-construction scope, including a copy/share path, may
+-pass without validation against that oracle under the integer-exact /
+-float-differential contract for every affected plane.
+-
+-The first bounded Stage 2C/2D scope that CONSTRUCTS that oracle is the sole
+-exception: it is accepted against the independently authored scalar obligations
+-and the corruption-sanity gate defined by the charter and
+-Deblock4_Verification_And_Tiering_Decisions section 20 (it creates the oracle,
+-so no pre-existing oracle exists to diff against).
+-
+----
++The Stage 1C copyFrame path is a pure identity pass-through, not algorithmic
++pixel construction. It must remain byte-identical to the source and must not
++mutate it. After a filter's ReleaseSafe scalar oracle has been accepted, later
++pixel-producing, frame-construction, copy/share, ReleaseFast-scalar, v2, and v3
++work is validated against that oracle under the charter's per-output-type
++contract.
++
++The first bounded Stage 2C/2D scope that CONSTRUCTS an oracle is the sole oracle-
++comparison exception: it is accepted against independently authored scalar
++obligations and the corruption-sanity gate in the charter and
++Deblock4_Verification_And_Tiering_Decisions section 20.
+ 
+ # 6. Stage map
+ 
+@@ -271,13 +321,13 @@
+           permanent-skeleton callback routers passing frames through
+           unmodified) - accepted and committed, green all three modes, bridge
+           extended not forked.
+-    ACTIVE Stage 1C Phase 3a: frame path (mechanics, property modules, tier-
+-          switch bodies, error handler, lifecycle trace) + real deblock4_plugin
+-          registration - about to be received for W3D review. The review is
+-          governed by the Phase 3a REVIEW SET (charter 2.3a version group, read
+-          together, latest of each prevailing): scope v1_5 + delivery addendum
+-          v1_1 + Phase 3a Designer Briefing v1_0. Phase 3b (sweep, build_1C
+-          batch, .vpy harnesses, full proof matrix) follows.
++    ACTIVE Stage 1C Phase 3a: W3C delivery v1.0 (frame mechanics, property
++          modules, tier-switch bodies, error handler, lifecycle trace, and real
++          deblock4_plugin registration) exists and awaits W3D static review, W3X
++          toolchain validation, and W3X acceptance. Review uses the complete
++          mixed-authority set: scope v1_5 + addendum v1_1 + root-level Phase 3a
++          Designer Briefing v1_2. Scope/addendum are grandfathered under charter
++          2.3b. Phase 3b is not released.
+ 
+ Per-filter algorithm stages run Classic first, then Deblock4:
+ 
+@@ -290,7 +340,8 @@
+     NOT STARTED
+ 
+ Stage 6 - VapourSynth integration and release readiness (BOTH filters)
+-    API header/interop groundwork proved; functional integration not started
++    API header/interop groundwork proved; inert integration candidate exists at
++    Stage 1C Phase 3a, but algorithmic integration and release work remain
+ ```
+ 
+ Stage 1 does not block source review, scalar algorithm design, test-vector
+@@ -299,7 +350,16 @@
+ 
+ ---
+ 
+-# 7. Most recently completed bounded scope
++# 7. Current candidate and most recently completed bounded scope
++
++## Stage 1C Phase 3a - frame path + real plugin registration (DELIVERED CANDIDATE; NOT YET ACCEPTED)
++
++W3C delivery v1.0 has been produced. It is now the current review candidate, not
++an accepted milestone. It adds the real plugin registration and inert API4 frame
++path bounded by the Phase 3a review set. W3D static review, W3X toolchain
++validation, and W3X acceptance remain outstanding; Phase 3b is not released.
++
++The most recently accepted and committed bounded scope remains Phase 2 below.
+ 
+ ## Stage 1C Phase 2 - tier selection + instance creation (PASS, committed)
+ 
+@@ -419,65 +479,60 @@
+ 
+ ---
+ 
+-# 8. Following Stage 1 work
+-
+-## Stage 1B.3 - runtime capability guard (COMPLETED; recorded here for reference)
+-
+-Stage 1B.3 implements CPUID/XGETBV detection over the verified Set-A bit table
+-plus the Set-B XCR0 check, whole-level v3->v2->v1 resolution into an immutable
+-ACTUAL (process-wide) record and an EFFECTIVE (per-instance) record, the shared
+-module skeleton (deblock4_config.zig, print_helper_functions.zig,
+-print_diag_helper_functions.zig, cpu_capability_detection.zig), a first-class
+-deblock4_selftest.exe built from the same source modules as the DLL, and a
+-debug-only force-down seam under the G10 three-layer inclusion pattern (both
+-debug options Debug-only; force-DOWN-only). It did NOT wire dispatch or create
+-the VapourSynth entry point (those are the filter-creation stage). Built,
+-proved, and committed. See
++# 8. Active and following Stage 1 work
++
++## Stage 1C Phase 3a - delivery candidate awaiting review and validation
++
++W3C delivery v1.0 contains the Phase 3a frame path and real plugin registration
++bounded by the existing mixed-authority review set:
++
++```text
++Scopes/Deblock4_Scope_Stage_1C_Filter_Creation_v1_5.md
++Scopes/Deblock4_Stage_1C_Delivery_Plan_Addendum_v1_1.md
++Deblock4_Stage_1C_Phase_3a_Designer_Briefing_v1_2.md
++```
++
++The principal review points are:
++
++- creation callbacks expose the exact translated VSPublicFunction C-ABI
++  signature, immediately rebind validated idiomatic locals, preserve the
++  accepted parsing/validation/tier-selection/allocation/ownership/filter-
++  construction logic, and add only the authorised lifecycle trace around it;
++- the permanent activation-reason switch is not restructured;
++- C5 order is obtain source -> frozen-tier switch -> property annotate -> return;
++- the lifecycle trace is one physical line per event and creation successful-
++  exit carries the complete resolved configuration;
++- every tier branch remains the shared inert pass-through; no real v2/v3
++  algorithm backend executes.
++
++Phase 3a stops for W3D review, W3X toolchain validation, and W3X acceptance. Do
++not begin Phase 3b or make unrelated production changes unless W3X releases a
++bounded correction or the next phase.
++
++## Stage 1C Phase 3b - not released
++
++After Phase 3a acceptance and explicit W3X release, Phase 3b performs the
++C-STY-10 scaffolding sweep, supplies build_1C_v1.bat and the two .vpy harnesses,
++and runs the full Stage 1C proof matrix. It must not be silently recombined with
++Phase 3a.
++
++## Stage 1B.3 - runtime capability guard (COMPLETED; retained for reference)
++
++Stage 1B.3 implemented CPUID/XGETBV detection over the verified Set-A bit table
++plus the Set-B XCR0 check, whole-level v3->v2->v1 resolution into immutable
++ACTUAL and EFFECTIVE records, the shared module skeleton, a first-class
++`deblock4_selftest.exe`, and the original debug-only G10 seams. It deliberately
++did not create the VapourSynth entry point or frame path; those are Phase 3a
++candidate work. See
+ Deblock4_Scope_Stage_1B3_Runtime_Capability_Guard_v1_3.md.
+ 
+-## Stage 1B.2 - within-level confirmation and assembly inspection (COMPLETED; recorded here for reference)
+-
+-The following was CONFIRMED (not derived):
+-
+-- that each object's emitted instructions stay WITHIN its named psABI level
+-  (x86_64_v1/v2/v3) - nothing outside the level appears;
+-- explicit vector widths by sample type and operation;
+-- contiguous unaligned load/store lowering;
+-- lane mask and `@select` lowering;
+-- narrow-tail strategies;
+-- scalar-load-and-pack, shuffle, transpose, and gather candidates;
+-- the AVX/SSE transition (`vzeroupper`) question, settled by inspection;
+-- emitted assembly in relevant build modes.
+-
+-The tiers ARE the named psABI levels used in full (the level is the feature
+-contract, not a bespoke closure). FMA is part of the v3 level and is NOT
+-excluded; it is included in the v3 target but not relied upon (under `.strict`
+-ordinary a*b+c stays non-fused; no @mulAdd currently required), so 1B.2 did NOT
+-expect FMA emission. Stage 1B.2 PRODUCED the whole-level feature requirements; it did not implement
+-or check a runtime guard - that guard is the Stage 1B.3 artifact, now COMPLETE
+-and committed.
+-`@Vector`, inline loops, and suggested vector lengths are not proof of generated
+-SIMD instructions.
+-
+-## Filter-creation stage (ACTIVE) - VS entry point, scaffolding sweep, dispatch
+-
+-Stage 1B.3 already implemented and PROVED the whole-level capability record
+-(immutable process-wide ACTUAL and per-instance EFFECTIVE, whole-level checks
+-including AVX/OSXSAVE/XCR0, the comptime named-model cross-check, v3->v2->v1
+-resolution, requested-backend resolution and rejection). The remaining work is:
+-
+-- the VapourSynth entry point and filter registration;
+-- the scaffolding sweep (retiring the probe/smoke/dll_probe files and remaining
+-  LF holdouts per C-STY-10's sweep test);
+-- dispatch WIRING that stores immutable selected entry points from the EFFECTIVE
+-  record and consumes them, with proof that no per-frame capability or backend-
+-  choice branch exists.
+-
+-After Stage 1B is checkpointed, begin the per-filter algorithm stages - Classic
+-(2C) first, then Deblock4 (2D) - each with its canonical scalar source and
+-ReleaseSafe proof harness.
+-
+----
++## Stage 1B.2 - within-level confirmation and assembly inspection (COMPLETED; retained for reference)
++
++Stage 1B.2 confirmed that each object's emitted instructions stay within its
++named psABI level, inspected relevant vector/code-generation forms, settled the
++AVX/SSE `vzeroupper` question, and produced the whole-level requirements later
++enforced by Stage 1B.3. The tier is the named level, not a bespoke closure; FMA
++is part of v3 but is not relied upon under `.strict`.
+ 
+ # 9. Stage 2 entry sequence
+ 
+@@ -501,58 +556,67 @@
+ 
+ There must never be a second independent scalar implementation.
+ 
+-Only after the oracle can produce and compare complete plane outputs should a
+-pixel-producing VapourSynth frame path, plane sharing, or copy implementation
+-be accepted.
+-
+----
++Stage 1C may establish a byte-identical inert pass-through using the standard
++API4 copyFrame idiom before an algorithmic scalar oracle exists. It must not
++perform deblocking or algorithmic plane construction. Once a filter's oracle
++exists, subsequent pixel/frame/copy/backend work is accepted only under the
++charter's oracle-based per-output-type validation contract.
+ 
+ # 10. Documentation package readiness
+ 
+-The current controlling/orientation package is:
++The current controlling/orientation/review package is:
+ 
+ ```text
+ README_Deblock4_Design_Spec_v1_9.md
+-AI_Charter_and_Invariants_Card_v1_19.md
++AI_Charter_and_Invariants_Card_v1_26.md
+ Deblock4_Verification_And_Tiering_Decisions_v1_10.md
+ Deblock4_Concise_Project_Summary_v1.2.md
+-Deblock4_Forward_Roadmap_v1_12.md
+-Deblock4_Project_Status_v1_14.md
++Deblock4_Forward_Roadmap_v1_13.md
++Deblock4_Project_Status_v1_17.md
+ Deblock4_Toolchain_Findings_v1_1.md
+ Deblock4_DISPATCH_RELATED_Backend_Objects_Explained_v1_3.md
+-111_New_Chat_Introduction_for_Coder_v1_13.md
+-111_New_Chat_Introduction_for_Designer_v1_7.md
+-```
+-
+-They serve different purposes and should live alongside one another:
+-
+-| Document | Purpose |
+-|---|---|
+-| README design specification | Controlling technical and algorithmic design |
+-| Charter and invariants card | Controlling invariants, roles, coding, and process |
+-| Verification and tiering decisions | Durable record of the verification/tiering/two-filter decisions |
+-| Concise project summary | Fast orientation and public-facing summary |
+-| Forward roadmap | Orientation on the next bounded stages |
+-| Project status | Current proof state, open work, and immediate execution sequence |
+-
+-Before moving ahead, W3X should confirm:
+-
+-1. the charter's canonical filename and internal version both say v1.19;
+-2. the README's filename and internal design revision both say v1.9;
+-3. the concise summary remains marked non-controlling;
+-4. this status document remains marked informative and non-controlling;
+-5. the next coding scope records the actual starting commit;
+-6. the repository working tree is clean before the next scope begins.
+-
+-With those checks complete, the project has enough design, process, orientation,
+-and current-state documentation to proceed safely.
+-
+----
++111_New_Chat_Introduction_for_Coder_v1_19.md
++111_New_Chat_Introduction_for_Designer_v1_13.md
++Deblock4_Scope_Header_CDELIV09_Reminder_Block_v1_1.md
++Scopes/Deblock4_Scope_Stage_1C_Filter_Creation_v1_5.md
++Scopes/Deblock4_Stage_1C_Delivery_Plan_Addendum_v1_1.md
++Deblock4_Stage_1C_Phase_3a_Designer_Briefing_v1_2.md
++Deblock4_Stage_1C_Phase_3a_W3C_delivery_v1_0.zip
++```
++
++Scope v1_5 and addendum v1_1 remain the controlling Stage 1C documents despite
++their historical pins. Their compatibility with charter v1.26 is recorded in
++section 1 under charter 2.3b; they are grandfathered until next issuance. The
++reminder block is supplied directly and applies to scopes/addenda issued
++henceforth.
++
++The Phase 3a review set must be complete and read together, while retaining its
++mixed authority. The delivery ZIP is a candidate artifact, not proof of W3D
++review, W3X validation, acceptance, or commit.
++
++Before Phase 3a can be accepted, W3X should confirm:
++
++1. the prevailing charter filename and internal version are v1.26;
++2. the README filename and internal design revision are v1.9;
++3. Project Status filename and internal version are v1.17;
++4. the charter 2.3b compatibility line for scope v1_5/addendum v1_1 is present;
++5. all three Phase 3a review-set members are present at the stated versions;
++6. the Phase 3a delivery v1.0 artifact and its checksum/manifest are the exact
++   candidate being reviewed;
++7. W3D's static findings and W3X's actual validation outputs are recorded before
++   any PASS recommendation;
++8. Phase 3b remains unreleased until Phase 3a acceptance and explicit W3X
++   release;
++9. any correction is prepared against the prevailing branch-main source or an
++   exact source tree supplied by W3X, not an inferred stale commit.
++
++With those checks complete, the project has enough design, process,
++orientation, and current-state material to review Phase 3a safely.
+ 
+ # 11. Status update discipline
+ 
+-This file should be updated only when a material implementation or proof
+-milestone changes the current state.
++This file should be updated only when a material implementation, delivery,
++review, acceptance, or proof milestone changes the current state.
+ 
+ Examples:
+ 
+@@ -562,6 +626,7 @@
+ - scalar oracle established;
+ - Schedule A/B quality decision settled;
+ - a filter's v2 or v3 backend differential contract proved (integer-exact / float-tolerance);
++- a bounded delivery candidate enters or leaves formal review;
+ - functional VapourSynth integration accepted.
+ 
+ For each material update:
+@@ -570,43 +635,55 @@
+ 2. update the date;
+ 3. state the newly accepted evidence;
+ 4. move items between completed and open sections;
+-5. identify the next bounded scope;
++5. identify the next bounded review, correction, or coding action;
+ 6. do not amend the charter or controlling design specification implicitly.
+ 
+ ---
+ 
+ # 12. Immediate next action
+ 
+-The FILTER-CREATION stage. Stages 1A through 1B.3 are complete and committed;
+-the shared infrastructure (build, backends, within-level confirmation, and the
+-proven runtime capability guard with its ACTUAL/EFFECTIVE records) now exists.
+-The next bounded work is:
+-
+-- register the VapourSynth entry point and filter-creation function;
+-- perform the scaffolding sweep - retire the probe/smoke/dll_probe files and any
+-  remaining LF holdouts, per C-STY-10's sweep test (deleting all scaffolding
+-  must require ZERO edits to first-class modules);
+-- wire dispatch to store immutable selected entry points from the EFFECTIVE
+-  capability record and consume them, with proof that no per-frame capability or
+-  backend-choice branch exists.
+-
+-No gated backend arithmetic executes yet - G5 continues to govern until each
+-filter's ReleaseSafe scalar oracle exists at Stage 2C/2D.
+-
+-Two filters, Classic first: the plugin will register deblock4.Classic (H.264,
+-built first) and deblock4.Deblock4 (the end-goal MPEG-2 algorithm, second). The
+-1B.x infrastructure work is filter-agnostic and now complete; the per-algorithm
+-build then runs for Classic first, then Deblock4. See README section 1.0.
+-The MPEG-2 filter remains the end goal; Classic-first is a sequencing choice.
+-
+-Starting point: the accepted Stage 1B.3 commit on branch main (verify the
+-current HEAD before issuing the scope).
+-
+----
++Do not begin fresh implementation or Phase 3b.
++
++The immediate bounded action is the Phase 3a review/validation/acceptance loop:
++
++1. W3D reviews W3C delivery v1.0 statically against the complete mixed-authority
++   Phase 3a review set, with file-and-line evidence.
++2. W3X applies or stages the exact candidate against the prevailing source and
++   runs the required toolchain validation.
++3. W3C responds only to bounded findings or correction instructions supplied by
++   W3X; no unrelated cleanup or Phase 3b work is pulled forward.
++4. W3X decides acceptance. Only after Phase 3a acceptance may W3X release Phase
++   3b.
++
++Phase 3b, when released, performs the scaffolding sweep, supplies the build batch
++and two .vpy harnesses, and closes the full Stage 1C proof matrix.
++
++No gated backend arithmetic executes in Stage 1C. Each tier branch remains the
++same inert pass-through until the per-filter scalar-oracle stages. Classic is
++built first; Deblock4 remains the end goal.
++
++Starting point for any correction: the prevailing branch-main source or exact
++source tree supplied by W3X together with the reviewed Phase 3a artifact. Do not
++infer or transcribe a commit id.
+ 
+ # 13. Revision history
+ 
+ ```text
++v1.17 Full status reconciliation after production of Stage 1C Phase 3a W3C
++      delivery v1.0 and ratification of charter v1.26. Current accepted baseline
++      advanced from Stage 1B.3 to Stage 1C Phase 2; Phase 3a is recorded as a
++      delivered candidate awaiting W3D static review, W3X toolchain validation,
++      and W3X acceptance; Phase 3b is explicitly unreleased. Updated live pins
++      (charter v1.26, roadmap v1.13, coder intro v1.19, designer intro v1.13,
++      briefing v1.2, self v1.17, reminder block v1.1), classified the Phase 3a
++      review set as mixed authority, and recorded the charter-2.3b compatibility
++      decision grandfathering scope v1_5 and addendum v1_1 to next issuance.
++      Corrected the stale exact-commit/HEAD rule to prevailing-source or exact
++      supplied-tree discipline. Distinguished candidate Phase 3a components from
++      accepted code, preserved the permitted byte-identical API4 copyFrame
++      pass-through exception, recorded the third G10 lifecycle seam, and changed
++      the immediate action from implementation to the Phase 3a review/validation/
++      acceptance loop. No design or Part 1 invariant change.
+ v1.14 Coder-review corrections: scaffold-era wording advanced (evidence basis
+       now spans through 1B.3; committed baseline = the 1B.3 infrastructure, not
+       merely the scaffold; current-position milestone table now lists
