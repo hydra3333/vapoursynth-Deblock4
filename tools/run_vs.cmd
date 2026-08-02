@@ -35,3 +35,4 @@ echo "%VSPIPE_EXE%" %*
 set "RC=%ERRORLEVEL%"
 popd
 exit /b %RC%
+
