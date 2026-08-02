@@ -120,26 +120,23 @@ elif CASE == "valid_full":
         % (CASE, in_hash, out_hash, tier, version)
     )
     filtered.set_output()
+# float->int:opt is coerced by VapourSynth before the plugin;
+# plugin-level wrong-type rejection is unreachable (Toolchain finding F6);
+# Deblock4's own validation is proven by the range cases.
 elif CASE == "error_strength":
     _expect_error(
         lambda: core.deblock4.Classic(clip=source, strength=61),
         "Classic: strength must be between 0 and 60",
-    )
-elif CASE == "error_wrong_type":
-    _expect_error(
-        lambda: core.deblock4.Classic(clip=source, strength=1.5),
-        ("Classic", "strength", "int"),
     )
 elif CASE == "error_duplicate_planes":
     _expect_error(
         lambda: core.deblock4.Classic(clip=source, planes=[0, 0]),
         "Classic: planes must not contain duplicates",
     )
-elif CASE == "error_empty_planes":
-    _expect_error(
-        lambda: core.deblock4.Classic(clip=source, planes=[]),
-        "Classic: planes must not be empty",
-    )
+# Unlike F6 coercion, Python planes=[] is rejected before the plugin;
+# Deblock4's empty-planes check remains valid low-level-API defence. It is
+# unreachable via vspipe, not dead code, and is proven by Zig test
+# "plane arrays reject empty and duplicate and ignore order".
 elif CASE == "error_unknown_backend":
     _expect_error(
         lambda: core.deblock4.Classic(clip=source, backend="unknown"),

@@ -359,11 +359,11 @@ exit /b !ERRORLEVEL!
 
 :run_validation_error_cases
 set "E2E_DIR=%~1"
-for %%C in (error_strength error_wrong_type error_duplicate_planes error_empty_planes error_unknown_backend error_variable_format) do (
+for %%C in (error_strength error_duplicate_planes error_unknown_backend error_variable_format) do (
     call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" %%C x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!E2E_DIR!\classic_%%C.txt"
     if errorlevel 1 exit /b 1
 )
-for %%C in (error_strength error_wrong_type error_duplicate_planes error_empty_planes error_step_low error_step_high error_unknown_backend error_variable_format) do (
+for %%C in (error_strength error_duplicate_planes error_step_low error_step_high error_unknown_backend error_variable_format) do (
     call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" %%C x86_64_v3_with_avx2 STAGE_1C_EXPECTED_ERROR_PASS "!E2E_DIR!\deblock4_%%C.txt"
     if errorlevel 1 exit /b 1
 )

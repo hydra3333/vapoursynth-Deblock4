@@ -218,6 +218,9 @@ elif CASE == "midpoint_absent":
         % (CASE, in_hash, out_hash, tier, version)
     )
     filtered.set_output()
+# float->int:opt is coerced by VapourSynth before the plugin;
+# plugin-level wrong-type rejection is unreachable (Toolchain finding F6);
+# Deblock4's own validation is proven by the range cases.
 elif CASE == "error_strength":
     _expect_error(
         lambda: core.deblock4.Deblock4(
@@ -226,15 +229,6 @@ elif CASE == "error_strength":
             strength=61,
         ),
         "Deblock4: strength must be between 0 and 60",
-    )
-elif CASE == "error_wrong_type":
-    _expect_error(
-        lambda: core.deblock4.Deblock4(
-            clip=source,
-            grid_mode="mpeg2_progressive",
-            strength=1.5,
-        ),
-        ("Deblock4", "strength", "int"),
     )
 elif CASE == "error_duplicate_planes":
     _expect_error(
@@ -245,15 +239,10 @@ elif CASE == "error_duplicate_planes":
         ),
         "Deblock4: planes must not contain duplicates",
     )
-elif CASE == "error_empty_planes":
-    _expect_error(
-        lambda: core.deblock4.Deblock4(
-            clip=source,
-            grid_mode="mpeg2_progressive",
-            planes=[],
-        ),
-        "Deblock4: planes must not be empty",
-    )
+# Unlike F6 coercion, Python planes=[] is rejected before the plugin;
+# Deblock4's empty-planes check remains valid low-level-API defence. It is
+# unreachable via vspipe, not dead code, and is proven by Zig test
+# "plane arrays reject empty and duplicate and ignore order".
 elif CASE == "error_step_low":
     _expect_error(
         lambda: core.deblock4.Deblock4(
