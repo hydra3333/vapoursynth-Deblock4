@@ -1,0 +1,318 @@
+# Deblock4 - Stage 2C Preface and Binding Knowledge Index
+
+**Deliverable:** W3D-2C-D0
+**Version:** 1.3
+**Date:** 2026-08-02
+**Author:** W3D (designer), ratified by W3X
+**Status:** Living index; updated as 2C deliverables land (extend, do not rewrite).
+**Encoding:** US-ASCII; CRLF.
+
+---
+
+# 1. Purpose
+
+Stage 2C introduces the first real deblocking mathematics into Deblock4: the
+Classic ReleaseSafe scalar oracle and the HolyWu external-reference
+differential harness. A large body of prior research, experimentation, and
+hard-won findings governs this work. All of it is captured in committed
+repository documents; NONE of it lives only in any chat's memory.
+
+This preface (a) records the Stage 2C plan and its pinned reference, and
+(b) indexes every binding knowledge item with its home document/section and
+the 2C-family point at which it applies - so that no participant (W3X, W3D,
+W3C, or any successor chat) can lose it by forgetfulness. Every 2C-family
+deliverable MUST carry a Binding Knowledge Checklist naming the items from
+section 4 that it touches and stating how each is honoured (or why it is out
+of scope for that deliverable). Reviewers check the deliverable against its
+checklist AND the checklist against this index.
+
+# 2. Pinned external reference (D-CLASSIC-4, RATIFIED)
+
+```text
+Reference:  HolyWu VapourSynth-Deblock, tag r9
+Ratified:   W3X, 2026-08-02
+Verified:   r9 src/ is byte-identical to master src/ as of 2026-08-02
+Contents:   src/deblock.cpp (448 lines, scalar core = oracle reference)
+            src/deblock_sse4.cpp (169 lines; THEIR SIMD - later 4C reference
+            reading only, never our implementation source)
+            src/deblock.h (17 lines)
+Snapshot:   to be archived read-only in-repo by deliverable W3D-2C-D1
+            (W3X-owned once committed, like the VapourSynth R78 headers).
+Rule:       all schedule/formula citations in 2C documents reference THIS
+            snapshot by file/function/line (README requirement: inspect the
+            real source; never compare against an assumed schedule).
+```
+
+# 3. Stage 2C deliverable plan (short-boundary, extensible)
+
+```text
+W3D-2C-D0  This preface + binding knowledge index. (this document)
+W3D-2C-D1  Pin record + read-only source snapshot committed to the repo.
+W3D-2C-D2  HolyWu Real Schedule document: line-by-line inspection of
+           deblock.cpp - actual edge order, formulas, rounding, clipping,
+           threshold derivation from strength, frame-boundary behaviour,
+           and the faithful luma-on-chroma path - with file/function/line
+           citations into the D1 snapshot.
+W3D-2C-D3  Independent scalar obligations + loose whole-image sanity gate
+           (the acceptance basis under the oracle-construction exception).
+W3D-2C-D4  Stage 2C coder scope draft, assembled from D1-D3, checklist
+           embedded, for W3X ratification and release.
+Then:      W3C implementation delivery/deliveries; W3D review; W3X run,
+           acceptance, commit - per the established Stage 1C process.
+```
+
+Each boundary is a valid stopping point; a successor designer resumes from
+the committed deliverables alone (the Stage 1C dead-coder recovery proved
+this model).
+
+# 4. Binding knowledge index
+
+Authority note: the charter and the README prevail where any summary here
+is imprecise. Section references are to the CURRENT committed versions
+(README_Deblock4_Design_Spec_v1_9, AI_Charter_and_Invariants_Card_v1_26,
+Deblock4_Verification_And_Tiering_Decisions_v1_10,
+Deblock4_Toolchain_Findings_v1_3); "or later" always applies.
+
+## 4.1 Vector semantics and SIMD discipline (the "@Vector" lessons)
+
+```text
+K1  Vector BYTES vs vector ELEMENTS must never be conflated.
+      README 3.6 (SIMD batch), 3.7 (Vector bytes), 3.8 (Vector lanes).
+      Applies: D3 obligations wording; 4C/5C backend scopes; any coder text
+      that mentions @Vector widths.
+K2  SIMD width must not define output: scalar, v2, v3 byte-identical for
+      integer formats regardless of batch width.
+      README 4.3.  Applies: D3 (obligation), 2C differential harness
+      definition, 4C/5C acceptance.
+K3  The TWO TAIL CLASSES are different things and must never be confused:
+      ALGORITHMIC boundary tail (frame-edge behaviour of the algorithm,
+      README 3.10 + section 6 corrected frame-boundary policy) vs SIMD
+      BATCH tail (vector-width remainder handling, README 3.12 + section 7
+      corrected SIMD-tail policy, esp. 7.2 "Never confuse the two tail
+      classes").  Applies: D2 (document HolyWu's actual frame-boundary
+      behaviour), D3 (state boundary obligations), 4C/5C (batch tails).
+K4  AVX2 masked load/store warning: README 7.4. AVX2 backend notes 7.3.
+      Applies: 5C primarily; recorded here so 2C documents do not
+      accidentally promise masked-IO semantics.
+```
+
+## 4.2 Miscompile guard and float semantics
+
+```text
+K5  R76-class miscompile risk and its PERMANENT mitigations (charter G9):
+      Verification_And_Tiering 5. Classic's 4-pixel grid is the
+      HIGHER-EXPOSURE case (Roadmap, "why this ordering").
+      Applies: D3 (obligations must be miscompile-detecting: independent
+      vectors, not implementation-derived), 2C scope (the differential
+      harness is itself a standing G9 guard), 4C/5C.
+K6  Non-fused float semantics: a*b+c must retain non-fused semantics; no
+      @mulAdd (README, section 3 rules; background in
+      Deblock4_Floating_Exactness_and_Full_Declared_Tiers_Discussion_v1_3).
+      Applies: D2 (note HolyWu's arithmetic type reality), D3, coder scope.
+      Note: Classic integer paths dominate; float applies to threshold
+      derivation if HolyWu uses it - D2 must establish the fact.
+```
+
+## 4.3 Oracle and differential doctrine
+
+```text
+K7  Classic oracle contract: README "Classic oracle contract" (section 4),
+      including the e-relative read footprint e-3..e+2 and write footprint
+      e-2..e+1 (p1,p0,q0,q1).
+      Applies: D2 (verify against real source), D3 (footprint obligations),
+      coder scope.
+K8  Do not use HolyWu as the ONLY oracle: README 4.2. Independent scalar
+      obligations + hand-derived vectors are mandatory, not optional.
+      Applies: D3 is this requirement made concrete.
+K9  Oracle sequencing (charter G7) + per-type differential acceptance +
+      ORACLE-CONSTRUCTION EXCEPTION: Verification_And_Tiering 20.1/20.2 and
+      Roadmap standing constraints. The 2C scope that CONSTRUCTS the oracle
+      is accepted against D3 obligations + loose whole-image sanity gate,
+      not against a pre-existing oracle. After acceptance, NO pixel/frame/
+      copy/backend code for Classic is accepted except differentially
+      validated against the oracle (integer byte-identical).
+      Applies: D3, D4, and every Classic delivery after 2C.
+K10 ReleaseFast-vs-ReleaseSafe scalar check: Verification_And_Tiering 3.7.
+      Applies: 2C proof surface (the oracle is ReleaseSafe; RF must match
+      byte-identically for integer).
+K11 Schedule A (verified HolyWu-equivalent) vs Schedule B (Deblock4
+      two-pass candidate): README 5.1-5.4. CLASSIC IS SCHEDULE A ONLY -
+      faithful HolyWu including luma-on-chroma; no grid_mode, no midpoint,
+      no Schedule B (Roadmap Stage 2C line). Schedule B and the MPEG-2
+      grid/field knowledge (Deblock4_MPEG2_Grid_Field_DCT_Knowledge_v1_0)
+      are 2D material - explicitly DEFERRED, listed here so nobody
+      "helpfully" imports them into Classic.
+      Applies: D2 (Schedule A verification IS the task), D3, D4 scope
+      boundary.
+K19 THREE-LAYER COMPARISON DOCTRINE (do not flatten to "byte-identical"):
+      (a) GENERAL: HolyWu is NOT an absolute bit-exact specification;
+          deliberate, documented, quality-validated differences are
+          permitted (README ~217 + settled-decisions table: "desired
+          baseline similarity, not absolute requirement"). This is the
+          ratified "slightly more accurate arithmetic acceptable" decision.
+      (b) CLASSIC EXTERNAL (stronger, supersedes loose equal-or-better
+          wording; README ~807): HolyWu C/scalar at the pinned commit IS
+          the external oracle for Classic. deblock4.Classic scalar vs
+          HolyWu C/scalar: INTEGER planes - byte-exact is the TARGET and
+          ANY difference is INVESTIGATED (then either fixed, or justified
+          under (a) as deliberate/documented/validated); FLOAT planes -
+          tolerance discipline, structural results exact.
+      (c) INTERNAL (V&T 20.1, merciless): Deblock4 tier vs Deblock4
+          ReleaseSafe scalar oracle: INTEGER byte-identical, no tolerance,
+          any difference is a defect; FLOAT within the approved
+          differential contract; COPY/SHARE byte-identical for ALL types
+          including float.
+      Applies: D3 (obligations must state which layer each check lives
+      in), D4 (harness gates named per layer), 4C/5C (layer (c) governs),
+      and every review of a Classic pixel difference.
+```
+
+## 4.4 Platform, build, and process findings already paid for
+
+```text
+K12 Toolchain Findings F1-F8 (Deblock4_Toolchain_Findings_v1_3): esp.
+      F4/F8 (export fn: object-mode vs DLL-root are different properties),
+      F5 (proven multi-feature-level idiom), F6 (VapourSynth numeric
+      coercion pre-plugin), F7 (empty-array boundary; plugin defence
+      retained).  Applies: any 2C source work touching modules/exports;
+      harness design (no host-owned error text assertions).
+K13 G5: no v2/v3 backend EXECUTION before the proven whole-level capability
+      guard (charter). 2C is scalar-only; the guard machinery from 1B.3
+      stands untouched.  Applies: D4 scope boundary, 4C/5C.
+K14 G10 three-layer debug-seam obligations + the Debug Module Inclusion
+      Pattern (Deblock4_Debug_Module_Inclusion_Pattern_v1_1): any new 2C
+      diagnostics follow the pattern; the standing fifteen-gate matrix
+      keeps its G10 gates green.  Applies: D4, coder deliveries.
+K15 Backend-object dispatch architecture:
+      Deblock4_DISPATCH_RELATED_Backend_Objects_Explained_v1_3 and
+      Deblock4_S1B1_Retention_Export_Research_Package_v1_0. The oracle is
+      scalar and lives in normal code; backend objects re-enter at 4C/5C.
+      Applies: 4C/5C (indexed now so it is not re-derived).
+K16 Creation-error message table v1_1 is ratified source obligation; 2C
+      must not alter creation strings. Deblock4Using / the using-echo
+      surfaces (rider 1C.1) must remain byte-stable.
+      Applies: D4 no-touch list, coder deliveries.
+K17 Delivery self-containment rule (Stage 1C.1 lesson): a delivery carries
+      and stages EVERY file its proof touches; presumes a clean tree;
+      preconditions hash only the files it touches; never reads, moves, or
+      deletes anything under superseded/; ships a scoped restore-to-base
+      command block derived from its own manifest.
+      Applies: every 2C-family coder delivery.
+K18 Proof-domain and audit discipline: S3 domain is the deliverable tree
+      (allowlist); the four -File PowerShell audits; the cmd/quoting
+      lessons; benign artifacts judged by exit code (Zig --listen context,
+      negative-configure FileNotFound).  Homes: build_1C_v1.bat + Stage 1C
+      scope v1_5 (amended) + Resume Brief v1_1 section 3.
+      Applies: 2C proof-surface extensions.
+```
+
+## 4.5 Quality-claim, withdrawn-alternatives, and reproducibility doctrine
+(added v1.2 after full V&T/README section sweep)
+
+```text
+K20 "MORE ACCURATE" MUST BE DEFINED (README 15.2) + default conservative
+      choice (15.3). A different output is NOT automatically more accurate
+      because it came from a codec-inspired schedule, AVX2, narrower
+      arithmetic, or fewer instructions. An equal-or-better claim must
+      refer to: reduced actual block discontinuities; retained legitimate
+      detail; fewer artifacts; closer agreement with a clean reference;
+      stable behaviour across representative content. If not demonstrably
+      equal or better: retain the verified HolyWu-equivalent result.
+      Applies: EVERY K19 layer-(b) justification; Stage 3C quality gate.
+K21 WITHDRAWN / DO-NOT-REVISIT alternatives (V&T 6): cross-backend
+      bit-exactness as shipping goal; the twin-build model; per-build
+      bespoke feature closures; float-identity feature exclusions (e.g.
+      subtracting FMA from v3). All superseded - do not re-propose.
+      Applies: D4 and all 4C/5C scoping and review.
+K22 FLOAT-PATH FINE INVARIANTS (V&T 3.4-3.8): structural results stay
+      EXACT while the near-threshold numeric-activation decision may flip
+      (3.4, INVARIANT) and such flips are ACCEPTED for this material
+      (3.5, DECISION); float mode is .strict (3.6); FMA is included in v3
+      but not relied upon under .strict (4.4); tolerance METHODOLOGY is a
+      W3D action with numbers fixed at Stage 2 (3.8) - for Classic this
+      binds only if D2 shows float in the pinned HolyWu path; otherwise
+      the tolerance-numbers duty defers to 2D and D3 must say so
+      explicitly.
+      Applies: D2 (establish the arithmetic-type fact), D3, D4.
+K23 DIAGNOSTICS AND REPRODUCIBILITY CONTRACT (V&T 7): one always-on
+      version/tier line per instance creation (live since 1C); forced
+      scalar backend selection available; selected backend recorded in
+      frame properties; float cross-MACHINE byte-identity explicitly NOT
+      promised; integer output exact and reproducible; per-binary
+      determinism (same binary/backend/input/parameters/FP environment
+      incl. MXCSR) is NON-NEGOTIABLE.
+      Applies: D3 obligations, D4, user-facing docs.
+K24 SHARED-KERNEL COMPTIME MODEL (V&T 11.1): the shared mathematics is
+      instantiated at compile time per backend width and element type
+      (BackendConfig shape). The 2C scalar oracle should be authored so
+      the SAME kernel body can later be instantiated for v2/v3 rather
+      than duplicated - a D4 architecture requirement, not an invitation
+      to write any vector code in 2C.
+      Applies: D4 architecture guidance, 4C/5C.
+K25 WHOLE-LEVEL DETECTION TRAP (V&T 4.3): capability detection checks
+      whole named psABI levels, never individual-feature closures; the
+      1B.3 guard embodies this and 2C must not add any feature-grained
+      selection logic.
+      Applies: D4 no-touch list.
+```
+
+# 5. What Stage 2C explicitly does NOT include
+
+```text
+- No grid_mode, no midpoint, no Schedule B, no field-DCT geometry (2D).
+- No v2/v3 SIMD implementation (4C/5C); vectorclass in the HolyWu tree is
+  THEIR dependency and is never imported.
+- No change to registration, validation, creation-error strings, tier
+  selection, G10 modules, or the using-echo surfaces.
+```
+
+# 6. Standing knowledge-sweep protocol (two-sided, issued henceforth)
+
+Ratified mechanism ensuring no committed knowledge/decision is silently
+missed by any scope. Applies to every scope issued from Stage 2C onward;
+the block in 6.1 is embedded verbatim in each scope header (same issuance
+mechanism as the C-DELIV-09 reminder block).
+
+```text
+1. W3D (authoring): every scope carries a Binding Knowledge Checklist
+   naming the K-items of this index that govern it, produced by
+   re-searching the doc set during authoring.
+2. W3C (pre-implementation review): INDEPENDENTLY search the committed
+   documentation set - own keywords, own reading, deliberately not
+   starting from W3D's checklist - for relevant, non-superseded,
+   non-withdrawn knowledge, rules, or decisions. Report as numbered
+   review findings anything relevant that is ABSENT from the scope's
+   checklist or from this index. Independence is the point: two
+   searchers, different blind spots.
+3. W3D verifies findings; confirmed items are appended to this index as
+   the next K-numbers (the established K19/K20-K25 append pattern) and
+   the scope is amended if material (ordinary I3/2.3b machinery).
+4. Exclusions: superseded/ is OUT OF SCOPE for the search; withdrawn
+   alternatives (K21 / V&T 6) are reportable only as do-not-revisit
+   confirmations, never as proposals.
+```
+
+## 6.1 Standard scope-header block (embed verbatim, issued henceforth)
+
+```text
+KNOWLEDGE SWEEP (standing, two-sided): Before implementation, W3C must
+independently search the committed documentation set (excluding
+superseded/) for relevant non-superseded, non-withdrawn knowledge,
+rules, or decisions bearing on this scope, WITHOUT starting from the
+checklist below, and report as numbered findings anything relevant that
+the checklist or the Stage 2C+ Binding Knowledge Index does not carry.
+Withdrawn alternatives are reportable only as do-not-revisit
+confirmations. W3D verifies; confirmed items become new index K-numbers;
+W3X adopts any scope amendment.
+```
+
+---
+
+Revision: v1.3 (2026-08-02) added section 6, the standing two-sided
+knowledge-sweep protocol and its verbatim scope-header block (W3X-proposed,
+W3D-refined to two-sided independence). v1.2 (2026-08-02) appended K20-K25 (quality-claim definition,
+do-not-revisit list, float fine invariants incl. Stage-2 tolerance duty,
+reproducibility contract, shared-kernel comptime model, whole-level trap)
+after a full section sweep of V&T v1_10 and README v1_9 bodies prompted by
+W3X completeness check. v1.1 appended K19 (three-layer comparison doctrine)
+on W3X recall check. v1.0 was the initial index, K1-K18.
