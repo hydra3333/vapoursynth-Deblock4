@@ -28,6 +28,12 @@ pub fn write(
         vsapi,
     );
     try helpers.setData(map, "Deblock4Version", version.identity_string, vsapi);
+    try helpers.setData(
+        map,
+        "Deblock4Using",
+        instance.using_text.slice(),
+        vsapi,
+    );
 
     const grid = resolvedGrid(instance);
     try helpers.setData(map, "Deblock4GridMode", grid.mode, vsapi);

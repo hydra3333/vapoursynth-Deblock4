@@ -295,6 +295,16 @@ pub fn build(b: *std.Build) void {
     });
     const run_parameter_tests = b.addRunArtifact(parameter_tests);
 
+    const invocation_text_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/effective_invocation_text.zig"),
+            .target = baseline_target,
+            .optimize = optimize,
+        }),
+    });
+    const run_invocation_text_tests =
+        b.addRunArtifact(invocation_text_tests);
+
     const tier_selection_test_module = b.createModule(.{
         .root_source_file = b.path("src/backend_tier_selection.zig"),
         .target = baseline_target,
@@ -374,6 +384,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_version_tests.step);
     test_step.dependOn(&run_common_instance_tests.step);
     test_step.dependOn(&run_parameter_tests.step);
+    test_step.dependOn(&run_invocation_text_tests.step);
     test_step.dependOn(&run_tier_selection_tests.step);
     test_step.dependOn(&run_classic_creation_tests.step);
     test_step.dependOn(&run_deblock4_creation_tests.step);

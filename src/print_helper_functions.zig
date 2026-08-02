@@ -89,6 +89,13 @@ pub fn emitInstanceSummary(
     }
 }
 
+pub fn emitUsingLine(text: []const u8) void {
+    std.debug.print(
+        "{s}: using {s}\n",
+        .{ deblock4_config.diag.summary_prefix, text },
+    );
+}
+
 fn joinNames(names: []const []const u8, buffer: []u8) []const u8 {
     var used: usize = 0;
 

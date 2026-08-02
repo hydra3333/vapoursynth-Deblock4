@@ -10,6 +10,8 @@ const common_instance = @import("common_instance_data_structure.zig");
 const deblock4_callback_router = @import("deblock4_callback_router.zig");
 const deblock4_instance_data = @import("deblock4_instance_data.zig");
 const filter_call_parameters = @import("filter_call_parameters.zig");
+const invocation_text = @import("effective_invocation_text.zig");
+const print_helpers = @import("print_helper_functions.zig");
 
 const lifecycle_dbg = if (config.debug.enable_trace_lifecycle)
     @import("lifecycle_trace_debug.zig")
@@ -89,6 +91,10 @@ pub fn create(
         setError(out, vsapi, selectionMessage(err));
         return;
     };
+    const using_text = invocation_text.buildDeblock4(
+        parameters,
+        copied_video_info.num_planes,
+    );
     const instance = std.heap.c_allocator.create(deblock4_instance_data.Deblock4InstanceData) catch {
         vs.zig_vs_free_node(vsapi, source);
         setError(out, vsapi, creationMessage(error.AllocationFailed));
@@ -103,6 +109,7 @@ pub fn create(
             .backend_selection = selection,
         },
         .parameters = parameters,
+        .using_text = using_text,
     };
     if (config.debug.enable_trace_lifecycle) {
         lifecycle_dbg.tools.creationExitDeblock4(
@@ -112,6 +119,7 @@ pub fn create(
             instance.common.backend_selection,
         );
     }
+    print_helpers.emitUsingLine(instance.using_text.slice());
     vs.zig_vs_create_video_filter_single_dependency(
         vsapi, out, "Deblock4", video_info,
         &deblock4_callback_router.getFrame, &deblock4_callback_router.free,

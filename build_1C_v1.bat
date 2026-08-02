@@ -346,6 +346,7 @@ set "E2E_DIR=%~1"
 set "DEBLOCK4_FORCE_DOWN="
 call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" valid_auto x86_64_v3_with_avx2 STAGE_1C_CLASSIC_PASS "!E2E_DIR!\classic_valid_auto.txt"
 call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" valid_full x86_64_v2_with_sse41 STAGE_1C_CLASSIC_PASS "!E2E_DIR!\classic_valid_full.txt"
+call :run_vpy_case "!DEBLOCK4_CLASSIC_SCRIPT!" valid_coercion x86_64_v3_with_avx2 STAGE_1C_CLASSIC_PASS "!E2E_DIR!\classic_valid_coercion.txt"
 call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" valid_auto x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_valid_auto.txt"
 call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" valid_full x86_64_v2_with_sse41 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_valid_full.txt"
 call :run_vpy_case "!DEBLOCK4_FILTER_SCRIPT!" midpoint_present x86_64_v3_with_avx2 STAGE_1C_DEBLOCK4_PASS "!E2E_DIR!\deblock4_midpoint_present.txt"
@@ -390,6 +391,12 @@ if not "!exit_code!"=="0" (
 call :find_present "vspipe case !DEBLOCK4_TEST_CASE! emitted PASS marker" "!OUT!" "!VPY_MARKER!"
 if errorlevel 1 exit /b 1
 call :find_absent "vspipe case !DEBLOCK4_TEST_CASE! emitted no Python traceback" "!OUT!" "Traceback (most recent call last)"
+if errorlevel 1 exit /b 1
+if /I "!VPY_MARKER!"=="STAGE_1C_EXPECTED_ERROR_PASS" (
+    call :find_absent "failed case !DEBLOCK4_TEST_CASE! emits no using line" "!OUT!" "deblock4: using "
+) else (
+    call :count_literal_exact "using line occurs once for !DEBLOCK4_TEST_CASE!" "!OUT!" "deblock4: using " 1
+)
 if errorlevel 1 exit /b 1
 exit /b 0
 
