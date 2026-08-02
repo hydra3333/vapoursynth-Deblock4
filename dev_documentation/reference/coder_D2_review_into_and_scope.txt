@@ -1,0 +1,60 @@
+committed thanks.  
+
+Now we pause coding and enter a period of research-findings (and perhaps design) reviews.  
+
+Designer is now engaging in stage  2C which has a number of sub-steps designated as "Dx". 
+Designer has completed D0 through D2.
+
+I have and will from time to time provide a zip containing 2C documentation - also
+committed from time to time to github
+https://github.com/hydra3333/vapoursynth-Deblock4/tree/main/dev_documentation/reference
+As always, 
+(a) don't use anyting in the superseded folder since its contents are outdated and possibly dangerous
+(b) version numbers are in filenames, highest is current and prevails.
+
+Steps D0 D1 D2 refer to a document with "D0" in its filename, which I now consider
+to be a critical evolving reference document for C2 and for this project (also for chats
+succession planning).
+
+Your current task is per designer task scope, and produce a .md response which
+I can upload into folder `reference` in github for designer to access from there:
+```
+W3C TASK - Stage 2C, D2 INDEPENDENT VERIFICATION (documentation review;
+NO implementation, NO code changes, NO scope release implied)
+
+The attached zip is dev_documentation/reference/ from committed main:
+  - Deblock4_Stage_2C_D0_Preface_and_Binding_Knowledge_Index_v1_3.md
+      Read sections 1, 4 (K19 especially) and 6 first. Section 6 defines
+      the two-sided knowledge-sweep duty this task is part of.
+  - holywu_r9/  = the pinned D-CLASSIC-4 reference source (byte-exact;
+      SHA256SUMS.txt; read-only; upstream LF endings are deliberate).
+  - Deblock4_Stage_2C_D2_HolyWu_Real_Schedule_v1_1.md  = the document
+      under review: W3D's line-by-line account of what deblock.cpp
+      actually does. It will become the layer-(b) oracle description that
+      Stage 2C obligations and the coder scope are built on.
+
+YOUR TASK: independently verify D2 against the pinned source, claim by
+claim. Read deblock.cpp yourself, in full, BEFORE reading D2's account of
+any section, then compare. Verify at minimum: the processing schedule and
+its sequential in-place ordering (D2 section 3); every formula, rounding
+step, shift, clamp bound and gating condition (sections 4.1-4.3); the
+threshold derivation and offset clamping (section 2); Appendix A table
+values against deblock.cpp:40-79; the float-path description (section 5);
+the pad-filter-crop behaviour (section 6); and the footprints (K7).
+
+REPORT as numbered findings, each with file:function:line evidence:
+  (a) any D2 claim you cannot confirm from the cited bytes;
+  (b) any algorithm-bearing source behaviour D2 omits or understates;
+  (c) any Appendix A discrepancy;
+  (d) per D0 section 6: any relevant, non-superseded, non-withdrawn
+      knowledge/decision in the committed documentation set that bears on
+      this material and is absent from D2's checklist or from D0's index
+      (do NOT start from D2's own checklist; use your own search).
+If everything verifies, say so explicitly per section. Findings go to
+W3X; W3D resolves; confirmed gaps become new D0 K-numbers. deblock_sse4.cpp
+is out of scope except as read-only context. Do not propose "improvements"
+to HolyWu behaviour: faithful means faithful (D2 WP-5, T-1).
+```
+
+Before commencing the task, please confirm that you understand the it,
+it you have questions now please table them first.
