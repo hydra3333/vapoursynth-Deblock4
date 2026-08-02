@@ -102,6 +102,10 @@ where powershell >nul 2>nul || (echo ERROR: powershell.exe not found & exit /b 1
 if not exist "tools\run_vs.cmd" (echo ERROR: tools\run_vs.cmd missing & exit /b 1)
 if not exist "%DEBLOCK4_CLASSIC_SCRIPT%" (echo ERROR: Classic .vpy missing & exit /b 1)
 if not exist "%DEBLOCK4_FILTER_SCRIPT%" (echo ERROR: Deblock4 .vpy missing & exit /b 1)
+if not exist "tools\audit_stage_1c_s1_structure.ps1" (echo ERROR: S1 audit script missing & exit /b 1)
+if not exist "tools\audit_stage_1c_g10_imports.ps1" (echo ERROR: G10 audit script missing & exit /b 1)
+if not exist "tools\audit_stage_1c_s2_sweep.ps1" (echo ERROR: S2 audit script missing & exit /b 1)
+if not exist "tools\audit_stage_1c_s3_eol.ps1" (echo ERROR: S3 audit script missing & exit /b 1)
 
 for /f "usebackq delims=" %%V in (`zig version`) do set "OBSERVED_ZIG_VERSION=%%V"
 echo === Observed Zig version !OBSERVED_ZIG_VERSION!
@@ -401,7 +405,7 @@ call :find_present "Lifecycle free present for %~2" "!TRACE_FILE!" "lifecycle fr
 call :count_literal_exact "Selection summary occurs once for %~2 instance" "!TRACE_FILE!" "deblock4: !IDENTITY_STRING! %~2 backend=" 1
 set "MARKER=Verify frame events contain no selection fields for %~2"
 set "CMD=powershell lifecycle frame-event scan"
-powershell -NoProfile -Command "$l=Get-Content -LiteralPath '!TRACE_FILE!' | ? {$_ -match 'lifecycle getFrame-'}; if(-not $l){exit 2}; if($l -match 'backend=|tier=|DEBLOCK4_FORCE_DOWN'){ $l; exit 1 }" >nul
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$l=Get-Content -LiteralPath '!TRACE_FILE!' | Where-Object {$_ -match 'lifecycle getFrame-'}; if(-not $l){exit 2}; if($l -match 'backend=|tier=|DEBLOCK4_FORCE_DOWN'){ $l; exit 1 }" >nul
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
 exit /b 0
@@ -594,16 +598,15 @@ rem ============================================================================
 :audit_source_structure
 set "MARKER=S1 structural dependency audit"
 echo === !MARKER!
-set "CMD=powershell structural source scan"
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$frame=@('src/classic_callback_router.zig','src/deblock4_callback_router.zig','src/classic_ar_initial.zig','src/deblock4_ar_initial.zig','src/classic_ar_all_frames_ready.zig','src/deblock4_ar_all_frames_ready.zig'); $bad=@(); foreach($f in $frame){$s=[IO.File]::ReadAllText($f); if($s -match '@import\(\"(?:backend_tier_selection|cpu_capability_detection)\.zig\"\)|DEBLOCK4_FORCE_DOWN'){ $bad += $f }}; $pure=@('src/backend_tier_selection.zig','src/filter_call_parameters.zig','src/common_instance_data_structure.zig','src/deblock4_version.zig'); foreach($f in $pure){$s=[IO.File]::ReadAllText($f); if($s -match 'vapoursynth_api4|zig_vsh_|VSAPI'){ $bad += $f }}; $cpu=[IO.File]::ReadAllText('src/cpu_capability_detection.zig'); if($cpu -match 'classic_|deblock4_(?:plugin|instance|callback|ar_|frame_)'){ $bad += 'src/cpu_capability_detection.zig' }; if($bad){$bad | %% {Write-Host $_}; exit 1}; Write-Host 'S1_STRUCTURAL_PASS'"
+set "CMD=powershell -File tools\audit_stage_1c_s1_structure.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "tools\audit_stage_1c_s1_structure.ps1"
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
 
 set "MARKER=G10 source-visible conditional-import audit"
-set "CMD=powershell G10 import scan"
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$checks=@(@('src/cpu_capability_detection.zig','enable_force_down','force_down_debug.zig'),@('src/cpu_capability_detection.zig','enable_verbose_detection','print_diag_helper_functions.zig'),@('src/deblock4_plugin.zig','enable_trace_lifecycle','lifecycle_trace_debug.zig'),@('src/deblock4_selftest.zig','enable_trace_lifecycle','lifecycle_trace_debug.zig')); foreach($c in $checks){$s=[IO.File]::ReadAllText($c[0]); $r='if\s*\([^\)]*'+[regex]::Escape($c[1])+'[^\)]*\)\s*@import\(\"'+[regex]::Escape($c[2])+'\"\)\s*else\s*struct'; if($s -notmatch $r){Write-Host ('missing gate '+$c[0]+' '+$c[2]); exit 1}}; Write-Host 'G10_SOURCE_GATES_PASS'"
+echo === !MARKER!
+set "CMD=powershell -File tools\audit_stage_1c_g10_imports.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "tools\audit_stage_1c_g10_imports.ps1"
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
 exit /b 0
@@ -611,9 +614,8 @@ exit /b 0
 :audit_sweep
 set "MARKER=S2 retired-file and reference sweep"
 echo === !MARKER!
-set "CMD=powershell sweep scan"
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ret=@('build_1B1_v7_3.bat','build_1B2_v5_REDEVELOPED.bat','build_1B3_v5.bat','src/backend_isolation_smoke_test.zig','src/backend_probe_avx2.zig','src/backend_probe_generic.zig','src/backend_probe_scalar.zig','src/backend_probe_sse41.zig','src/backend_retention_anchor.zig','src/build_probe.zig','src/dll_probe.zig','src/dll_smoke_test.zig','src/vapoursynth_header_probe.zig'); foreach($f in $ret){if(Test-Path -LiteralPath $f){Write-Host ('retired file remains: '+$f);exit 1}}; $roots=@('build.zig','build.zig.zon','src','tests','tools'); $files=@(); foreach($r in $roots){if(Test-Path $r){$i=Get-Item $r; if($i.PSIsContainer){$files+=Get-ChildItem $r -Recurse -File}else{$files+=$i}}}; $names=$ret | %% {[IO.Path]::GetFileName($_)}; foreach($f in $files){if($f.Name -eq 'build_1C_v1.bat'){continue}; $s=[IO.File]::ReadAllText($f.FullName); foreach($n in $names){if($s.Contains($n)){Write-Host ('retired reference '+$n+' in '+$f.FullName);exit 1}}}; Write-Host 'S2_SWEEP_PASS'"
+set "CMD=powershell -File tools\audit_stage_1c_s2_sweep.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "tools\audit_stage_1c_s2_sweep.ps1"
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
 exit /b 0
@@ -621,9 +623,8 @@ exit /b 0
 :audit_eol
 set "MARKER=S3 repository text CRLF and US-ASCII audit"
 echo === !MARKER!
-set "CMD=powershell tracked/untracked text scan"
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ext=@('.zig','.zon','.c','.h','.bat','.cmd','.vpy','.md','.txt','.patch','.diff','.py','.ps1','.json','.yml','.yaml'); $paths=git ls-files -co --exclude-standard; $bad=@(); foreach($r in $paths){if(-not(Test-Path -LiteralPath $r)){continue}; $f=Get-Item -LiteralPath $r; if($f.PSIsContainer){continue}; if(($ext -notcontains $f.Extension.ToLowerInvariant()) -and $f.Name -ne '.gitignore'){continue}; $b=[IO.File]::ReadAllBytes($f.FullName); for($i=0;$i -lt $b.Length;$i++){if($b[$i] -gt 127){$bad+=($r+' non-ASCII');break}; if($b[$i] -eq 10 -and ($i -eq 0 -or $b[$i-1] -ne 13)){$bad+=($r+' bare-LF');break}}}; if($bad){$bad | %% {Write-Host $_};exit 1}; Write-Host 'S3_ZERO_LF_TEXT_FILES_PASS'"
+set "CMD=powershell -File tools\audit_stage_1c_s3_eol.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "tools\audit_stage_1c_s3_eol.ps1"
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
 exit /b 0
@@ -632,8 +633,7 @@ exit /b 0
 set "MARKER=V1 source and manifest single-home audit"
 echo === !MARKER!
 set "CMD=powershell version scan"
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$zon=[IO.File]::ReadAllText('build.zig.zon'); if($zon -notmatch ('\.version\s*=\s*\"'+[regex]::Escape('!SEMANTIC_VERSION!')+'\"')){exit 1}; $plugin=[IO.File]::ReadAllText('src/deblock4_plugin.zig'); if(-not $plugin.Contains('version.vs_packed_version')){exit 2}; $classic=[IO.File]::ReadAllText('src/classic_frame_properties.zig'); $deb=[IO.File]::ReadAllText('src/deblock4_frame_properties.zig'); $self=[IO.File]::ReadAllText('src/deblock4_selftest.zig'); if(-not($classic.Contains('version.identity_string') -and $deb.Contains('version.identity_string') -and $self.Contains('version.identity_string'))){exit 3}; $dupes=Get-ChildItem src -File | ? {$_.Name -ne 'deblock4_version.zig'} | Select-String -SimpleMatch '!IDENTITY_STRING!'; if($dupes){$dupes;exit 4}; Write-Host 'V1_SOURCE_MANIFEST_PASS'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$q=[char]34; $zon=[IO.File]::ReadAllText('build.zig.zon'); if($zon -notmatch ('\.version\s*=\s*'+$q+[regex]::Escape('!SEMANTIC_VERSION!')+$q)){exit 1}; $plugin=[IO.File]::ReadAllText('src/deblock4_plugin.zig'); if(-not $plugin.Contains('version.vs_packed_version')){exit 2}; $classic=[IO.File]::ReadAllText('src/classic_frame_properties.zig'); $deb=[IO.File]::ReadAllText('src/deblock4_frame_properties.zig'); $self=[IO.File]::ReadAllText('src/deblock4_selftest.zig'); if(-not($classic.Contains('version.identity_string') -and $deb.Contains('version.identity_string') -and $self.Contains('version.identity_string'))){exit 3}; $dupes=Get-ChildItem src -File | Where-Object {$_.Name -ne 'deblock4_version.zig'} | Select-String -SimpleMatch '!IDENTITY_STRING!'; if($dupes){$dupes;exit 4}; Write-Host 'V1_SOURCE_MANIFEST_PASS'"
 set "exit_code=!ERRORLEVEL!"
 if not "!exit_code!"=="0" goto :fail
 exit /b 0
@@ -835,4 +835,4 @@ echo CMD !CMD!
 echo Exit code !exit_code!
 echo ================================================================================
 echo.
-exit !exit_code!
+exit /b !exit_code!
