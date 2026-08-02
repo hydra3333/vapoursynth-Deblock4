@@ -39,7 +39,7 @@ pub const tools = if (deblock4_config.debug.enable_force_down) struct {
 
     pub const ReadError = error{InvalidForceDownValue};
 
-    pub export fn deblock4_force_down_marker_FD00D001() u32 {
+    pub fn deblock4_force_down_marker_FD00D001() u32 {
         std.debug.print("{s}\n", .{MARKER});
         return CODE_MARKER;
     }

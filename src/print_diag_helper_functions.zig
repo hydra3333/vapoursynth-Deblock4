@@ -11,7 +11,7 @@ pub const tools = if (deblock4_config.debug.enable_verbose_detection) struct {
         "DEBLOCK4_VERBOSE_DETECTION_MARKER_DD00D001";
     pub const CODE_MARKER: u32 = 0xDD00_D001;
 
-    pub export fn deblock4_verbose_detection_marker_DD00D001() u32 {
+    pub fn deblock4_verbose_detection_marker_DD00D001() u32 {
         std.debug.print("{s}\n", .{MARKER});
         return CODE_MARKER;
     }

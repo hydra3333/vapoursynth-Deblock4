@@ -19,7 +19,7 @@ pub const tools = if (config.debug.enable_trace_lifecycle) struct {
         }
     }
 
-    pub export fn deblock4_lifecycle_trace_marker_1C71FE01() u32 {
+    pub fn deblock4_lifecycle_trace_marker_1C71FE01() u32 {
         std.debug.print("{s}\n", .{MARKER});
         return CODE_MARKER;
     }
