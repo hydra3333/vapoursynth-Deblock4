@@ -97,7 +97,11 @@ fn runStage1CPureContracts() !void {
     if (classic.common.strength != 25 or
         classic.common.backend != .x86_64_v2_with_sse41 or
         classic.common.planes.all or classic.common.planes.count != 3 or
-        classic.common.planes.indices != [3]u32{ 0, 1, 2 })
+        !std.mem.eql(
+            u32,
+            &classic.common.planes.indices,
+            &[_]u32{ 0, 1, 2 },
+        ))
     {
         return error.Stage1CClassicValidationFailed;
     }
