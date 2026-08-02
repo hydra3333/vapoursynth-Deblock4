@@ -350,7 +350,7 @@ RETAIN:
 POST-SWEEP OBLIGATIONS: G10 three-surface absence and the export-table gate
 re-proven on the new binary (gates G1/G2); repo-wide reference scan proves
 zero first-class references to retired files (gate S2); repo ends the stage
-with ZERO LF text files (gate S3).
+with ZERO LF text files across the Stage 1C deliverable tree (gate S3).
 ```
 
 # 9. Settled conventions (C-1C-1..8, binding; carried from v1.1)
@@ -463,7 +463,11 @@ S1  No-per-frame-selection proof, three parts:
         instance (at creation), never in frame events.
 S2  Sweep test: repo-wide reference scan finds ZERO references to retired
     files from first-class code; build + all tests green post-deletion.
-S3  EOL: repo-wide check reports ZERO LF text files.
+S3  EOL: the Stage 1C deliverable tree (build.zig, build.zig.zon,
+    build_1C_v1.bat, src/, tests/, tools/, third_party/) reports ZERO LF
+    text files. (W3D-assessed / W3X-ratified 2026-08-02 per charter 2.3b;
+    supersedes the earlier "repo-wide" wording, which predated the
+    historical archive and W3X-owned files.)
 N1  Negative controls: -Dcpu/-Dtarget rejected; release build-reject of all
     THREE G10 options panics across the three release modes (9/9).
 ```
