@@ -1,5 +1,5 @@
 Hello. First please thoroughly read attachment 111_New_Chat_Introduction_for_Designer_v1_19.md (or later version)
-and go no further (refer below for the next steps).
+and go no further (refer below for the next steps). Additional documents and the latest source are in the attached zip files.
 
 Then please recognise rule 2.3a in AI_Charter_and_Invariants_Card_v1_26.md (or later version).
 
@@ -36,6 +36,6 @@ I have
 - portable vapoursynth R78 (including its portable python 3.14) in a folder for testing (we use .h code headers from R78)
 
 Now, please perform orientation per the designer introduction 111_New_Chat_Introduction_for_Designer_v1_19 (or later),
-and then let me know if you are sufficiently oriented to continue and/or if you have any questions please table them.
+and then let me know if you are sufficiently oriented to continue and/or if you have any questions then please table them.
 
 Thanks.
