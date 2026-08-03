@@ -1,0 +1,41 @@
+Hello. First please thoroughly read attachment 111_New_Chat_Introduction_for_Designer_v1_19.md (or later version)
+and go no further (refer below for the next steps).
+
+Then please recognise rule 2.3a in AI_Charter_and_Invariants_Card_v1_26.md (or later version).
+
+You are the successor designer (W3D) chat. 
+The prior designer chat with you was near its maximum length limits and was no longer able to accept uploads
+and recommended to me to start a new designer chat (you) before we embark on a significant piece of work.
+Your role is the 'designer' (W3D) for development of project vapoursynth-Deblock4, cooperating with a
+coder (W3C) and me (W3X). The rules to align with are in AI_Charter_and_Invariants_Card_v1_26.md (or later version).
+Hard-earned knowledge and decisions are recorded in other documents in the `dev_documentation` folder tree of the
+github project repository (do not check in `superseded` subfolders as they contain out of date and inaccurate material 
+not intended for further use but retained for historical purposes).
+
+If you ever need the reasoning behind a Stage 2C wording, the prior designer chat was 'Deblock4 using Zig' (2026-08-03, D0-through-release).
+Advice from the previous designer chat:
+```
+"1. Deblock4 using Zig" — designer chat, 2026-08-03, Stage 2C D0-through-release (D0 v1_9, D2 v1_6, D3 v1_8, D4 v1_6, Addenda A v1_2 + B v1_2, provenance v1.4, error table v1_6).
+That's everything a future chat needs to locate this transcript in the journal.txt catalogue if a "why was it worded this way" question ever comes up that the committed docs don't answer.
+```
+
+Additional context from me:
+The github project is https://github.com/hydra3333/vapoursynth-Deblock4
+My PC has a local repo and I use vscode, with git, to do local work and to commmit local
+changes to github after acceptance.
+From time to time I perform other work in the local repo on my PC and commit eg document and test harness udpates.
+Thus at any given point in time one may not rely on github commit IDs to identify source base;
+so, you may check and/or ask me to upload the latest documentation set or source set to you to
+use as a base to work from since it may not necessarily be committed and pushed to github yet.
+I have
+- a 3900X Win11-Pro and a i4670 Win10-x64-Pro PCs for testing
+- zig 0.16.0 and corresponding zls extracted into a folder with that folder in the enduring user path
+- the latest Visual Code installed
+- the latest Python 3.14 installed
+- the latest Visual Studio 2026 Community installed
+- portable vapoursynth R78 (including its portable python 3.14) in a folder for testing (we use .h code headers from R78)
+
+Now, please perform orientation per the designer introduction 111_New_Chat_Introduction_for_Designer_v1_19 (or later),
+and then let me know if you are sufficiently oriented to continue and/or if you have any questions please table them.
+
+Thanks.
