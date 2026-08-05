@@ -1,0 +1,57 @@
+Answers embedded:
+Q1 (2.3a currency) Confirm nothing newer than the uploaded set exists in
+   your local tree, and that src.zip is the current local tip.
+A1:Yes, although the initial blurb to you has had a minor bump.
+Q2 D4 v1_6's internal Status still reads "DRAFT for W3X release ... NOT
+   released", while the handover records W3X's FINAL/ratified/released
+   call. I will treat the release declaration as governing; confirm, and
+   note the status line as a next-edit hygiene item (2.3b materiality:
+   recommend compatible, no reissue - status text only).
+A2:They are confirmed as release by me.
+Q3 Project Status v1_20 predates the 2C release recording (its state
+   advance stops at 1C+1C.1). Presumably a v1_21 advance recording the
+   2C release (and any 2.3b compatibility one-liners) is owed at your
+   convenience - confirm known.
+A3:yes, that document is out of date. I can return to ask old coder to update
+   it if you need, or you can put it on your to-do list, let me know.
+Q4 Housekeeping trap: an old D0 generation sits at the doc ROOT
+   (Deblock4_Stage_2C_Preface_and_Binding_Knowledge_Index_v1_3.md),
+   outside superseded/. The D0 section-6 knowledge sweep excludes only
+   superseded/, so this stale copy is technically in-sweep and could
+   mislead a searcher. Recommend moving it under superseded/.
+A4:Thanks, I have moved it now.
+Q5 holywu_r9/ contains both the plain README_provenance.md (internal
+   v1.0) and the v1_4 "__replaces" sidecar. I read the sidecar naming +
+   the handover as: v1.4 prevails, plain file retained because the folder
+   is read-only once committed. Confirm.
+A5:Yes v1.4 prevails. I have now moved the plain readme.
+Q6 Coder intro v1_20's IMMEDIATE NEXT ACTION block still describes the
+   1C-era G6 fix as the active work. I assume the 2C coder chat was
+   oriented from D4 v1_6 section 11 directly and the coder-intro refresh
+   is deferred; confirm so I don't misjudge what the coder was told.
+A6:yes coder and designer iterated reviewing and fixing the D documents
+   and coder is next expecting a 2C scope from you next to undergo the
+   normal 3-way scope review process.  Coder is a relatively new chatGPT
+   chat, hence it's intro may not be updated for some time yet.
+Q7 (intro section 7 item 7) Confirm the current delivery-form convention
+   for design documents this session (I'd default to: complete US-ASCII
+   CRLF .md files delivered as downloadable artifacts, exact filenames
+   with bumped versions, never fragments).
+A8:yes. From time to time for small easy doc updates I may request
+   document name and from/to text blocks for me to identify and in-place
+   edit though. For scopes etc I have to save the .md files and then
+   attach them to coder chat since they have trouble accessing the
+   github project whereas you do not seem to have that trouble; similar
+   for prevailing code base from time to time (better safe than sorry).
+Q8 What is the "significant piece of work" you mentioned - the incoming
+   2C delivery review, or something to scope beforehand?
+A8:nearly, you to review the 2C docs that you have and bundle a full new 2C scope
+   for coder to review per the normal 3-way scope review process. Just checking
+   have you read all of AI_Charter_and_Invariants_Card_v1_26.md (or later)
+   especially the rules, and in the 2C 'reference' folder the documents containing 
+   knowledge and decisions ? They are essential for you to understand what is being
+   requested and why so as to develop a good scope; there is also at least one
+   knowledge/decisions document in the dev_documents root as well which you
+   probably need to read and understand (I am unsure if it is a part of your
+   orientation), please let me know.
+   
