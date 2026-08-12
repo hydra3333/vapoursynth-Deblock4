@@ -13,6 +13,10 @@ pub const SummaryReason = union(enum) {
         ceiling_name: []const u8,
         actual_name: []const u8,
     },
+    intentionally_capped: struct {
+        ceiling_name: []const u8,
+        actual_name: []const u8,
+    },
     hardware: struct {
         missing_names: [max_missing_requirements][]const u8,
         missing_count: usize,
@@ -64,6 +68,20 @@ pub fn emitInstanceSummary(
                 effective_name,
                 forced.ceiling_name,
                 forced.actual_name,
+            },
+        ),
+        .intentionally_capped => |capped| std.debug.print(
+            "{s}: {s} {s} backend={s} tier={s} " ++
+                "reason={s}({s}) actual={s}\n",
+            .{
+                prefix,
+                version,
+                instance_name,
+                requested_name,
+                effective_name,
+                deblock4_config.implementation.intentionally_capped_reason_token,
+                capped.ceiling_name,
+                capped.actual_name,
             },
         ),
         .hardware => |hardware| {

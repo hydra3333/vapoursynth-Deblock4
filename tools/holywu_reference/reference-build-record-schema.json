@@ -1,0 +1,37 @@
+{
+  "schema": "deblock4-stage-2c-holywu-reference-build-record-v1",
+  "completion_state": "template",
+  "required_fields": [
+    "os",
+    "process_architecture",
+    "compiler_path",
+    "compiler_version",
+    "linker_path",
+    "linker_version",
+    "cpp_language_mode",
+    "optimisation_flags",
+    "floating_point_flags",
+    "preprocessor_definitions",
+    "complete_compile_link_command",
+    "exact_source_files",
+    "compilation_units",
+    "included_project_headers",
+    "pinned_source_hashes",
+    "post_build_source_hashes",
+    "vapoursynth_api_contract",
+    "vapoursynth_headers",
+    "reference_plugin.dll_sha256",
+    "deblock4_plugin.version",
+    "deblock4_plugin.dll_sha256",
+    "vapoursynth_runtime_version",
+    "mxcsr_fp_environment",
+    "sentinel_observations"
+  ],
+  "notes": [
+    "DEBLOCK_X86 must be recorded ABSENT for the forced C/scalar build.",
+    "Actual source bytes are hashed immediately before compilation.",
+    "Post-build hashes must equal the immediately pre-build pinned-source hashes.",
+    "A rebuilt DLL is a new oracle artefact and requires all six sentinels again.",
+    "The completed record and DLL are W3X-generated inspection evidence, not committed source."
+  ]
+}

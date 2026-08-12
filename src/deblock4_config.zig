@@ -4,6 +4,7 @@
 // no gated bodies; it only names values consumed by first-class modules.
 const deblock4_build_options = @import("deblock4_build_options");
 const deblock4_version = @import("deblock4_version.zig");
+const common_instance = @import("common_instance_data_structure.zig");
 
 pub const debug = struct {
     pub const enable_force_down =
@@ -21,6 +22,13 @@ pub const tier = struct {
     pub const name_v1 = "x86_64_v1_baseline";
     pub const name_v2 = "x86_64_v2_with_sse41";
     pub const name_v3 = "x86_64_v3_with_avx2";
+};
+
+pub const implementation = struct {
+    pub const classic_tier_ceiling: ?common_instance.BackendTier =
+        .x86_64_v1_baseline;
+    pub const deblock4_tier_ceiling: ?common_instance.BackendTier = null;
+    pub const intentionally_capped_reason_token = "intentionally-capped";
 };
 
 pub const diag = struct {

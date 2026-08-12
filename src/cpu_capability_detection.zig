@@ -126,6 +126,11 @@ pub const EffectiveCapabilities = struct {
     ceiling_at_or_above_actual: bool,
 };
 
+pub const InstanceCapabilities = struct {
+    effective: EffectiveCapabilities,
+    summary_reason: print_helpers.SummaryReason,
+};
+
 pub const InstanceInitError = error{InvalidForceDownValue};
 
 const CpuidLeaf = struct {
@@ -199,10 +204,7 @@ pub fn detectActualOnce() *const ActualCapabilities {
     }
 }
 
-pub fn initInstanceCapabilities(
-    instance_name: []const u8,
-    requested: RequestedBackend,
-) InstanceInitError!EffectiveCapabilities {
+pub fn initInstanceCapabilities() InstanceInitError!InstanceCapabilities {
     const actual = detectActualOnce();
     var ceiling: ?ResolvedTier = null;
 
@@ -235,18 +237,14 @@ pub fn initInstanceCapabilities(
         }
     }
 
-    print_helpers.emitInstanceSummary(
-        instance_name,
-        requested,
-        effective.resolved_tier,
-        summaryReason(actual, effective),
-    );
-
     if (deblock4_config.debug.enable_verbose_detection) {
         diag_dbg.tools.dumpDetection(actual, effective);
     }
 
-    return effective;
+    return .{
+        .effective = effective,
+        .summary_reason = summaryReason(actual, effective),
+    };
 }
 
 pub fn applyCeiling(

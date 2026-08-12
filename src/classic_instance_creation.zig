@@ -8,6 +8,7 @@ const config = @import("deblock4_config.zig");
 const backend_tier_selection = @import("backend_tier_selection.zig");
 const classic_callback_router = @import("classic_callback_router.zig");
 const classic_instance_data = @import("classic_instance_data.zig");
+const classic_thresholds = @import("classic_thresholds.zig");
 const common_instance = @import("common_instance_data_structure.zig");
 const filter_call_parameters = @import("filter_call_parameters.zig");
 const invocation_text = @import("effective_invocation_text.zig");
@@ -25,6 +26,8 @@ pub const CreationError = error{
     UnsupportedColorFamily,
     InvalidVideoMetadata,
     PlaneIndexOutOfRange,
+    FloatUnsupported,
+    IntegerDepthUnsupported,
     AllocationFailed,
 };
 
@@ -96,9 +99,20 @@ pub fn create(
         return;
     };
 
-    const selection = backend_tier_selection.selectForInstance(
+    const format_fields = validateFormatFields(
+        video_info.*.format.sampleType,
+        video_info.*.format.bitsPerSample,
+        video_info.*.format.bytesPerSample,
+    ) catch |err| {
+        vs.zig_vs_free_node(vsapi, source);
+        setError(out, vsapi, creationMessage(err));
+        return;
+    };
+
+    const selection = backend_tier_selection.selectForInstanceWithCeiling(
         "Classic",
         parameters.common.backend,
+        config.implementation.classic_tier_ceiling,
     ) catch |err| {
         vs.zig_vs_free_node(vsapi, source);
         setError(out, vsapi, selectionMessage(err));
@@ -126,6 +140,13 @@ pub fn create(
             .backend_selection = selection,
         },
         .parameters = parameters,
+        .format = format_fields,
+        .thresholds = classic_thresholds.resolve(
+            parameters.common.strength,
+            parameters.common.boundary_strength_offset,
+            parameters.common.side_activity_offset,
+            format_fields.bits_per_sample,
+        ),
         .using_text = using_text,
     };
 
@@ -247,6 +268,40 @@ pub fn copyVideoInfo(video_info: *const vs.VSVideoInfo) CreationError!common_ins
     };
 }
 
+pub fn validateFormatFields(
+    sample_type: c_int,
+    bits_per_sample: c_int,
+    bytes_per_sample: c_int,
+) CreationError!classic_instance_data.FormatFields {
+    if (sample_type == vs.stFloat) {
+        const valid_float =
+            (bits_per_sample == 16 and bytes_per_sample == 2) or
+            (bits_per_sample == 32 and bytes_per_sample == 4);
+        if (!valid_float) return error.InvalidVideoMetadata;
+        return error.FloatUnsupported;
+    }
+    if (sample_type != vs.stInteger) return error.InvalidVideoMetadata;
+    if (bits_per_sample < 8 or bits_per_sample > 32) {
+        return error.InvalidVideoMetadata;
+    }
+
+    const expected_bytes: c_int = if (bits_per_sample <= 8)
+        1
+    else if (bits_per_sample <= 16)
+        2
+    else
+        4;
+    if (bytes_per_sample != expected_bytes) return error.InvalidVideoMetadata;
+    if (bits_per_sample > 16) return error.IntegerDepthUnsupported;
+
+    return .{
+        .sample_type = sample_type,
+        .bits_per_sample = @intCast(bits_per_sample),
+        .bytes_per_sample = @intCast(bytes_per_sample),
+        .storage = if (bytes_per_sample == 1) .u8 else .u16,
+    };
+}
+
 fn setError(out: *vs.VSMap, vsapi: *const vs.VSAPI, message: [*:0]const u8) void {
     vs.zig_vs_map_set_error(vsapi, out, message);
 }
@@ -264,19 +319,47 @@ fn validationMessage(err: filter_call_parameters.ValidationError) [*:0]const u8 
     error.DuplicatePlaneIndex => "Classic: planes must not contain duplicates",
     else => "Classic: an argument is not valid for this filter",
 }; }
-fn selectionMessage(err: backend_tier_selection.SelectionError) [*:0]const u8 { return switch (err) {
+fn selectionMessage(err: backend_tier_selection.CappedSelectionError) [*:0]const u8 { return switch (err) {
     error.InvalidForceDownValue => "Classic: DEBLOCK4_FORCE_DOWN has an invalid value",
     error.RequestedBackendUnavailable => "Classic: requested backend is above the EFFECTIVE CPU tier",
+    error.RequestedBackendNotImplemented => "Classic: requested backend is not available in this build",
 }; }
 fn creationMessage(err: CreationError) [*:0]const u8 { return switch (err) {
     error.VariableFormatOrDimensions => "Classic: input clip must have constant format and dimensions",
     error.UnsupportedColorFamily => "Classic: input color family is unsupported",
     error.InvalidVideoMetadata => "Classic: input video metadata is invalid",
     error.PlaneIndexOutOfRange => "Classic: a plane index is outside the source format",
+    error.FloatUnsupported => "Classic: float input is not supported",
+    error.IntegerDepthUnsupported => "Classic: integer input must be between 8 and 16 bits",
     error.AllocationFailed => "Classic: instance allocation failed",
 }; }
 
 test "Classic clip validation rejects a plane above the source format" {
     const planes = filter_call_parameters.PlaneRequest{ .all = false, .count = 1, .indices = .{ 2, 0, 0 } };
     try std.testing.expectError(error.PlaneIndexOutOfRange, validatePlanes(planes, 2));
+}
+
+
+test "Classic format validation accepts exact integer storage" {
+    const format8 = try validateFormatFields(vs.stInteger, 8, 1);
+    try std.testing.expectEqual(@as(c_int, vs.stInteger), format8.sample_type);
+    try std.testing.expectEqual(classic_instance_data.SampleStorage.u8, format8.storage);
+    const format10 = try validateFormatFields(vs.stInteger, 10, 2);
+    try std.testing.expectEqual(classic_instance_data.SampleStorage.u16, format10.storage);
+    const format16 = try validateFormatFields(vs.stInteger, 16, 2);
+    try std.testing.expectEqual(@as(u8, 16), format16.bits_per_sample);
+}
+
+test "Classic format validation separates float depth and malformed metadata" {
+    try std.testing.expectError(error.FloatUnsupported, validateFormatFields(vs.stFloat, 16, 2));
+    try std.testing.expectError(error.FloatUnsupported, validateFormatFields(vs.stFloat, 32, 4));
+    try std.testing.expectError(error.InvalidVideoMetadata, validateFormatFields(vs.stFloat, 16, 4));
+    try std.testing.expectError(error.InvalidVideoMetadata, validateFormatFields(vs.stInteger, 10, 4));
+}
+
+test "Classic format validation refuses every integer depth 17 through 32" {
+    var bits: c_int = 17;
+    while (bits <= 32) : (bits += 1) {
+        try std.testing.expectError(error.IntegerDepthUnsupported, validateFormatFields(vs.stInteger, bits, 4));
+    }
 }

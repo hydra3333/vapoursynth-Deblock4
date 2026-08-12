@@ -1,9 +1,10 @@
-// First-class Deblock4 capability and Stage 1C pure-contract self-test.
+// First-class Deblock4 capability and pure-contract self-test.
 const std = @import("std");
 const detection = @import("cpu_capability_detection.zig");
 const config = @import("deblock4_config.zig");
 const parameters = @import("filter_call_parameters.zig");
 const tier_selection = @import("backend_tier_selection.zig");
+const common_instance = @import("common_instance_data_structure.zig");
 const version = @import("deblock4_version.zig");
 
 const lifecycle_dbg = if (config.debug.enable_trace_lifecycle)
@@ -29,16 +30,20 @@ pub fn main() !void {
     // The W3X development host is the required positive v3 detector case.
     try requireV3DevelopmentHost(first);
 
-    const automatic = try detection.initInstanceCapabilities(
-        "selftest",
-        .auto,
-    );
-    const named = try detection.initInstanceCapabilities(
+    const capabilities = try detection.initInstanceCapabilities();
+    const automatic = try tier_selection.selectForInstance("selftest", .auto);
+    const named = try tier_selection.selectForInstance(
         "selftest-nonauto",
-        .x86_64_v1,
+        .x86_64_v1_baseline,
     );
-
-    if (automatic.resolved_tier != named.resolved_tier) {
+    const detected_tier = switch (capabilities.effective.resolved_tier) {
+        .x86_64_v1 => common_instance.BackendTier.x86_64_v1_baseline,
+        .x86_64_v2 => common_instance.BackendTier.x86_64_v2_with_sse41,
+        .x86_64_v3 => common_instance.BackendTier.x86_64_v3_with_avx2,
+    };
+    if (automatic.selected_tier != detected_tier or
+        named.selected_tier != .x86_64_v1_baseline)
+    {
         return error.RequestedBackendAlteredCapability;
     }
 
@@ -48,7 +53,7 @@ pub fn main() !void {
         "deblock4_selftest: PASS actual={s} effective={s} stage_1c=PASS\n",
         .{
             @tagName(first.resolved_tier),
-            @tagName(automatic.resolved_tier),
+            @tagName(capabilities.effective.resolved_tier),
         },
     );
 }
@@ -57,6 +62,7 @@ fn runStage1CPureContracts() !void {
     const auto = try tier_selection.selectForEffectiveTier(
         .auto,
         .x86_64_v3_with_avx2,
+        null,
     );
     if (auto.selected_tier != .x86_64_v3_with_avx2 or
         auto.provenance != .automatic)
@@ -67,6 +73,7 @@ fn runStage1CPureContracts() !void {
     const explicit_ok = try tier_selection.selectForEffectiveTier(
         .x86_64_v2_with_sse41,
         .x86_64_v3_with_avx2,
+        null,
     );
     if (explicit_ok.selected_tier != .x86_64_v2_with_sse41 or
         explicit_ok.provenance != .explicit)
@@ -77,10 +84,29 @@ fn runStage1CPureContracts() !void {
     if (tier_selection.selectForEffectiveTier(
         .x86_64_v3_with_avx2,
         .x86_64_v2_with_sse41,
+        null,
     )) |_| {
         return error.Stage1CAboveEffectiveWasAccepted;
     } else |err| {
         if (err != error.RequestedBackendUnavailable) return err;
+    }
+
+    const capped_auto = try tier_selection.selectForEffectiveTier(
+        .auto,
+        .x86_64_v3_with_avx2,
+        config.implementation.classic_tier_ceiling,
+    );
+    if (capped_auto.selected_tier != .x86_64_v1_baseline) {
+        return error.ClassicAutoWasNotImplementationCapped;
+    }
+    if (tier_selection.selectForEffectiveTier(
+        .x86_64_v2_with_sse41,
+        .x86_64_v3_with_avx2,
+        config.implementation.classic_tier_ceiling,
+    )) |_| {
+        return error.UnimplementedBackendWasAccepted;
+    } else |err| {
+        if (err != error.RequestedBackendNotImplemented) return err;
     }
 
     if (parameters.parseBackendValue(.{ .data = "unknown" })) |_| {
