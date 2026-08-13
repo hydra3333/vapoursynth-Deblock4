@@ -9,6 +9,12 @@ pub fn build(b: *std.Build) void {
         .os_tag = .windows,
         .abi = .msvc,
     });
+    const classic_v2_target = b.resolveTargetQuery(.{
+        .cpu_arch = .x86_64,
+        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v2 },
+        .os_tag = .windows,
+        .abi = .msvc,
+    });
     const optimize = b.standardOptimizeOption(.{});
 
     // G10 debug-only modules are source-visible opt-ins and are structurally
@@ -86,12 +92,35 @@ pub fn build(b: *std.Build) void {
         .flags = &.{"-std=c11"},
     });
 
+    // Classic v2 is a separate named-level object. The target-specific source
+    // owns its emission roots; the baseline DLL reaches them only by extern.
+    const classic_v2_module = b.createModule(.{
+        .root_source_file = b.path("src/classic_backend_v2_sse41.zig"),
+        .target = classic_v2_target,
+        .optimize = optimize,
+    });
+    const classic_v2_object = b.addObject(.{
+        .name = "classic_backend_v2_sse41",
+        .root_module = classic_v2_module,
+    });
+
     const dll = b.addLibrary(.{
         .name = "Deblock4",
         .linkage = .dynamic,
         .root_module = dll_module,
     });
+    dll.root_module.addObject(classic_v2_object);
     b.installArtifact(dll);
+
+    const install_classic_v2_object = b.addInstallFile(
+        classic_v2_object.getEmittedBin(),
+        "backend-objects/classic_backend_v2_sse41.obj",
+    );
+    const classic_v2_object_step = b.step(
+        "classic-v2-object",
+        "Build the Classic x86-64-v2 backend inspection object",
+    );
+    classic_v2_object_step.dependOn(&install_classic_v2_object.step);
 
     const dll_check_step = b.step(
         "dll-check",
@@ -345,6 +374,20 @@ pub fn build(b: *std.Build) void {
         }),
     });
     const run_edge_schedule_tests = b.addRunArtifact(edge_schedule_tests);
+
+    const vector_backend_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/classic_vector_backend.zig"),
+            .target = classic_v2_target,
+            .optimize = optimize,
+        }),
+    });
+    const run_vector_backend_tests = b.addRunArtifact(vector_backend_tests);
+    const classic_v2_test_step = b.step(
+        "test-classic-v2",
+        "Run the Classic x86-64-v2 vector differential unit suite",
+    );
+    classic_v2_test_step.dependOn(&run_vector_backend_tests.step);
 
     // Clip-dependent validation tests live in the two creation modules and
     // compile against the real translated API and bridge.

@@ -4,6 +4,31 @@ const instance_module = @import("classic_instance_data.zig");
 const frame_mechanics = @import("common_frame_mechanics.zig");
 const frame_properties = @import("classic_frame_properties.zig");
 const edge_schedule = @import("classic_edge_schedule.zig");
+const thresholds_module = @import("classic_thresholds.zig");
+
+extern fn deblock4_classic_v2_process_u8(
+    base: [*]u8,
+    width: usize,
+    height: usize,
+    stride_bytes: usize,
+    alpha: i32,
+    beta: i32,
+    c0: i32,
+    c1: i32,
+    peak: i32,
+) callconv(.c) void;
+
+extern fn deblock4_classic_v2_process_u16(
+    base: [*]u8,
+    width: usize,
+    height: usize,
+    stride_bytes: usize,
+    alpha: i32,
+    beta: i32,
+    c0: i32,
+    c1: i32,
+    peak: i32,
+) callconv(.c) void;
 
 const ProcessingError = error{
     InvalidFrameFormat,
@@ -28,7 +53,7 @@ pub fn handle(
     defer frame_mechanics.releaseFrame(source, vsapi);
 
     // C5.2: preserve the copyFrame-equivalent destination state, then run the
-    // selected production backend. Stage 2C can resolve only the scalar tier.
+    // immutable creation-time selected production backend.
     const output = frame_mechanics.passThroughWritableCopy(source, core, vsapi) orelse {
         frame_mechanics.setFilterError("Classic: failed to copy the source frame", frame_context, vsapi);
         return null;
@@ -56,9 +81,6 @@ fn processOutputFrame(
 ) ProcessingError!void {
     if (vsapi_c == null) return error.InvalidFrameFormat;
     const vsapi: *const vs.VSAPI = @ptrCast(vsapi_c);
-    if (instance.common.backend_selection.selected_tier != .x86_64_v1_baseline) {
-        return error.BackendInvariant;
-    }
 
     const format_ptr = vsapi.getVideoFrameFormat.?(output);
     if (format_ptr == null) return error.InvalidFrameFormat;
@@ -107,11 +129,52 @@ fn processOutputFrame(
             .stride_bytes = stride_bytes,
         };
 
-        switch (instance.format.storage) {
-            .u8 => edge_schedule.processPlane(u8, plane_view, instance.thresholds),
-            .u16 => edge_schedule.processPlane(u16, plane_view, instance.thresholds),
+        switch (instance.common.backend_selection.selected_tier) {
+            .x86_64_v1_baseline => switch (instance.format.storage) {
+                .u8 => edge_schedule.processPlane(u8, plane_view, instance.thresholds),
+                .u16 => edge_schedule.processPlane(u16, plane_view, instance.thresholds),
+            },
+            .x86_64_v2_with_sse41 => switch (instance.format.storage) {
+                .u8 => callV2U8(plane_view, instance.thresholds),
+                .u16 => callV2U16(plane_view, instance.thresholds),
+            },
+            .x86_64_v3_with_avx2 => return error.BackendInvariant,
         }
     }
+}
+
+fn callV2U8(
+    plane: edge_schedule.BytePlane,
+    thresholds: thresholds_module.Resolved,
+) void {
+    deblock4_classic_v2_process_u8(
+        plane.base,
+        plane.width,
+        plane.height,
+        plane.stride_bytes,
+        thresholds.alpha,
+        thresholds.beta,
+        thresholds.c0,
+        thresholds.c1,
+        thresholds.peak,
+    );
+}
+
+fn callV2U16(
+    plane: edge_schedule.BytePlane,
+    thresholds: thresholds_module.Resolved,
+) void {
+    deblock4_classic_v2_process_u16(
+        plane.base,
+        plane.width,
+        plane.height,
+        plane.stride_bytes,
+        thresholds.alpha,
+        thresholds.beta,
+        thresholds.c0,
+        thresholds.c1,
+        thresholds.peak,
+    );
 }
 
 fn planeSelected(

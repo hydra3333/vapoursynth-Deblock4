@@ -7,7 +7,12 @@ core = vs.core
 PLUGIN_PATH = os.environ.get("DEBLOCK4_PLUGIN_PATH", "")
 CASE = os.environ.get("DEBLOCK4_TEST_CASE", "o4_gray8")
 EXPECTED_VERSION = os.environ.get("DEBLOCK4_EXPECTED_VERSION", "0.1.0-dev+2C")
-EXPECTED_TIER = "x86_64_v1_baseline"
+# Stage 4C amendment (W3D, 2026-08-12): the expected tier is now supplied
+# per case by the invoking batch (build_4C_v1.bat passes it as case arg 3
+# into DEBLOCK4_EXPECTED_TIER). The default preserves Stage 2C standalone
+# behaviour byte-for-byte: build_2C_v1.bat sets no tier variable and every
+# 2C case therefore still expects the scalar baseline, unchanged.
+EXPECTED_TIER = os.environ.get("DEBLOCK4_EXPECTED_TIER", "x86_64_v1_baseline")
 
 if not PLUGIN_PATH:
     raise RuntimeError("DEBLOCK4_PLUGIN_PATH is required")

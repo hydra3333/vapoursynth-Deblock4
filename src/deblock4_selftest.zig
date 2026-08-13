@@ -96,11 +96,21 @@ fn runStage1CPureContracts() !void {
         .x86_64_v3_with_avx2,
         config.implementation.classic_tier_ceiling,
     );
-    if (capped_auto.selected_tier != .x86_64_v1_baseline) {
+    if (capped_auto.selected_tier != .x86_64_v2_with_sse41) {
         return error.ClassicAutoWasNotImplementationCapped;
     }
-    if (tier_selection.selectForEffectiveTier(
+    const capped_v2 = try tier_selection.selectForEffectiveTier(
         .x86_64_v2_with_sse41,
+        .x86_64_v3_with_avx2,
+        config.implementation.classic_tier_ceiling,
+    );
+    if (capped_v2.selected_tier != .x86_64_v2_with_sse41 or
+        capped_v2.provenance != .explicit)
+    {
+        return error.ClassicV2WasNotImplemented;
+    }
+    if (tier_selection.selectForEffectiveTier(
+        .x86_64_v3_with_avx2,
         .x86_64_v3_with_avx2,
         config.implementation.classic_tier_ceiling,
     )) |_| {
