@@ -51,7 +51,7 @@ Delivery and repository discipline (charter v1.27, C-DELIV-10/11):
     (C-DELIV-07).
 
 Environment (constant; W3X corrects at issuance if changed):
-    Zig 0.16.0. Visual Studio 2026 x64 developer prompt (VsDevCmd -arch=amd64).
+    Zig 0.16.0. Visual Code 2026 x64 developer prompt (VsDevCmd -arch=amd64).
     Portable VapourSynth R79 at D:\TEST\Vapoursynth_x64_R79 (in-tree API4
     compile headers unchanged; the R78-era header set remains the compile
     contract). Test invocation via tools\run_vs.cmd. US-ASCII CRLF for all
