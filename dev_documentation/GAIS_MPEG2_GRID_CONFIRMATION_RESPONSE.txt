@@ -1,0 +1,73 @@
+PROVENANCE (W3D, 2026-08-14): captured verbatim from GAIS on 2026-08-12 in
+response to the W3D chroma-grid question during the Stage 4C design round.
+It substantively confirms items G2, G3 and G4 of the confirmation checklist
+in Deblock4_MPEG2_Grid_Field_DCT_Knowledge (v1_2 records this). The
+knowledge document PREVAILS over this raw response. Items G1, G5, G6 and G7
+remain pending a further GAIS pass.
+
+--- GAIS RESPONSE, VERBATIM ---
+
+Yes, that statement is correct.
+In MPEG-2 (ISO/IEC 13818-2), the Discrete Cosine Transform (DCT) always
+operates on blocks of **$8 \times 8$ samples**, regardless of whether the
+plane is luma or chroma, and regardless of the chroma subsampling format
+(4:2:0, 4:2:2, or 4:4:4).
+The coordinates and dimensions of these blocks are defined relative to the
+sampling grid of the specific plane being coded (the chroma plane's own
+coordinates), not the luma plane's coordinates.
+Here is how this relationship works across the different chroma formats
+within a single macroblock (which always covers a $16 \times 16$ region of
+luma pixels):
+
+### 1. 4:2:0 Format
+* **Luma ($Y$):** The $16 \times 16$ luma region is divided into four
+  $8 \times 8$ luma blocks.
+* **Chroma ($Cb, Cr$):** The chroma components are subsampled by a factor
+  of 2 both horizontally and vertically. This means the $16 \times 16$ luma
+  area corresponds to an $8 \times 8$ area of samples in each of the chroma
+  planes.
+* **DCT Blocks:** Each chroma plane ($Cb$ and $Cr$) contributes exactly
+  **one** $8 \times 8$ block.
+* *In luma coordinates*, this $8 \times 8$ chroma block spans a
+  $16 \times 16$ pixel area, but the DCT is performed on the $8 \times 8$
+  actual samples present in the chroma plane.
+
+### 2. 4:2:2 Format
+* **Luma ($Y$):** Four $8 \times 8$ blocks.
+* **Chroma ($Cb, Cr$):** The chroma is subsampled by a factor of 2
+  horizontally, but not vertically. The $16 \times 16$ luma area
+  corresponds to an $8 \times 16$ area of samples in each chroma plane.
+* **DCT Blocks:** Each chroma plane is divided vertically into **two**
+  $8 \times 8$ blocks.
+* *In luma coordinates*, each of these chroma DCT blocks covers an
+  $8 \times 16$ area, but the data array processed by the DCT is still
+  $8 \times 8$ samples in the chroma plane's own grid.
+
+### 3. 4:4:4 Format
+* **Luma ($Y$):** Four $8 \times 8$ blocks.
+* **Chroma ($Cb, Cr$):** There is no subsampling. The $16 \times 16$ luma
+  area corresponds to a $16 \times 16$ area of samples in each chroma
+  plane.
+* **DCT Blocks:** Each chroma plane is divided into **four** $8 \times 8$
+  blocks.
+* Here, the chroma plane coordinates match the luma coordinates exactly,
+  and each of the four blocks per chroma channel is $8 \times 8$ samples.
+
+---
+
+### Summary of Block Counts per Macroblock
+Because the DCT engine in MPEG-2 always expects an $8 \times 8$ matrix of
+values, the number of coded blocks per macroblock changes depending on the
+chroma format:
+
+| Format | Luma Blocks ($8\times8$) | Chroma Blocks ($8\times8$) per MB | Total Blocks per MB |
+| :--- | :--- | :--- | :--- |
+| **4:2:0** | 4 | 2 (1 $Cb$, 1 $Cr$) | 6 |
+| **4:2:2** | 4 | 4 (2 $Cb$, 2 $Cr$) | 8 |
+| **4:4:4** | 4 | 8 (4 $Cb$, 4 $Cr$) | 12 |
+
+If the blocks were defined in luma coordinates, a 4:2:0 chroma block would
+have to be processed as a $4 \times 4$ DCT, which the MPEG-2 specification
+does not support. The hardware or software pipeline always processes
+$8 \times 8$ matrices of samples directly from the respective coordinate
+system of the plane being decoded.
