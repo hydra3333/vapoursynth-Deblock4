@@ -91,32 +91,35 @@ fn runStage1CPureContracts() !void {
         if (err != error.RequestedBackendUnavailable) return err;
     }
 
-    const capped_auto = try tier_selection.selectForEffectiveTier(
+    const classic_auto = try tier_selection.selectForEffectiveTier(
         .auto,
         .x86_64_v3_with_avx2,
         config.implementation.classic_tier_ceiling,
     );
-    if (capped_auto.selected_tier != .x86_64_v2_with_sse41) {
-        return error.ClassicAutoWasNotImplementationCapped;
+    if (classic_auto.selected_tier != .x86_64_v3_with_avx2 or
+        classic_auto.provenance != .automatic)
+    {
+        return error.ClassicAutoDidNotSelectImplementedV3;
     }
-    const capped_v2 = try tier_selection.selectForEffectiveTier(
+    const classic_v2 = try tier_selection.selectForEffectiveTier(
         .x86_64_v2_with_sse41,
         .x86_64_v3_with_avx2,
         config.implementation.classic_tier_ceiling,
     );
-    if (capped_v2.selected_tier != .x86_64_v2_with_sse41 or
-        capped_v2.provenance != .explicit)
+    if (classic_v2.selected_tier != .x86_64_v2_with_sse41 or
+        classic_v2.provenance != .explicit)
     {
         return error.ClassicV2WasNotImplemented;
     }
-    if (tier_selection.selectForEffectiveTier(
+    const classic_v3 = try tier_selection.selectForEffectiveTier(
         .x86_64_v3_with_avx2,
         .x86_64_v3_with_avx2,
         config.implementation.classic_tier_ceiling,
-    )) |_| {
-        return error.UnimplementedBackendWasAccepted;
-    } else |err| {
-        if (err != error.RequestedBackendNotImplemented) return err;
+    );
+    if (classic_v3.selected_tier != .x86_64_v3_with_avx2 or
+        classic_v3.provenance != .explicit)
+    {
+        return error.ClassicV3WasNotImplemented;
     }
 
     if (parameters.parseBackendValue(.{ .data = "unknown" })) |_| {

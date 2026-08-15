@@ -30,10 +30,33 @@ extern fn deblock4_classic_v2_process_u16(
     peak: i32,
 ) callconv(.c) void;
 
+extern fn deblock4_classic_v3_process_u8(
+    base: [*]u8,
+    width: usize,
+    height: usize,
+    stride_bytes: usize,
+    alpha: i32,
+    beta: i32,
+    c0: i32,
+    c1: i32,
+    peak: i32,
+) callconv(.c) void;
+
+extern fn deblock4_classic_v3_process_u16(
+    base: [*]u8,
+    width: usize,
+    height: usize,
+    stride_bytes: usize,
+    alpha: i32,
+    beta: i32,
+    c0: i32,
+    c1: i32,
+    peak: i32,
+) callconv(.c) void;
+
 const ProcessingError = error{
     InvalidFrameFormat,
     InvalidPlaneGeometry,
-    BackendInvariant,
 };
 
 pub fn handle(
@@ -138,7 +161,10 @@ fn processOutputFrame(
                 .u8 => callV2U8(plane_view, instance.thresholds),
                 .u16 => callV2U16(plane_view, instance.thresholds),
             },
-            .x86_64_v3_with_avx2 => return error.BackendInvariant,
+            .x86_64_v3_with_avx2 => switch (instance.format.storage) {
+                .u8 => callV3U8(plane_view, instance.thresholds),
+                .u16 => callV3U16(plane_view, instance.thresholds),
+            },
         }
     }
 }
@@ -165,6 +191,40 @@ fn callV2U16(
     thresholds: thresholds_module.Resolved,
 ) void {
     deblock4_classic_v2_process_u16(
+        plane.base,
+        plane.width,
+        plane.height,
+        plane.stride_bytes,
+        thresholds.alpha,
+        thresholds.beta,
+        thresholds.c0,
+        thresholds.c1,
+        thresholds.peak,
+    );
+}
+
+fn callV3U8(
+    plane: edge_schedule.BytePlane,
+    thresholds: thresholds_module.Resolved,
+) void {
+    deblock4_classic_v3_process_u8(
+        plane.base,
+        plane.width,
+        plane.height,
+        plane.stride_bytes,
+        thresholds.alpha,
+        thresholds.beta,
+        thresholds.c0,
+        thresholds.c1,
+        thresholds.peak,
+    );
+}
+
+fn callV3U16(
+    plane: edge_schedule.BytePlane,
+    thresholds: thresholds_module.Resolved,
+) void {
+    deblock4_classic_v3_process_u16(
         plane.base,
         plane.width,
         plane.height,

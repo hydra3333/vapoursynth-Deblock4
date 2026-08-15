@@ -26,7 +26,7 @@ pub const tier = struct {
 
 pub const implementation = struct {
     pub const classic_tier_ceiling: ?common_instance.BackendTier =
-        .x86_64_v2_with_sse41;
+        .x86_64_v3_with_avx2;
     pub const deblock4_tier_ceiling: ?common_instance.BackendTier = null;
     pub const intentionally_capped_reason_token = "intentionally-capped";
 };
