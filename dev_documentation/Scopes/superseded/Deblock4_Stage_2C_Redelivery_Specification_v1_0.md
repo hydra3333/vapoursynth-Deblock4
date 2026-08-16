@@ -1,0 +1,176 @@
+# Deblock4 - Stage 2C Redelivery Specification (No-Script Package Form)
+
+**Deliverable:** W3D-2C-REDELIVERY-SPEC
+**Version:** 1.0
+**Date:** 2026-08-10
+**Author:** W3D (designer)
+**Route:** W3D -> W3X -> W3C
+**Status:** W3X-RATIFIED redelivery instruction (W3X decisions Q1/Q2/Q3,
+2026-08-10). Supersedes the consolidated-round list of the S2 incident
+document and the open items of the rider re-review: delivery v1.0 and the
+F-1 rider are RETIRED WHOLESALE; the W3X tree is verified reset to HEAD
+(empty git status). This document specifies the complete replacement
+package. The scope itself (D4 v1_9 authority set) is UNCHANGED.
+**Encoding:** US-ASCII; CRLF.
+
+---
+
+# 1. The ratified shape (W3X Q1)
+
+```text
+NO POWERSHELL ANYWHERE IN THE PACKAGE. NO apply script, NO restore
+script, NO patch files, NO git in any machinery. ONE script total: the
+MSVC reference-build driver, as a .cmd (section 4).
+
+PACKAGE LAYOUT:
+  Deblock4_Stage_2C_Implementation_Delivery_v2_0/
+    Deblock4_Stage_2C_Implementation_Delivery_Manifest_v2_0.md
+    apply_to_tree/        (mirrors the repo layout; 22 files)
+    restore_to_base/      (pre-change copies of the 10 REPLACES files)
+
+APPLICATION (manual W3X act): copy the CONTENTS of apply_to_tree/ over
+the repository root. Nothing else. The manifest lists every file with
+NEW/REPLACES so the result can be eyeballed against git status.
+
+BACKOUT (manual W3X acts, manifest-carried): the per-file command
+block (10x git restore + 12x del + rd tools\holywu_reference,
+static-review v1_3 section 5b form), AND/OR manual copy-back from
+restore_to_base/. The folder's three ruled purposes are stated:
+delivery base record; W3D verification input; manual backout resource.
+```
+
+# 2. Byte-identity requirements (this is what makes the round small)
+
+The reviewed core took ZERO findings and its mathematics is verified
+digit-for-digit against the independent W3D model. It returns
+BYTE-IDENTICAL, and W3D will verify that mechanically against retained
+copies before anything else is read.
+
+```text
+BYTE-IDENTICAL (18 files - any difference is a finding):
+  the 10 REPLACES sources:
+    build.zig, src/backend_tier_selection.zig,
+    src/classic_ar_all_frames_ready.zig,
+    src/classic_instance_creation.zig, src/classic_instance_data.zig,
+    src/cpu_capability_detection.zig, src/deblock4_config.zig,
+    src/deblock4_selftest.zig, src/deblock4_version.zig,
+    src/print_helper_functions.zig
+  the 3 new first-class modules:
+    src/classic_scalar_kernel.zig, src/classic_edge_schedule.zig,
+    src/classic_thresholds.zig
+  tests/Deblock4_Stage_2C_D3_v1_10_O_G_to_Test_Crosswalk.md
+    EXCEPT the single K30 row (section 3) - all other rows byte-equal.
+  tests/stage_2c_classic_obligations.vpy
+  tools/holywu_reference/stage_2c_holywu_diff.vpy
+  tools/holywu_reference/reference-build-record-schema.json
+  restore_to_base/* (the 10 base copies - byte-equal to HEAD)
+
+CHANGED (4 files - the entire W3C authoring surface this round):
+  build_2C_v1.bat: REMOVE the K30-audit invocation step and its
+    preflight existence check line. NOTHING ELSE CHANGES - W3D
+    re-reviews this file as a diff against the retained reviewed copy
+    and any unrelated delta is a finding.
+  tools/holywu_reference/build_holywu_r9_scalar.cmd: NEW, replacing
+    the .ps1 (section 4).
+  tools/holywu_reference/run_stage_2c_holywu_reference.cmd: invokes
+    the new .cmd instead of powershell; otherwise minimal.
+  tools/holywu_reference/README.md: references the .cmd; documents
+    the K30 evidence routing (section 3); otherwise minimal.
+
+DROPPED (do not ship): apply_delivery.ps1, restore_to_base.ps1,
+  tools/audit_stage_2c_k30_first_class.ps1, any .patch.
+```
+
+# 3. K30 routing (W3X Q2, ratified as compatible with the ratified
+contract wording "a delivery obligation ... named in the crosswalk")
+
+```text
+The K30 two-part audit is discharged as DELIVERY EVIDENCE, not as an
+in-tree gate:
+  (a) W3C performs the audit with its OWN tooling at authoring time
+      and reports the results in the delivery manifest: part 1 (new
+      modules + build wiring + test names, full scan, generic
+      vocabulary + the CANONICAL thirteen S2 basenames, expected
+      EMPTY) and part 2 (existing edited modules, ADDED LINES ONLY,
+      no new scaffolding reference, no retired identifier; accepted
+      Stage 1C identifiers untouched). The canonical list is the S2
+      sweep's thirteen names - NOT the seven-entry list of the retired
+      v1.0 audit.
+  (b) W3D independently re-verifies both parts at review time with
+      the W3D-held tooling (the transliterated sweep + LCS
+      changes-only comparator already proven in the S2 incident).
+The crosswalk's K30 row routes to this evidence pair. build_2C_v1.bat
+carries NO K30 step. CONSEQUENCE, VERIFIED: with no in-tree audit
+script, the tree contains no retired literal anywhere and the S2
+collision class is dissolved at the root (W3D whole-tree simulation:
+zero hits).
+D4/D0's K30 wording ("named in the O/G crosswalk with this exact
+two-part domain") remains satisfied; the phrasing that implies an
+in-tree audit gets its touch-up on the end-of-phase pass, per the
+recorded W3X compatibility ruling of 2026-08-10.
+```
+
+# 4. The one script: build_holywu_r9_scalar.cmd (W3X Q3)
+
+```text
+Plain CMD, W3X house style (hard exit-code checks after every step,
+no PowerShell, no git). Requirements, all carried over from the
+reviewed .ps1 - the DISCIPLINE is unchanged, only the language:
+  1. Verify the four pinned holywu_r9 files against SHA256SUMS.txt
+     BEFORE the build: certutil -hashfile <file> SHA256, compare the
+     computed hash against the expected constant (the expected values
+     may be embedded as SET constants read from the committed
+     SHA256SUMS.txt at authoring time, or parsed from the file);
+     MISMATCH = hard stop, nonzero exit.
+  2. Compile deblock.cpp ONLY (deblock_sse4.cpp never compiled -
+     scalar by construction), in place by absolute path, never
+     copying or EOL-normalising the pinned snapshot; /O2 per the
+     recorded OBS-2 ruling; produce the reference DLL in the
+     evidence area.
+  3. Re-verify the four hashes AFTER the build (tamper window closed)
+     - mismatch = hard stop.
+  4. Hash the produced DLL (certutil) and write the preliminary
+     reference-build record (schema unchanged) including the exact
+     compile command line.
+  5. Exit 0 only if every step succeeded. Assert by EXIT CODE per the
+     standing P2/P3 rules; no findstr /X on mixed-EOL captures.
+```
+
+# 5. Manifest v2_0 requirements
+
+```text
+- Complete file list, NEW/REPLACES per file, no hashes (Q8 standing).
+- The manual application instruction (one copy operation).
+- The full manual backout command block + the restore_to_base/ triple
+  purpose.
+- The K30 evidence report per section 3(a).
+- The statement: no scripts execute any repository operation; the one
+  .cmd drives only the external reference build; git appears nowhere.
+- C-DELIV-07: no execution/PASS claims; W3X runs all validation.
+```
+
+# 6. W3D re-review scope on return (small by construction)
+
+```text
+1. Mechanical byte-check of the 18-file identical set + restore_to_base
+   against retained reviewed copies.
+2. Diff-review of build_2C_v1.bat (expected: exactly the K30 step +
+   preflight line removed).
+3. Full review of the new .cmd; delta review of the runner + README.
+4. Manifest v2_0 review incl. the K30 evidence report, independently
+   re-verified per section 3(b).
+5. Whole-tree S2/S3 simulation re-run over the merged result.
+```
+
+---
+
+*Revision history*
+```text
+v1.0 (2026-08-10) Redelivery specification implementing W3X rulings
+     Q1 (no-script package, manual apply/backout), Q2 (K30 as
+     delivery evidence + W3D verification; batch step removed; S2
+     collision dissolved at root), Q3 (single .cmd reference-build
+     driver with certutil hash guards). Delivery v1.0 + F-1 rider
+     retired wholesale; tree reset verified; reviewed core pinned
+     byte-identical to preserve the completed review.
+```

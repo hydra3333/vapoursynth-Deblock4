@@ -61,6 +61,20 @@ Development order: `Classic` first (it proves the harness against HolyWu as an e
 
 `Classic` and `Deblock4` are DIFFERENT algorithms registered as two separate filter calls (not selected by a parameter). All filters are strictly 1-in/1-out. No frame reordering, no cross-frame cache/pin machinery. This simplifies the fmParallel story considerably: no frame-lifecycle/ownership complexity beyond the standard VapourSynth API4 per-frame contract.
 
+> **AUTHORITY NOTE (v1.10).** This document is the founding project DESIGN
+> BRIEF and is FALLBACK GENERAL GUIDANCE. Where it conflicts with the charter
+> (AI_Charter_and_Invariants_Card, prevailing version) or with the current
+> ratified authority set for a stage - for Stage 2C: D0 (Binding Knowledge
+> Index), D2 (HolyWu Real Schedule), D3 (Scalar Obligations and Sanity Gate),
+> D4 (Classic Scalar Oracle scope), Addenda A/B, the Creation-Error Message
+> Table, and the Verification-and-Tiering Decisions - THE LATTER PREVAIL.
+> Consult this README only on a matter the authority set does not settle, and
+> name the matter and section so the next currency audit can pick it up. In
+> particular the section-2 decision-status table is a HISTORICAL SNAPSHOT as
+> of README v1.5 and is NOT maintained row-by-row; individual rows may lag the
+> ratified decisions. A full README reconciliation is a registered end-of-phase
+> task; this v1.10 pass fixes only the actively-misleading items.
+
 ---
 
 # License
@@ -71,7 +85,7 @@ This project is distributed under the GNU GENERAL PUBLIC LICENSE Version 2 or la
 
 # Architecture Decisions and Detailed Specification
 
-**Design specification revision:** 1.9  
+**Design specification revision:** 1.12  
 **Date:** 2026-07-29  
 **Status:** accepted design-specification baseline; this is not a claim that the plugin binary is released.  
 **Toolchain:** Zig 0.16.0 pinned; exact object-link and runtime-detection syntax remains subject to compile/run proof.  
@@ -279,6 +293,11 @@ The current working recommendation is:
 
 # 2. Decision-status table
 
+**HISTORICAL SNAPSHOT (as of README v1.5); not maintained row-by-row.** For
+current status see the ratified authority set (see the Authority Note above).
+Rows marked [2C] were settled or changed by the Stage 2C ratifications and are
+annotated inline; other rows may still lag.
+
 | Topic | Current status | Position |
 |---|---|---|
 | One canonical algorithm | Settled | Required |
@@ -287,7 +306,7 @@ The current working recommendation is:
 | CPU tiers | Settled v1.3 | Named psABI levels x86_64_v1/v2/v3, used in full, no identity-driven exclusions (charter G3) |
 | Tier dispatch | Settled v1.3 | Whole-level detection; highest fully-satisfied level wins with v3->v2->v1 fallback |
 | FMA | Settled v1.3 | Part of the v3 level, not excluded; not required; .strict prevents auto-fusion (charter G8) |
-| Float tolerance values | Deferred | Derived analytically then stress-tested; frozen once real kernels exist (Stage 2) |
+| Float tolerance values | [2C] Deferred to the future float step | Float is REFUSED at creation in Stage 2C (D4 S1); the K22/V&T 3.8 tolerance-derivation duty transfers to the later bounded float step - NOT Stage 2 |
 | Version/tier stderr emission | Settled v1.3 | Always-on, ffmpeg-style; float cross-machine byte-identity not promised |
 | HolyWu bit-exactness | Settled | Desired baseline similarity, not absolute requirement |
 | Whole-frame pad/resize/crop | Settled | Rejected for Deblock4 core |
@@ -295,9 +314,9 @@ The current working recommendation is:
 | Valid SIMD tail | Settled | Must still be processed |
 | Use of stride padding beyond logical width | Settled | Do not rely on it |
 | Backend abstraction | Settled | `vector_bytes`, not flat lane count |
-| Format-specific arithmetic | Settled in principle | 8-12 bit -> candidate `i16`; 13-16 bit -> `i32`; float -> strict `f32` |
+| Format-specific arithmetic | [2C] Superseded for Classic 2C | Classic 2C integer path computes in `i32` for all integer depths (D3/D4); the `i16` candidate is not used. Float families remain future |
 | H/V data movement | Settled | May be backend-specific |
-| Candidate schedule | Provisional quality gate | Whole-plane vertical pass, then horizontal pass |
+| Candidate schedule | [2C] Settled for Classic | Classic 2C uses the ratified HolyWu-equivalent Schedule A (D2 v1_6); the Schedule-B two-pass question belongs to the later Deblock4 core |
 | Schedule A/B implementation order | Settled | Both scalar first; gate closes before SSE4.1 work |
 | Schedule C (macroblock-local H.264 order) | Settled | Deferred; see section 5.6 |
 | HolyWu exact schedule | Verified in source review | Raster-interleaved, H before V per 4x4 position; see sections 3.5 and 17 |
@@ -310,7 +329,7 @@ The current working recommendation is:
 | Public parameter naming | Settled | Meaning-based names plus a documentation-only legacy translation table; see section 3.14 |
 | Required grid selection | Settled | No silent default; `auto` token reserved but rejected until implemented |
 | Field-separated MPEG-2 4:2:0 luma grid | Settled geometry | `x=8`, `y=4`; primary/midpoint position classes |
-| Luma midpoint threshold scale | Open quality tuning | Scale midpoint `alpha`/`beta`; default selected by harness |
+| Luma midpoint threshold scale | Open quality tuning (Deblock4 core; not Classic) | Scale midpoint `alpha`/`beta`; default selected by harness. Not a Classic 2C item |
 | Midpoint fixed-point conversion | Settled | One-time `i64` creation-path computation; kernel receives immutable threshold sets |
 | Midpoint data source | Settled | Current destination state at that point in canonical schedule |
 | Field-separated MPEG-2 4:2:0 chroma grid | Confirmed structurally | `x=8`, `y=4` in chroma coordinates; no luma `dct_type` ambiguity |
@@ -323,7 +342,7 @@ The current working recommendation is:
 | Public strength/offset ranges | Settled | `strength=0..60`; each offset must keep its independent resolved index within `0..60` |
 | Production backends | Settled v1.5 | `auto`, `x86_64_v3_with_avx2`, `x86_64_v2_with_sse41`, always-available `x86_64_v1_baseline` |
 | Audit frame properties | Settled | Always-on resolved-grid/backend properties; see section 13.5 |
-| Zig 0.16 runtime CPU detection | Open implementation spike | Prefer one named-level mechanism for target + detection; explicit CPUID/XGETBV is a possible canonical-descriptor fallback (section 12.4) |
+| Zig 0.16 runtime CPU detection | [2C] Settled and shipped | Implemented in Stage 1B.3 (capability detection) and exercised in 2C; the named-level mechanism with the ACTUAL/EFFECTIVE model is in production |
 | SSE4.1/AVX2 build syntax | Open implementation spike | Separate target-specific objects linked into one DLL |
 | Future automatic-strength extensibility | Settled guards only | Shared kernels, separate driver; analyser is canonical and uses per-call pre-pass scratch |
 | AVX2 speed benefit | Open benchmark | Never assume 2x merely from register width |
@@ -1416,6 +1435,12 @@ At minimum, retain the current HolyWu-advertised coverage:
 - 32-bit floating-point samples;
 - independently selectable planes.
 
+> **[2C] Superseded for Stage 2C.** Stage 2C REFUSES float at creation (D4 S1)
+> and refuses integer depths outside 8..16 (K29); float (16-bit half and
+> 32-bit) is a first-class FUTURE path, not current Classic coverage. This
+> paragraph describes the project's eventual coverage, not the 2C-accepted
+> surface.
+
 The design should accommodate planar:
 
 - Gray;
@@ -2138,7 +2163,16 @@ The correct decomposition is:
 
     per filter instance, once, at filter creation
         resolve the requested backend against that capability record:
-            "auto"   -> highest backend allowed by the capability record
+            "auto"   -> highest tier BOTH supported by the capability
+                       record AND implemented in this build
+                       ([2C] D4 S5: the implemented-tier ceiling; e.g.
+                       Classic in 2C implements only the scalar baseline,
+                       so "auto" resolves to x86_64_v1_baseline and the
+                       summary reports reason=intentionally-capped.
+                       [4C] From Stage 4C the Classic ceiling is
+                       x86_64_v2_with_sse41: "auto" resolves to v2 on
+                       capable hardware, and on v3 hardware the summary
+                       reports intentionally-capped at v2)
             "x86_64_v3_with_avx2"  -> full v3 level, or creation error
             "x86_64_v2_with_sse41" -> full v2 level, or creation error
             "x86_64_v1_baseline"   -> baseline v1 level (scalar)
@@ -2323,6 +2357,13 @@ not per-frame. "Once per run" would be ambiguous in a graph with several filter
 instances; once-per-instance names each instance unambiguously. This makes
 "which filter selected which tier, and why" immediately visible for support and
 performance triage.
+
+> **[2C] Clarified by D-2C-4.** The summary line is emitted once per creation
+> ATTEMPT that reaches backend tier selection, INCLUDING attempts that then
+> fail at selection (preserving pre-existing behaviour). Clip-format refusals
+> that run BEFORE selection (the S1 float and K29 depth refusals) emit NO
+> summary line. In Stage 2C the emission is issued from backend tier selection,
+> after the final tier is resolved (D-2C-1).
 
 Reproducibility contract:
 
@@ -2655,6 +2696,39 @@ If the candidate schedule is not demonstrably equal or better:
 # 16. Revision history
 
 This section replaces the former "Proposed README corrections" list, which instructed this document to amend itself and became self-referential once those amendments were applied.
+
+## Revision v1.12
+
+Header currency (2026-08-14, W3C orientation finding): the front-matter
+"Design specification revision" field still read 1.9 from the last full
+reconciliation; it now tracks the document revision (1.12). No content
+change beyond this field and this note.
+
+## Revision v1.11
+
+Currency touch after Stage 4C acceptance (2026-08-13): the 12.5 auto-
+resolution example extended with the 4C reality (Classic ceiling raised to
+x86_64_v2_with_sse41; auto resolves to v2 on capable hardware). No other
+change; the v1.10 authority note and snapshot markers stand.
+
+## Revision v1.10
+
+End-of-phase currency audit after Stage 2C acceptance (2026-08-12), targeted
+pass per W3X ruling (fix only actively-misleading items; full reconciliation
+deferred to a later pass). (a) Added the AUTHORITY NOTE under the title: this
+README is fallback general guidance; the charter and the ratified authority
+set prevail; the section-2 table is a historical v1.5 snapshot. (b) Marked the
+section-2 decision-status table as a historical snapshot and corrected the
+five actively-misleading rows (float tolerance -> future float step, not Stage
+2; format-specific arithmetic superseded by the 2C i32 integer path; Zig
+runtime CPU detection settled/shipped; candidate schedule settled to Schedule
+A for Classic; luma midpoint clarified as Deblock4-core not Classic). (c) Prose
+corrections in place: 8.1 float coverage superseded for 2C by S1/K29; 12.5
+auto-resolution corrected to the S5 implemented-AND-supported rule with the
+intentionally-capped reason; 13.6 augmented with the D-2C-4
+once-per-attempt-including-refusals emission point. Section 8.6 (float mode /
+.strict / FMA) reviewed and left unchanged - it is current. No algorithm,
+schedule, threshold, boundary or corpus content is changed by this pass.
 
 ## Revision v1.9
 

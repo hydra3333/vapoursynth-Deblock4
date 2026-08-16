@@ -1,0 +1,59 @@
+The coder’s review is highly disciplined and technically accurate. It identifies genuine logical gaps that would have resulted in build failures, compilation errors, or incomplete outputs if ignored. 
+
+Addressing these remaining clarifications is straightforward. Below is objective advice and actionable recommendations that can be passed to the designer (or adopted by W3X) to issue **Scope v1.3** and unblock coding.
+
+---
+
+### Actionable Advice for Resolving R1–R5
+
+#### R1. Instance API & Summary Line Mismatch
+* **The Problem:** `initInstanceCapabilities` cannot print the version or comparison of the requested vs. effective backend because it only receives `instance_name: []const u8`.
+* **Recommendation:**
+  1. **Pin Version Location:** Add `pub const version = "0.1.0";` (or the appropriate semver string) directly to `src/deblock4_config.zig`.
+  2. **Update Signature:** Update the signature to accept the requested backend token (either as a string or an enum). 
+     * *Proposed signature:* 
+       ```zig
+       pub fn initInstanceCapabilities(
+           instance_name: []const u8, 
+           requested_backend: []const u8
+       ) InstanceInitError!EffectiveCapabilities
+       ```
+  3. **Wording Ordering Rule:** If both a missing hardware feature and a force-down are active, print the force-down ceiling as the primary reason. If multiple hardware features are missing for the requested tier, print the first missing feature encountered in the whole-level checks (v3 -> v2).
+
+#### R2. Missing Test Artifacts & Inspection Object in build.zig
+* **The Problem:** The coder cannot run `zig build test` or inspect a standalone detection `.obj` without specific build graph declarations.
+* **Recommendation:**
+  1. **Authorize Test Step:** Explicitly authorize adding a standard `test` step to `build.zig` targeting the detection unit and the unit tests.
+  2. **Standalone Detection Object:** Add a standalone compile step for the detection unit in `build.zig` (similar to the 1B.1 backend objects) so it outputs a distinct `.obj` file for `dumpbin /DISASM` inspection:
+     * *Proposed addition:*
+       ```zig
+       const detection_obj = b.addObject(.{
+           .name = "deblock4_cpu_detection",
+           .root_module = cpu_detection_module,
+       });
+       ```
+
+#### R3. Comptime Model Mapping / Exclusion List
+* **The Problem:** The coder cannot construct the comptime assertion without knowing the exact approved exclusions or being allowed to define them.
+* **Recommendation:** 
+  * Authorize the coder to implement their proposed mapping/exclusion list based on the Stage 1B.2 model captures.
+  * Explicitly state that this list must be submitted as part of the W3C delivery manifest for W3X approval. This keeps the build executable without stalling the coder.
+  * Note that the standard exclusions will include target properties like `64bit`, `crc32` (rolled into SSE4.2), `xsave` (gated by OSXSAVE), and tuning parameters (e.g., `slow_shld`, `fast_15by`, `fast_scalar_shift_to_vector`).
+
+#### R4. Environment Variable Acquisition Failures
+* **The Problem:** Operating system errors or memory allocation limits might cause the Windows environment-reading API to fail in ways other than variable absence.
+* **Recommendation:**
+  * For a debug-only seam, any unexpected system or allocation error (such as `OutOfMemory` or OS buffer issues) should result in an immediate panic/crash (`@panic` or `unreachable`) at initialization rather than a silent fallback or a misleading error return. 
+  * If the variable is simply absent, it is handled gracefully (inert). If it is present but invalid, return `InvalidForceDownValue`.
+
+#### R5. Exact Filenames for Validation Deliverables
+* **The Problem:** Exact filenames are needed for the G10 standing gate and `.bat` harness to satisfy the P1 exact inventory rule.
+* **Recommendation:**
+  * Pin the exact names and locations:
+    * `scripts/validate_1b3_absence.bat` (The G10 three-surface absence-proof standing gate and positive/negative build control runner).
+    * `scripts/run_selftest.bat` (The execution harness for the self-test binary across different environment configurations).
+
+---
+
+### Next Step Recommendation
+To keep the project moving efficiently while the designer is busy, W3X can incorporate these exact resolutions directly into a **Scope v1.3** document and deliver it to the coder along with the requested session package. The coder's feedback is highly constructive, and adopting these clarifications will result in a cleaner, safer, and fully verifiable implementation.
