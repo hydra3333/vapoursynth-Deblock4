@@ -7,11 +7,9 @@ core = vs.core
 PLUGIN_PATH = os.environ.get("DEBLOCK4_PLUGIN_PATH", "")
 CASE = os.environ.get("DEBLOCK4_TEST_CASE", "o4_gray8")
 EXPECTED_VERSION = os.environ.get("DEBLOCK4_EXPECTED_VERSION", "0.1.0-dev+2C")
-# Stage 4C amendment (W3D, 2026-08-12): the expected tier is now supplied
-# per case by the invoking batch (build_4C_v1.bat passes it as case arg 3
-# into DEBLOCK4_EXPECTED_TIER). The default preserves Stage 2C standalone
-# behaviour byte-for-byte: build_2C_v1.bat sets no tier variable and every
-# 2C case therefore still expects the scalar baseline, unchanged.
+# The live Stage 5C proof runner supplies the expected tier per case through
+# DEBLOCK4_EXPECTED_TIER. The default preserves the historical Stage 2C
+# standalone scalar-baseline expectation for direct/manual invocation.
 EXPECTED_TIER = os.environ.get("DEBLOCK4_EXPECTED_TIER", "x86_64_v1_baseline")
 
 if not PLUGIN_PATH:
@@ -481,12 +479,6 @@ elif CASE in ("n01c1", "n01c2"):
     fmt = core.query_video_format(vs.GRAY, vs.INTEGER, bits, 0, 0)
     source = core.std.BlankClip(width=64,height=64,length=1,format=fmt.id)
     _expect_error(lambda: _classic(source), "Classic: integer input must be between 8 and 16 bits")
-elif CASE == "n02a":
-    source = _cb_clip(64,64,vs.GRAY8)
-    _expect_error(lambda: _classic(source, backend="x86_64_v2_with_sse41"), "Classic: requested backend is not available in this build")
-elif CASE == "n02b":
-    source = _cb_clip(64,64,vs.GRAY8)
-    _expect_error(lambda: _classic(source, backend="x86_64_v3_with_avx2"), "Classic: requested backend is not available in this build")
 elif CASE == "n03":
     source = _cb_clip(64,64,vs.GRAY8)
     _expect_error(lambda: _classic(source, backend="x86_64_v3_with_avx2"), "Classic: requested backend is above the EFFECTIVE CPU tier")

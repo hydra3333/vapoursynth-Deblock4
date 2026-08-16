@@ -46,14 +46,14 @@
 | G4 deterministic plane bytes + properties | vspipe `sanity`, frames 0/1 | RS+RF |
 | G5 max change | vspipe `sanity` | RS+RF |
 | G6 mean change and negative control | vspipe `sanity`; `sanity_negative_control` must reject | RS+RF |
-| T-S5-1a count 1 | batch exact-count gate for success/N02a/N02b/N03/N04 and Deblock4 cases | applicable modes |
+| T-S5-1a count 1 | batch exact-count gate for success/N03/N04 and Deblock4 cases | applicable modes |
 | T-S5-1b count 0 | batch exact-count gate for N01a/N01b/N01c1/N01c2 | all three |
-| T-S5-2 intentionally capped auto | vspipe `n04` + exact stderr/property assertions | all three on v3 host |
-| T-S5-3 byte-stable Deblock4/force-down | successor Stage 1C matrix in `build_2C_v1.bat` | all applicable modes |
-| T-S5-4 precedence | `n02a`, `n02b`, `n03` exact rows | ReleaseSafe/Debug |
-| T-S5-5 force-down v2 + auto cap | Debug combined case in `build_2C_v1.bat` | Debug |
+| T-S5-2 implemented v3 auto | vspipe `n04` + exact stderr/property assertions; retired implementation-cap line asserted absent | all three on v3 host |
+| T-S5-3 byte-stable Deblock4/force-down | live Stage 5C matrix in `build_5C_v1.bat` | all applicable modes |
+| T-S5-4 precedence | `n03` exact row (explicit backend above effective tier is refused) | ReleaseSafe/Debug |
+| T-S5-5 force-down v2 + auto v3 | Debug combined case in `build_5C_v1.bat` | Debug |
 | K30 audit | delivery-manifest W3C K30 evidence + independent W3D re-verification | delivery evidence (not in-tree gate) |
 | K31 byte-row model | source inspection gate + stride canary/O-8 cases | static + all three/RS+RF |
-| H0-H6 | `tools/holywu_reference/run_stage_2c_holywu_reference.cmd` and `stage_2c_holywu_diff.vpy` | W3X generated reference evidence |
+| H0-H6 | EVIDENCE HISTORY per K26; live Stage 5C summary records `H0_H6=NOT_RERUN_2C_HISTORY` | historical external-oracle evidence |
 
 The batch runner fails if any D3 O/G identifier above is absent from this file.

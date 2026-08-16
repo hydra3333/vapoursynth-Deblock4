@@ -226,7 +226,7 @@ set "OUT=!MODE_DIR!\selftest.txt"
 call :capture_both
 call :find_present "Debug selftest version banner" "!OUT!" "deblock4_selftest: version=!IDENTITY_STRING!"
 call :find_present "Debug selftest PASS" "!OUT!" "deblock4_selftest: PASS"
-call :find_present "Debug selftest retained Stage 1C section" "!OUT!" "stage_1c=PASS"
+call :find_present "Debug selftest selection and creation contract" "!OUT!" "selection_and_creation_contract=PASS"
 call :find_present "Debug selftest lifecycle marker" "!OUT!" "!TRACE_STRING!"
 
 call :capture_artifacts "!MODE_DIR!" "!DLL_FILE!" "!SELFTEST_FILE!"
@@ -382,7 +382,7 @@ if errorlevel 1 exit /b 1
 set "DEBLOCK4_FORCE_DOWN="
 call :find_present "!MODE! selftest version banner" "!OUT!" "deblock4_selftest: version=!IDENTITY_STRING!"
 call :find_present "!MODE! selftest PASS" "!OUT!" "deblock4_selftest: PASS"
-call :find_present "!MODE! selftest retained Stage 1C section" "!OUT!" "stage_1c=PASS"
+call :find_present "!MODE! selftest selection and creation contract" "!OUT!" "selection_and_creation_contract=PASS"
 call :find_absent "!MODE! ignores force-down environment" "!OUT!" "FORCE-DOWN ACTIVE"
 call :find_absent "!MODE! has no lifecycle marker" "!OUT!" "!TRACE_STRING!"
 

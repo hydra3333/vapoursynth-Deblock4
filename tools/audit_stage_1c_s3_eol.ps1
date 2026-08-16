@@ -1,5 +1,5 @@
 $ext=@('.zig','.zon','.c','.h','.bat','.cmd','.vpy','.md','.txt','.patch','.diff','.py','.ps1','.json','.yml','.yaml')
-$rootFiles=@('build.zig','build.zig.zon','build_1C_v1.bat')
+$rootFiles=@('build.zig','build.zig.zon','build_5C_v1.bat')
 $prefixes=@('src/','tests/','tools/','third_party/')
 $paths=git ls-files -co --exclude-standard
 $bad=@()

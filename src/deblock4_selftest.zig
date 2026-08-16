@@ -47,10 +47,10 @@ pub fn main() !void {
         return error.RequestedBackendAlteredCapability;
     }
 
-    try runStage1CPureContracts();
+    try runSelectionAndCreationContracts();
 
     std.debug.print(
-        "deblock4_selftest: PASS actual={s} effective={s} stage_1c=PASS\n",
+        "deblock4_selftest: PASS actual={s} effective={s} selection_and_creation_contract=PASS\n",
         .{
             @tagName(first.resolved_tier),
             @tagName(capabilities.effective.resolved_tier),
@@ -58,7 +58,7 @@ pub fn main() !void {
     );
 }
 
-fn runStage1CPureContracts() !void {
+fn runSelectionAndCreationContracts() !void {
     const auto = try tier_selection.selectForEffectiveTier(
         .auto,
         .x86_64_v3_with_avx2,
@@ -67,7 +67,7 @@ fn runStage1CPureContracts() !void {
     if (auto.selected_tier != .x86_64_v3_with_avx2 or
         auto.provenance != .automatic)
     {
-        return error.Stage1CAutoSelectionFailed;
+        return error.SelectionAutoFailed;
     }
 
     const explicit_ok = try tier_selection.selectForEffectiveTier(
@@ -78,7 +78,7 @@ fn runStage1CPureContracts() !void {
     if (explicit_ok.selected_tier != .x86_64_v2_with_sse41 or
         explicit_ok.provenance != .explicit)
     {
-        return error.Stage1CExplicitSelectionFailed;
+        return error.SelectionExplicitFailed;
     }
 
     if (tier_selection.selectForEffectiveTier(
@@ -86,7 +86,7 @@ fn runStage1CPureContracts() !void {
         .x86_64_v2_with_sse41,
         null,
     )) |_| {
-        return error.Stage1CAboveEffectiveWasAccepted;
+        return error.SelectionAboveEffectiveWasAccepted;
     } else |err| {
         if (err != error.RequestedBackendUnavailable) return err;
     }
@@ -123,7 +123,7 @@ fn runStage1CPureContracts() !void {
     }
 
     if (parameters.parseBackendValue(.{ .data = "unknown" })) |_| {
-        return error.Stage1CUnknownBackendWasAccepted;
+        return error.SelectionUnknownBackendWasAccepted;
     } else |err| {
         if (err != error.UnknownBackend) return err;
     }
@@ -142,7 +142,7 @@ fn runStage1CPureContracts() !void {
             &[_]u32{ 0, 1, 2 },
         ))
     {
-        return error.Stage1CClassicValidationFailed;
+        return error.CreationClassicValidationFailed;
     }
 
     const deblock4 = try parameters.parseDeblock4(.{
@@ -156,7 +156,7 @@ fn runStage1CPureContracts() !void {
         .midpoint_threshold_scale = .{ .float = 0.5 },
     });
     if (deblock4.common.strength != 30) {
-        return error.Stage1CDeblock4ValidationFailed;
+        return error.CreationDeblock4ValidationFailed;
     }
     switch (deblock4.grid) {
         .custom => |grid| {
@@ -166,16 +166,16 @@ fn runStage1CPureContracts() !void {
                 grid.midpoint_threshold_scale == null or
                 grid.midpoint_threshold_scale.? != 0.5)
             {
-                return error.Stage1CDeblock4ValidationFailed;
+                return error.CreationDeblock4ValidationFailed;
             }
         },
-        else => return error.Stage1CDeblock4ValidationFailed,
+        else => return error.CreationDeblock4ValidationFailed,
     }
 
     if (parameters.parseClassic(.{
         .strength = .{ .integer = 61 },
     })) |_| {
-        return error.Stage1CInvalidCallWasAccepted;
+        return error.CreationInvalidCallWasAccepted;
     } else |err| {
         if (err != error.StrengthOutOfRange) return err;
     }
@@ -183,7 +183,7 @@ fn runStage1CPureContracts() !void {
     if (parameters.parseClassic(.{
         .planes = .{ .integer_array = &.{ 0, 0 } },
     })) |_| {
-        return error.Stage1CInvalidCallWasAccepted;
+        return error.CreationInvalidCallWasAccepted;
     } else |err| {
         if (err != error.DuplicatePlaneIndex) return err;
     }
@@ -191,7 +191,7 @@ fn runStage1CPureContracts() !void {
     if (parameters.parseClassic(.{
         .planes = .{ .integer_array = &.{} },
     })) |_| {
-        return error.Stage1CInvalidCallWasAccepted;
+        return error.CreationInvalidCallWasAccepted;
     } else |err| {
         if (err != error.EmptyPlanes) return err;
     }
@@ -204,7 +204,7 @@ fn runStage1CPureContracts() !void {
         .chroma_step_y = .{ .integer = 4 },
         .luma_midpoint_enabled = .{ .integer = 0 },
     })) |_| {
-        return error.Stage1CInvalidCallWasAccepted;
+        return error.CreationInvalidCallWasAccepted;
     } else |err| {
         if (err != error.CustomStepOutOfRange) return err;
     }
