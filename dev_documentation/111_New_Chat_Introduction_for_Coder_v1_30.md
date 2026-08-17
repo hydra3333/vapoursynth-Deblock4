@@ -266,7 +266,7 @@ document you produce. Its companion (v1_1) binds the designer identically.
 > not the active Deblock4 algorithm authority. Item 2.7, by contrast, is NOW
 > REQUIRED because Deblock4 MPEG-2 work is active.
 
-## 2.7 `Deblock4_MPEG2_Deblocking_Investigation_and_Decided_Architecture_v1_05.md` - PREVAILING MPEG-2 AUTHORITY
+## 2.7 `Deblock4_MPEG2_Deblocking_Investigation_and_Decided_Architecture_v1_05.md` (or later version) - PREVAILING MPEG-2 AUTHORITY
 
 Read section 0 first, then the sections named by the active Q14/design scope.
 This W3X-ratified document is the single source of truth for MPEG-2 block
