@@ -1,15 +1,26 @@
 # Deblock4 - T1S01a3 Ledger: the Architecture Summary and Header Statements
 
 **Deliverable:** T1S01a3_A - LEDGER
-**Version:** 1.0
+**Version:** 1.1 - REISSUED after W3C found an unratified rule in use
 **Date:** 2026-08-18
 **Author:** W3D
 **Route:** W3D -> W3X -> W3C
 **Step:** T1S01a, sub-tranche 3
 **Document adjudicated:** `Deblock4_MPEG2_Deblocking_Investigation_and_Decided_Architecture_v1_05.md`
-**Template:** review scope v1.8 - atomic claims, SWEPT field, canonical-home
+**Template:** review scope v1.9 - atomic claims, SWEPT field, canonical-home
 CURRENT-DUPLICATE.
 **Search frame:** the frozen 90-term set, manifest v1.4.
+
+**WHY THIS WAS REISSUED.** v1.0 proposed a new duplicate-handling exception,
+wrote that it must not be applied retroactively, and had ALREADY APPLIED IT in
+seven entries' PREVAILS fields, which said "THIS COPY STAYS as summary" - an
+outcome possible only under a rule W3X had not ratified. W3C found it. That is
+derived reasoning leaking into the findings half, the exact failure the
+two-part template exists to prevent, and the fourth instance of this designer
+asserting a conclusion the evidence in front of it did not yet support.
+The rule has since been ratified in W3C's wording, not W3D's, as review scope
+v1.9 section 5.4 RETAIN-SUMMARY. Every affected entry below now carries an
+explicit DUPLICATE-ACTION field resting on that ratified rule.
 
 **THIS IS NOT THE FINAL SUB-TRANCHE OF THIS DOCUMENT.** T1S01a4 takes section
 23's steps 6-10; T1S01a5 takes Appendix E and is the final one, where
@@ -76,9 +87,12 @@ that makes the authority usable - and it would do so while following the rule
 correctly.
 ```
 
-**This is proposed as a distinction the disposition vocabulary does not
-currently carry**, and it is raised rather than assumed. See the derived
-proposition at LED-025.
+**At v1.0 this was proposed as a distinction the vocabulary did not carry.** It
+has since been SETTLED: W3X ratified the RETAIN-SUMMARY exception in W3C's
+wording at review scope v1.9 section 5.4, and every affected entry below now
+carries a DUPLICATE-ACTION field resting on that ratified rule. The derived
+proposition is at LED-024. (v1.0 pointed at "LED-025", which does not exist -
+W3C caught it.)
 
 ---
 
@@ -86,13 +100,43 @@ proposition at LED-025.
 
 ```text
 DOCUMENT     authority v1.05, section 0, items 1-8, lines 62-121
-CLAIM        item 1 whole-frame input only [D4-D01]; item 2 three source-mode
-             semantics [D4-D02, F7]; item 3 4:2:0 Case-(a) chroma normative,
-             4:2:2/4:4:4 follow luma [F4]; item 4 luma Case-(a) is the hard
-             geometry [F5, F6]; item 5 vertical edges geometry-invariant at
-             x=8k [D4-D12]; item 6 no hidden temporal state [D4-D06]; item 7
-             Deblock4 gets its own oracle and proof chain [D4-D08]; item 8 v1
-             filters nominal transform-grid blockiness only [D4-D09, D4-Q11].
+CLAIM        item 1 whole-frame input only, SeparateFields not a supported
+             MPEG-2 contract because it tears frame-organised transform blocks
+             between two clips [D4-D01].
+             item 2 three source-mode semantics - progressive, frame
+             picture/interlaced Case (a), field pictures Case (b) - AND that
+             exact public tokens remain a D4-Q16 decision, AND that the
+             `mpeg2_field_separated` name is retired in principle, AND that
+             TFF/BFF is not a grid parameter because field order does not move
+             transform-block boundaries [D4-D02, F7].
+             item 3 4:2:0 Case-(a) chroma is normative not detected, staying
+             frame-organised even under field-DCT luma; 4:2:2 and 4:4:4 FOLLOW
+             luma organisation and cannot inherit that simplification [F4].
+             item 4 luma Case-(a) is the hard geometry - dct_type is
+             macroblock-level, may vary within one frame picture, and is
+             invisible to a post-decode filter absent trusted side data
+             [F5, F6].
+             item 5 vertical transform-block edges are geometry-invariant,
+             frame-vs-field DCT changes HORIZONTAL row adjacency only, luma
+             vertical boundaries stay at x = 8*k, no parity split or DCT-phase
+             classification is required for vertical luma, AND the same
+             principle applies to plane-relative vertical block boundaries in
+             chroma [D4-D12].
+             item 6 no hidden temporal state in v1; detector output is a pure
+             function of the frame, its immutable parameters and the declared
+             source mode; no hysteresis under fmParallel [D4-D06].
+             item 7 Deblock4 gets its own oracle, mathematics and proof chain;
+             Classic supplies engineering patterns only, and Classic code,
+             thresholds, formulas and acceptance evidence are not a Deblock4
+             design or acceptance basis [D4-D08].
+             item 8 v1 filters nominal transform-grid blockiness only; motion-
+             predicted or inherited blockiness shifted off the nominal grid is
+             a documented limitation [D4-D09, D4-Q11].
+             (EXPANDED at v1.1: v1.0's CLAIM compressed away item 2's D4-Q16
+             token deferral, the retirement-in-principle and the TFF/BFF rule,
+             and item 5's plane-relative chroma consequence. W3C found the
+             omissions. A CLAIM must visibly account for every material
+             proposition in a declared item.)
 ASSERTS      the settled input contract and geometry facts.
 CLASS        W3X-RATIFIED; items 3 and 4 rest on H.262-VERIFIED findings.
 DISPOSITION  CURRENT-DUPLICATE
@@ -101,14 +145,27 @@ REASON       All eight are current and correct. All eight restate decisions
              register at lines 1600-1660, and for item 1 the full derivation
              at section 5.
 CONFLICTS    none.
-PREVAILS     CANONICAL HOME: the D4-D decision register and the body sections
-             that derive each item, both inside THIS document.
-             THIS COPY IS A DELIBERATE SUMMARY AND SHOULD STAY. It is not a
-             stray duplicate in another document; it is this document's own
-             read-first compression of itself. See LED-025.
+PREVAILS     CANONICAL HOME, PER PROPOSITION - v1.0 named "the register and
+             the body sections" generically, which the corrected rule
+             forbids:
+                 item 1 -> section 5 (the tearing derivation) and D4-D01 in
+                           the decision register
+                 item 2 -> D4-D02 and F7; the token question -> D4-Q16
+                 item 3 -> F4
+                 item 4 -> F5 and F6
+                 item 5 -> D4-D12, with sections 10-11 for the topology
+                 item 6 -> D4-D06, with section 21 for the fmParallel basis
+                 item 7 -> D4-D08
+                 item 8 -> D4-D09, with D4-Q11 for the open question
+DUPLICATE-ACTION  RETAIN-SUMMARY
+             Justified under review scope v1.9 section 5.4: section 0 is an
+             explicitly designated read-first layer INSIDE this canonical
+             authority; each proposition's canonical source is named above;
+             and the summary introduces no unique normative content - every
+             clause traces to a source clause.
              The copies in Project Status, both introductions, both blurbs and
-             the concise summary ARE the non-canonical duplicates, and they
-             are what T3 adjudicates.
+             the concise summary are OUTSIDE the authority, are non-canonical,
+             and are POINTER candidates for T3.
 ```
 
 ```text
@@ -136,11 +193,17 @@ REASON       Current, correct, and unusually careful - the evidence limit is
              restates section 6.2 (the measurements) and section 3.1 (the
              triage route).
 CONFLICTS    none.
-PREVAILS     CANONICAL HOME: sections 6.2 and 3.1 of this document.
-             THIS COPY STAYS as summary. The evidence-limit sentence in
-             particular must survive any future compression: it is the
-             difference between "B2 is warranted" and "B2 is proven
-             necessary", and the project has repeatedly had to restate it.
+PREVAILS     CANONICAL HOME, PER PROPOSITION:
+                 the LG/MLS measurements -> section 6.2
+                 the mediainfo triage route -> section 3.1
+                 the evidence LIMIT -> section 6.2, which states the same
+                     precision distinction
+DUPLICATE-ACTION  RETAIN-SUMMARY
+             The evidence-limit sentence in particular must survive any future
+             compression: it is the difference between "B2 is warranted" and
+             "B2 is proven necessary", and the project has repeatedly had to
+             restate it. W3C independently confirmed section 6.2 makes the
+             same distinction, so the summary adds nothing normative.
 ```
 
 ```text
@@ -154,12 +217,29 @@ VERDICT  [W3C]
 
 ```text
 DOCUMENT     authority v1.05, section 0, items 9-11, lines 128-163
-CLAIM        item 9 the per-macroblock FRAME/FIELD/UNKNOWN classification and
-             the full edge-topology table, including the four macroblock-row
-             boundary cases and the UNKNOWN no-filter policy; item 10 where
-             the map is produced and where geometry is fixed instead; item 11
-             geometry-homogeneous spans as the SIMD scheduling unit, with
-             classification never a per-lane branch.
+CLAIM        item 9 per-macroblock FRAME/FIELD/UNKNOWN classification with
+             confidence, and the full edge-topology table: internal edge at
+             mb_y+8 (FRAME one pitch-1 edge, FIELD none, UNKNOWN none and
+             counted); macroblock-row boundary at mb_y+16 per 16-pixel x
+             segment (FRAME/FRAME one pitch-1; FIELD/FIELD two pitch-2 parity;
+             FRAME/FIELD and FIELD/FRAME two pitch-2 MIXED-BOUNDARY edges;
+             UNKNOWN involved -> D4-D07 no filtering, counted, revisit after
+             Q14) - and that the mixed boundary is an EXPLICIT EDGE TYPE, not
+             a detector seam.
+             item 10 where the map is produced and where geometry is fixed
+             instead: progressive fixed frame; Case (b) fixed field; Case (a)
+             luma detector; Case (a) 4:2:0 chroma fixed frame from F4; Case
+             (a) 4:2:2/4:4:4 chroma FOLLOW resolved luma with no independent
+             chroma detector.
+             item 11 geometry-homogeneous spans as the SIMD scheduling unit;
+             classification never a per-lane SIMD branch; AND that horizontal
+             span descriptors carry at least PLANE, X BOUNDS, EDGE ROW, EDGE
+             KIND, PITCH and PARITY where applicable; AND that vertical work
+             does not gain a fake pitch-2/parity split merely because
+             neighbouring luma macroblocks were field-DCT.
+             (EXPANDED at v1.1: v1.0 omitted item 11's descriptor contents and
+             the no-fake-split rule. W3C found it and is right that these are
+             implementation-facing architecture requirements, not decoration.)
 ASSERTS      the primary candidate architecture in compressed form.
 CLASS        W3X-RATIFIED
 DISPOSITION  CURRENT-DUPLICATE
@@ -171,8 +251,18 @@ REASON       Current. Item 9's topology table restates section 10's
              Architecture B, and losing it to compression would lose the
              design's central idea.
 CONFLICTS    none.
-PREVAILS     CANONICAL HOME: sections 10, 11 and 19 of this document.
-             THIS COPY STAYS as summary.
+PREVAILS     CANONICAL HOME, PER PROPOSITION:
+                 item 9's topology table -> section 10
+                 item 9's UNKNOWN policy -> D4-D07
+                 item 10's map-production rules -> section 10, with F4 for
+                     the 4:2:0 chroma case
+                 item 11's spans, descriptors and no-fake-split rule ->
+                     section 19
+DUPLICATE-ACTION  RETAIN-SUMMARY
+             Note what the summary does that a bare pointer would not: it
+             states the mixed FRAME/FIELD boundary as an EXPLICIT EDGE TYPE.
+             That framing is why B2 replaced Architecture B, and it is a
+             restatement of section 10, not new normative content.
 ```
 
 ```text
@@ -204,9 +294,14 @@ REASON       Current, restating section 11.
              FRAME/FRAME boundaries is the quality cost that D's independent
              viability bar must measure; it is not a footnote.
 CONFLICTS    none.
-PREVAILS     CANONICAL HOME: section 11 of this document, with D4-Q05 holding
-             the threshold-scaling experiment question.
-             THIS COPY STAYS as summary.
+PREVAILS     CANONICAL HOME, PER PROPOSITION:
+                 D's detector-free topology and its FRAME/FRAME pitch-2
+                     approximation -> section 11
+                 the A-derived threshold-scaling experiment idea -> D4-Q05
+DUPLICATE-ACTION  RETAIN-SUMMARY
+             W3C independently confirmed section 11 carries all four
+             propositions and that D4-Q05 keeps the threshold-scaling idea
+             open without preserving the old parameter name.
 ```
 
 ```text
@@ -240,8 +335,16 @@ REASON       Current. Item 13 compresses section 12 and Appendix C; item 14
              consistent with 13.1 being the general rule and 12.5 its
              A-specific application.
 CONFLICTS    none.
-PREVAILS     CANONICAL HOME: section 12 and Appendix C for A; section 9.4 for
-             C. THIS COPY STAYS as summary.
+PREVAILS     CANONICAL HOME, PER PROPOSITION - and W3C is right that a
+             DECISION home and its supporting PROOF are different things:
+                 the A rejection DECISION -> section 12
+                 the A rejection PROOF/derivation -> Appendix C
+                 A's local false-activation application -> section 12.5
+                 the GENERAL no-implicit-geometry-classifier principle ->
+                     section 13.1 - NOT summarised in item 13, which is
+                     correct and consistent with the earlier PR-1 correction
+                 the C rejection -> section 9.4
+DUPLICATE-ACTION  RETAIN-SUMMARY
 ```
 
 ```text
@@ -274,8 +377,13 @@ REASON       Current, restating section 15.
              ratified. It is the reason D must earn viability rather than
              inherit it.
 CONFLICTS    none.
-PREVAILS     CANONICAL HOME: section 15 of this document.
-             THIS COPY STAYS as summary.
+PREVAILS     CANONICAL HOME, PER PROPOSITION:
+                 the experiment design and both measurement legs -> section 15
+                 the truth-class rule (NO_DCT/skipped/motion-only are their
+                     own class, never fabricated into FRAME/FIELD) -> section
+                     15
+                 the no-forced-fallback decision rule -> section 15.3
+DUPLICATE-ACTION  RETAIN-SUMMARY
 ```
 
 ```text
@@ -289,10 +397,20 @@ VERDICT  [W3C]
 
 ```text
 DOCUMENT     authority v1.05, section 0, item 17, lines 213-215+
-CLAIM        that luma kernel mathematics, exact footprint and eligibility,
-             threshold design, the UNKNOWN-policy revisit, proper-chroma
-             vertical siting and processing order remain OPEN after the
-             architecture gate.
+CLAIM        that ALL TWELVE of the following remain OPEN after the
+             architecture gate: luma kernel mathematics; exact luma
+             footprint/eligibility; threshold design; the UNKNOWN-policy
+             revisit; proper-chroma vertical siting; the processing-order
+             Schedule-SA vs Schedule-SB quality winner; the proper-chroma
+             QUALITY GATE; pipeline guidance; the SIDE-DATA INTERFACE; the
+             FINAL PUBLIC PARAMETER/PROPERTY SURFACE; the SCALAR ORACLE; and
+             the LATER SIMD BACKENDS.
+             (EXPANDED at v1.1. v1.0 stopped after processing-order and
+             silently dropped the last six. W3C called this the worst omission
+             in the tranche and is right: item 17's entire purpose is stopping
+             a successor believing open work is settled, and truncating the
+             list of open work is the one error that does exactly the harm the
+             item exists to prevent.)
 ASSERTS      what is NOT settled.
 CLASS        PENDING
 DISPOSITION  CURRENT-DUPLICATE
@@ -307,8 +425,15 @@ REASON       Current, restating Appendix D.
              to FREEZE thresholds before the later quality decision.
 CONFLICTS    none here. The tension with section 23 step 7 is a section 23
              finding and belongs to T1S01a4.
-PREVAILS     CANONICAL HOME: Appendix D of this document.
-             THIS COPY STAYS as summary.
+PREVAILS     CANONICAL HOME: Appendix D of this document, which holds the
+             open-items register in full.
+DUPLICATE-ACTION  RETAIN-SUMMARY
+             This is the entry where RETAIN-SUMMARY earns itself. A pointer
+             saying "see Appendix D for open items" in the read-first section
+             would be strictly correct and would lose the thing that matters -
+             a successor scanning section 0 seeing, without a second lookup,
+             that the scalar oracle and the public parameter surface are NOT
+             settled.
 ```
 
 ```text
@@ -330,19 +455,36 @@ CLAIM        "W3X-RATIFIED. PREVAILING SINGLE SOURCE OF TRUTH for MPEG-2
 ASSERTS      the document's authority status and the nature of the v1.05
              revision.
 CLASS        W3X-RATIFIED
-DISPOSITION  CURRENT-UNIQUE
-REASON       Current. A document's own declaration of its authority status
-             belongs in that document and is not a duplicate of anything -
-             other documents POINT AT this status, which is a different act
-             from restating it.
+DISPOSITION  CURRENT-DUPLICATE
+             (CORRECTED at v1.1 from CURRENT-UNIQUE.)
+REASON       Current, but NOT unique. W3D invented a distinction between
+             DECLARING the status and REFERRING to it, and no such distinction
+             exists in the five disposition definitions - which say plainly not
+             to call a statement unique merely because this is its correct home
+             while it also appears elsewhere. The coder introduction v1.32,
+             both blurbs and Project Status v1.30 all restate that this
+             W3X-ratified document is the prevailing MPEG-2 authority and
+             single source of truth. W3C found this.
+             NOTE ALSO: this entry bundled a second proposition - what the
+             v1.05 REVISION did - which is a different claim with a different
+             home. Split below.
 CONFLICTS    none.
-PREVAILS     n/a.
-SWEPT        To establish uniqueness: searched Project Status v1.29, the task
-             register v1.11, both chat introductions and both blurbs for a
-             statement DECLARING this document's status as opposed to
-             REFERRING to it. All five refer; none declares. Terms used:
-             "PREVAILING", "single source of truth", "W3X-RATIFIED",
-             "authority" - frozen-frame groups 5 and 9 plus the phrase search.
+PREVAILS     CANONICAL HOME, PER PROPOSITION:
+                 the AUTHORITY STATUS -> this header. A document's declaration
+                     of its own status belongs in that document.
+                 the V1.05 REVISION-NATURE statement ("records the already-made
+                     ratification of v1.04 and reconciles status/sequence
+                     wording only; makes no new algorithm or architecture
+                     decision") -> Appendix E, which carries the same
+                     characterisation as revision history.
+DUPLICATE-ACTION  RETAIN-SUMMARY for the authority status - it IS the canonical
+             home. POINTER for the revision-nature statement, whose home is
+             Appendix E. The external restatements in the introductions,
+             blurbs and Project Status are non-canonical and are T3 candidates.
+SWEPT        WITHDRAWN. The v1.0 search looked for a distinction that is not in
+             the rules, so it could not have established anything. The correct
+             search was for the PROPOSITION, and it appears in at least four
+             live documents.
 ```
 
 ```text
@@ -364,7 +506,8 @@ CLAIM        verified MPEG-2 geometry, measurements, architecture mathematics,
              authorities and are referenced rather than duplicated here."
 ASSERTS      the document's own scope boundary, in both directions.
 CLASS        W3X-RATIFIED
-DISPOSITION  CURRENT-UNIQUE
+DISPOSITION  CURRENT-DUPLICATE
+             (CORRECTED at v1.1 from CURRENT-UNIQUE.)
 REASON       Current, and load-bearing in a way that has already been
              exercised: this is the rule under which sections 0 and 23's
              sequencing statements were adjudicated as work-queue content
@@ -375,13 +518,21 @@ CONFLICTS    none. It is in TENSION with sections 0 and 23 carrying
              non-MPEG-2 work-queue content - but that tension is a defect in
              those sections, already ledgered at LED-003, LED-004 and LED-007,
              not a defect in this rule.
-PREVAILS     n/a.
-SWEPT        To establish uniqueness: searched the task register v1.11 and
-             Project Status v1.29 for an equivalent statement of THIS
-             document's scope boundary. The register states domain separation
-             operationally in DEC-02's reasoning and DEC-24's; neither states
-             the general rule. Terms: "single-source", "authority",
-             "duplicated", "referenced", "boundary".
+PREVAILS     CANONICAL HOME: this authority header. A document's statement of
+             its own scope boundary belongs in that document, and this rule in
+             particular supplied the standard by which sections 0 and 23 were
+             found wanting.
+DUPLICATE-ACTION  RETAIN-SUMMARY - this IS the canonical home. The external
+             operational restatements are non-canonical T3 candidates.
+SWEPT        INADEQUATE, AND WITHDRAWN AS A UNIQUENESS BASIS. The v1.0 search
+             covered only the task register and Project Status v1.29 - a
+             SUPERSEDED generation, with v1.30 live - and omitted the
+             orientation documents entirely. W3C found both faults. The
+             operative propositions are restated in the coder introduction,
+             both blurbs and Project Status v1.30.
+             THIS IS THE SWEPT FIELD DOING ITS JOB: the search was recorded,
+             so the reviewer could attack the search rather than only the
+             conclusion, and did.
 ```
 
 ```text
@@ -433,7 +584,12 @@ DOCUMENT     authority v1.05, header, line 45
 CLAIM        "Nothing in this document rests on unverified GAIS testimony."
 ASSERTS      a completeness claim about the document's provenance.
 CLASS        DERIVED
-DISPOSITION  CURRENT-UNIQUE
+DISPOSITION  DEFERRED TO T1S01a5 - NO DISPOSITION PROPOSED AT THIS TRANCHE.
+             (CHANGED at v1.1. v1.0 proposed CURRENT-UNIQUE while admitting
+             the claim's truth was unverified. W3C returned UNSURE and is
+             right: CURRENT-UNIQUE requires the statement to be TRUE, not
+             merely un-contradicted. No sixth disposition is invented; the
+             entry stays open until the sweep can settle it.)
 REASON       Current as a statement of the document's own discipline.
              BUT NOTE WHAT KIND OF CLAIM IT IS: it asserts that a property
              holds across the WHOLE document. W3D has adjudicated roughly a
@@ -481,8 +637,20 @@ DERIVED        The five dispositions cannot currently distinguish a DESIGNED
                home, the entry must additionally state whether the copy is
                DESIGNED (a deliberate summary, index or orientation
                restatement that stays) or INCIDENTAL (drift, to be reduced to
-               a pointer by T3). Ten entries in this sub-tranche alone need
-               that field.
+               a pointer by T3). Seven entries here are CURRENT-DUPLICATE and
+               need such a field. (v1.0 said ten; W3C caught the miscount.)
+
+               SETTLED AGAINST THIS PROPOSAL, AND CORRECTLY. W3C rejected the
+               DESIGNED / INCIDENTAL axis: a stale duplicate can be
+               deliberately designed too, so authorial intent is the wrong
+               test. What matters is whether the copy has an APPROVED
+               CONTINUING ROLE. W3C also showed the de-duplication danger was
+               overstated - T3's actual wording strips duplicates out of OTHER
+               documents into pointers to the authority, and never instructed
+               anyone to hollow out the authority's own summary.
+               W3X ratified W3C's narrower RETAIN-SUMMARY wording at review
+               scope v1.9 section 5.4. This proposition is CLOSED; it is
+               retained only as the record of how the rule was reached.
 
 DERIVED-BASIS  Traced six of the seventeen items to their formal homes by
                decision tag - D4-D01 to section 5 and the register at line
@@ -539,6 +707,33 @@ VERDICT  [W3C]
 
 *Revision history*
 ```text
+v1.1 (2026-08-18) Reissued after W3C's review. THE METHOD DEFECT: v1.0
+     proposed a duplicate-handling exception, stated it must not be applied
+     retroactively, and had already applied it in seven entries' PREVAILS
+     fields - derived reasoning leaking into the findings half, and the fourth
+     instance of this designer asserting a conclusion the evidence did not yet
+     support. The rule is now ratified in W3C's wording (review scope v1.9
+     section 5.4 RETAIN-SUMMARY) and every affected entry carries an explicit
+     DUPLICATE-ACTION field resting on it.
+     CLAIMS EXPANDED where v1.0 compressed away material propositions:
+     LED-013 (item 2's D4-Q16 token deferral, retirement-in-principle and the
+     TFF/BFF rule; item 5's plane-relative chroma consequence), LED-015 (item
+     11's span descriptor contents and the no-fake-pitch2/parity rule),
+     LED-019 (item 17's last six open items - the worst omission in the
+     tranche, since truncating a list of open work does exactly the harm that
+     item exists to prevent).
+     CANONICAL HOMES now mapped PER PROPOSITION rather than named as a cloud
+     of possible sections, per the corrected rule.
+     DISPOSITIONS CORRECTED: LED-020 and LED-021 from CURRENT-UNIQUE to
+     CURRENT-DUPLICATE - W3D had invented a "declare versus refer" distinction
+     absent from the definitions, and LED-021's SWEPT had searched a
+     superseded Project Status generation while omitting the orientation
+     documents entirely. LED-023's disposition WITHDRAWN and deferred to
+     T1S01a5, since CURRENT-UNIQUE requires a statement to be TRUE and this
+     blanket provenance claim is merely un-contradicted.
+     Two clerical errors fixed: a pointer to a non-existent LED-025, and a
+     miscount of ten entries where seven are CURRENT-DUPLICATE.
+     Eleven of the twelve corrections came from W3C.
 v1.0 (2026-08-18) First issue of T1S01a3. Adjudicates section 0's seventeen
      numbered architecture items, the target-device evidence block, and the
      header's ratified-status declaration, single-source rule, provenance-tag
