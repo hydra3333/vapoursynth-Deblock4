@@ -25,8 +25,8 @@ About supplied attachments:
    and STOP/report an incomplete or internally inconsistent set. Superseded or
    historical material may be present; do not reason from it as live authority;
    the documentation tree contains folders named "superseded" or similar which
-   contain outdated and/or inaccurate material - do not reason from it as live
-   authority.
+   contain outdated and/or inaccurate material - do not use or reason from it as
+   live authority.
 2. If I supply a `src` zip, use that W3X-supplied branch-main tree as the live
    source snapshot/base I identify for the session. Verify source claims against
    the supplied/current tree, not memory or old review extracts. If unsure the
