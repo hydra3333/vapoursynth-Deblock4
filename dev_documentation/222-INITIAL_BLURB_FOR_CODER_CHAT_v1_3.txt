@@ -13,7 +13,7 @@ between W3C and W3D.
 
 About supplied attachments:
 1. The `dev_documentation` zip contains the documentation set. Highest filename
-   version normally prevails (and may possibly confluct with an obsoleted version
+   version normally prevails (and may possibly conflIct with an obsoleted version
    number in the file), however a document I directly provide in the current
    session may be newer than the committed copy and so you need to verify 
    those situations with me (W3X). Respect declared version sets
