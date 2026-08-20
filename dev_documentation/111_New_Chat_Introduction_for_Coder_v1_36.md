@@ -1,0 +1,1175 @@
+# Deblock4 - New Chat Introduction for Coder (v1.35)
+
+```text
+CURRENT SUCCESSOR BOOTSTRAP - 2026-08-19 (v1.35) - READ THIS FIRST
+
+IF T1 IS STILL RUNNING, START HERE BEFORE USING ANY STATE SUMMARY BELOW:
+    Deblock4_T1_Resume_Brief, HIGHEST COMMITTED VERSION, SECTION 0a FIRST.
+    It is the maintained recovery/task-state handoff. It records which
+    sub-tranches are closed, which is live, what was physically delivered,
+    and what is owed next. IT PREVAILS OVER CURRENT-STATE SUMMARIES IN THIS
+    INTRODUCTION, Project Status and chat blurbs where those have not yet been
+    refreshed.
+
+    NO REVIEW YOU HAVE DELIVERED IS LOST. Delivered W3C verdicts survive in
+    the response artifacts and the Standing Task Register decision log. Do
+    not redo a settled review because a chat session rolled over; delta-review
+    only what the current designer package actually changes.
+
+CURRENT POSITION - UPDATED AT v1.36. T1S01a5 IS CLOSED. NOTHING IS OWED TO
+W3C RIGHT NOW; THE NEXT W3C WORK IS a5b REVIEW WHEN A PACKAGE ARRIVES.
+
+    WHAT HAPPENED, so you do not re-derive it: a W3D chat death led to a W3C
+    recovery reconstruction (ledger v1.4), which W3X RULED OUT as a source
+    (DEC-70). A successor W3D rebuilt textually on delivered v1.3, and
+    closure then took SEVEN W3C review rounds (generations v1.5 to v1.10).
+    W3X capped the correction rounds at DEC-85 (cap-and-carry) and recorded
+    closure at DEC-88 on 2026-08-21.
+
+    WHERE a5 ENDED:
+        FINAL ledger v1.10 - 44 entries, ALL Tier C (16 CURRENT-UNIQUE, 28
+        CURRENT-DUPLICATE, zero CONFLICTING/SUPERSEDED/OPERATIVE-SPEC), every
+        headline figure independently reproduced by W3C's final verification
+        (response v1.4);
+        CLOSED WITH KNOWN RESIDUE R1-R8, enumerated and ROUTED at Standing
+        Task Register v1.36 section 0c - R1-R6 to a7, R7 to the continuity
+        refresh, R8 historical;
+        NO a5 CORRECTION GENERATION MAY BE OPENED. There is no v1.11. If a
+        package asks you to review a5 material again, STOP and query W3X.
+
+    THE RECORD, because it matters for how you review a5b: across all seven
+    rounds NOT ONE MPEG-2 CONCLUSION WAS OVERTURNED. Every finding you made
+    was method, framing, provenance or recovery. Expect the same posture in
+    a5b: attack evidence and method hard; the substance has so far held.
+
+    THINGS THAT ARE SETTLED AND MUST NOT BE REOPENED:
+        THE a5 TIER C SAMPLE IS COMPLETE. W3X selected ELEVEN entries; W3C
+            reviewed exactly those eleven; 3 AGREE / 8 DISAGREE. DEC-73.
+            DO NOT SELECT OR REVIEW ANOTHER a5 TIER C SAMPLE.
+        the 22-probe a5 search round - settled and independently reproduced;
+        Classification Repair v1.1 - substantively settled;
+        the a5/a5b split at the section 8/9 boundary - DEC-68;
+        DEC-67's search methodology.
+    DO NOT START ANOTHER a5 SEARCH OR CLASSIFICATION ROUND unless a concrete
+    new defect actually requires one.
+
+    THE BINDING REVIEW SCOPE IS NOW Deblock4_T1_W3C_Review_Scope_v1_15 - the
+    RATIFIED consolidated method (DEC-83: occurrence-level evidence,
+    CITED-OUTSIDE-RANGE, mechanical entry-sweep gate; DEC-84: the exact
+    SUPERSEDED-KIND/propagation wording at its 0.11, CITE IT, NEVER
+    PARAPHRASE). NOT v1.12 or earlier. Its new section 0 consolidates the method rules that had spread
+    into the Standing Task Register's decision log and Classification Repair
+    v1.1. THAT FRAGMENTATION CAUSED A REAL ERROR - a successor read v1.11's
+    generic "Tier C: W3X selects a random sample", did not see that a5's
+    sample was already complete, and asked W3X for something already given.
+    READ SECTION 0 OF v1.12 BEFORE ANYTHING ELSE.
+
+READ IN THIS ORDER FOR CURRENT STATE. VERSIONS ARE DELIBERATELY NOT PINNED
+- use the HIGHEST COMMITTED VERSION of each - except the MPEG-2 authority,
+which is pinned for the reason given at item 3:
+
+    1. Deblock4_T1_Resume_Brief, section 0a FIRST while T1 is active
+    2. Deblock4_Project_Status, section 0, as broader implementation/proof state
+    3. Deblock4_MPEG2_Deblocking_Investigation_and_Decided_Architecture_v1_05.md
+       section 0 CURRENT ARCHITECTURE POSITION.
+       STILL v1.05 DELIBERATELY: no T1 remedy has been applied to it and
+       every ledger remedy remains a PROPOSAL awaiting W3X. A higher
+       generation means STOP and ask W3X what was ratified.
+    4. Deblock4_Standing_Task_Register_T_Series - the live work queue and
+       its DECISION LOG
+    5. Deblock4_T1_W3C_Review_Scope - what binds YOU during T1
+    6. the current charter / active bounded scope when W3X issues one
+
+YOUR CURRENT WORK IS DOCUMENT REVIEW, NOT CODE. T1 is a documentation
+consolidation sweep and W3C's role in it is independent review of the
+designer's adjudications, under Deblock4_T1_W3C_Review_Scope (latest). It
+authorises NO source change of any kind. Read-only source inspection IS
+permitted and, where a judgement turns on what code implements, expected.
+
+FOR ALL MPEG-2 DEBLOCKING MATTERS - block geometry, field/frame coding,
+grid/source modes, chroma organisation, prior art, Deblock4 architecture,
+architecture-discriminator mathematics and the D4 issue/decision registers -
+the PREVAILING AUTHORITY is the W3X-ratified:
+
+    Deblock4_MPEG2_Deblocking_Investigation_and_Decided_Architecture_v1_05.md
+
+It SUPERSEDES Deblock4_MPEG2_Grid_Field_DCT_Knowledge. It also PREVAILS over
+any MPEG-2 statement elsewhere in this documentation set INCLUDING THIS
+INTRODUCTION. The raw GAIS material under GAIS_investigations/ is now ignored
+for T1 search AND adjudication and is not evidence for a current T1
+proposition. Where independently verified knowledge survived that research,
+use the applicable non-GAIS project record.
+
+CURRENT STATE:
+ - Classic is FINISHED for the ratified integer tier set: 2C scalar oracle,
+   4C SSE4.1 backend, 5C AVX2 backend, all accepted. Post-5C maintenance M1
+   and M2 are complete and committed. Identity remains 0.1.0-dev+5C unless
+   W3X supplies a later base.
+ - deblock4.Deblock4 STILL HAS NO FILTERING KERNEL. Its live dispatch arms are
+   validated writable-copy/pass-through paths.
+ - THE ACTIVE WORK IS T1, NOT T5/Q14 AND NOT CODE. T1S01a5 covers authority
+   sections 1-8. Its search/re-sweep/classification repair is complete from
+   W3D's side at Classification Repair v1.1. THE LEDGER REWRITE IS NEXT.
+ - T1S01a5b, authority sections 9-13, is a separately RATIFIED later
+   sub-tranche. a6/a7 remain later authority work.
+ - AFTER T1: T8 closes provenance gaps exposed by T1; then T5 detector
+   mathematics; then T6/Q14 planning as a separate ratification. Older text
+   saying T5 immediately follows T1 or that Q14 is the immediate artifact is
+   stale.
+ - Primary candidate remains Architecture B2. Mandatory detector-free
+   comparator/fallback remains Architecture D. Architectures A and C are
+   rejected. Q14 is not a forced binary: B2 may advance only if viable;
+   otherwise D may advance only if viable; if neither is acceptable, REOPEN
+   THE ARCHITECTURE. Nothing ships at Q14.
+
+DO NOT CONFUSE THE T1 POPULATIONS:
+ - frozen historical T1S00 survey record: 47 adjudication documents at the
+   time the frame was frozen;
+ - current T1 adjudication population: 41 documents;
+ - current a5 search population: 46 files.
+
+CURRENT MECHANICAL SEARCH EXCLUSIONS:
+ - any folder whose name begins superseded or scheduled_for_deletion;
+ - everything under T1/;
+ - everything under GAIS_investigations/.
+
+T1/ IS A WORKSHOP, NOT A KNOWLEDGE SHELF. Material drafted or consolidated
+there is process material and does not become applicable/final knowledge until
+promoted OUT into the live documentation tree proper.
+
+THE THREE a5 SWEEP RULES NOW BIND THE REVIEW METHOD:
+ 1. OPEN EVERY HIT - an unclassified returned file is not swept.
+ 2. NORMALISE WHITESPACE for phrase searches.
+ 3. SEARCH THE PROPOSITION, NOT MERELY THE SOURCE SENTENCE - declare a bounded
+    probe family, open every candidate, classify the matched passage as
+    CARRIER / APPLIES / DIFFERENT / IDENTIFIER / NOISE (MIXED where needed),
+    expand the probe family only when a genuine carrier exposes an equivalent
+    phrasing, record why, and rerun the SAME population.
+
+AND THE FAILURE MODE THAT SURVIVED THOSE RULES:
+    OPENING A HIT IS NOT THE SAME AS READING IT. In the a5 re-sweep W3D opened
+    every hit and still misclassified seven. Keyword presence is not semantic
+    classification; a numerically correct count can still have the wrong
+    members.
+
+TARGET-MATERIAL FACT THAT MUST NOT BE LOST:
+ - The LG VHS-to-DVD target recorder was measured with frame_pred_frame_dct=0
+   in XP/SP/LP/EP, i.e. the ADAPTIVE-CAPABLE per-macroblock DCT regime is the
+   normal practical target-device regime. MLS was the frame-DCT control.
+ - This makes B2 a response to normal target-device operation, not a
+   theoretical corner case. It does NOT by itself prove that every picture
+   contains both FRAME and FIELD dct_type values; Q14 must obtain per-MB truth.
+ - mediainfo --Details=1 is useful CHEAP PICTURE-LEVEL REGIME TRIAGE; it is
+   NOT the per-macroblock dct_type truth extractor required by Q14.
+
+CODER-SPECIFIC CONSEQUENCES:
+ - Do NOT implement Deblock4 filtering mathematics under an older README/grid
+   description. No kernel scope exists.
+ - Treat mpeg2_field_separated, the old primary/midpoint union grid, and old
+   midpoint-required conclusions as SUPERSEDED architecture. Current Stage-1C
+   parameter/property plumbing is legacy scaffolding, not algorithm authority.
+ - The current scalar Deblock4LumaStepY/midpoint property model cannot express
+   mixed B2 geometry as one truthful per-frame step and is expected to change
+   under a later bounded parameter/diagnostic scope.
+ - Nothing is inherited from Classic: no code, thresholds, oracle or proof.
+   Engineering disciplines/patterns may be re-derived, but Deblock4 gets its
+   own mathematics, fixtures, oracle and differential proof chain.
+ - External factual claims enter applicable project knowledge only through the
+   current non-T1/non-GAIS knowledge set and its normal verification rules.
+```
+
+**Version:** 1.36
+**Date:** 2026-08-21
+**Status:** Informative successor orientation; not controlling. During active
+T1, Resume Brief section 0a is the precise recovery/task-state handoff. The
+charter and the MPEG-2 authority prevail in their respective domains.
+**Role:** W3C successor coder
+**Encoding:** US-ASCII; CRLF
+
+---
+
+# IMMEDIATE NEXT ACTION
+
+There is **NO ACTIVE IMPLEMENTATION SCOPE**.
+
+Classic is complete for the ratified integer tier set. Stage 2C established the
+ReleaseSafe scalar oracle, Stage 4C added the SSE4.1 backend, and Stage 5C added
+the AVX2 backend; the vector paths are accepted against the scalar oracle.
+Post-5C maintenance M1 and M2 are complete and committed. The retained identity
+is `0.1.0-dev+5C`.
+
+deblock4.Deblock4 remains a pass-through shell. The active design line is the
+W3X-ratified MPEG-2 authority v1.05.
+
+**THE ACTIVE WORK IS T1, A DOCUMENTATION SWEEP - NOT CODE.** The current
+recovery state is more advanced than the older T1-start summaries: T1S01a5's
+search/re-sweep/classification repair is complete from W3D's side at
+`T1S01a5_A_Classification_Repair_v1_1.md`, and the promised rewritten a5 ledger
+was NOT delivered before the W3D session died. The ledger rewrite is therefore
+NEXT. W3C reviews that rewrite when supplied. Do not restart the settled 22-probe
+search/classification round without a concrete new defect.
+
+The downstream order is now:
+
+```text
+T1 -> T8 -> T5 -> separately-ratified T6/Q14
+```
+
+T8 closes provenance gaps exposed by T1. T5 derives detector mathematics.
+T6/Q14 planning follows only as a separately ratified step. Do not write a
+Deblock4 filtering kernel and do not infer a kernel scope from this handover.
+
+Resume sequence after any interruption:
+
+```text
+Deblock4_T1_Resume_Brief, HIGHEST COMMITTED - section 0a FIRST
+    -> Project Status, HIGHEST COMMITTED, section 0
+    -> MPEG-2 authority v1.05 section 0 (still v1.05 deliberately)
+    -> Standing Task Register, HIGHEST COMMITTED, and its DECISION LOG
+    -> Deblock4_T1_W3C_Review_Scope (latest) - what binds you during T1
+    -> the current T1 ledger/repair tranche, or active scope supplied by W3X
+```
+
+WHAT W3C IS DOING IN T1, in one paragraph: W3D adjudicates material in the
+applicable documentation population and records dispositions in ledgers. W3C
+independently reviews the selected/full entries under the binding T1 review
+scope, using the supplied documentation/source rather than trusting W3D's
+quotations or search classifications. The frozen T1S00 survey originally
+recorded 47 adjudication documents; the CURRENT adjudication population is 41,
+and the CURRENT a5 search population is 46 files. Those are different records
+and must not be silently normalised into one number.
+
+THE FIRST LEDGER'S OUTCOME, so you know the standard expected: W3C rejected
+BOTH entries and found a method defect in the template. All three findings
+were accepted. Disagreement is the product here; bare agreement on a
+high-tier entry tells nobody whether you checked.
+
+STANDING PROCESS RULINGS (binding on every delivery; do not rediscover them):
+- NO git staging, EVER, in delivery or validation machinery. Commit/push are
+  manual W3X acts after review and acceptance.
+- No correctness-critical machinery may depend on a particular local git
+  index/staging/HEAD state. Non-destructive git reads and W3X-manual workflows
+  remain permitted under the prevailing charter.
+- Do not author or ship PowerShell delivery machinery. Retained previously
+  reviewed proof machinery is not an invitation to add new machinery.
+- Harness ownership remains W3D's where the active scope assigns it; W3C
+  delivers source under the bounded scope and never silently expands it.
+- C-DELIV-07: W3C does not claim local project build/test PASS; W3X runs and
+  reports authoritative execution.
+- Communication to W3X follows the coder convention: plain English; expand
+  abbreviations on first use; put all decisions/questions in one clearly headed
+  section near the top; make each decision self-contained.
+- G5/G6 continue to govern target-specific execution and PE-export containment.
+  Do not weaken the proven one-DLL guarded-dispatch architecture while working
+  on the novel Deblock4 algorithm.
+
+Historical Stage-1C/2C/4C/5C scopes and their proof documents remain evidence
+for the work they accepted; they are not live authority for the next Deblock4
+algorithm design. The active D4 scope, when one exists, arrives from W3X.
+
+# 1. Purpose and authority
+
+You are the successor coder chat and may have no prior memory. This file orients
+you; it does not define the algorithm, amend an invariant, authorise changes,
+or replace a coding scope.
+
+```text
+W3X  human coordinator: decisions, repository, builds, runs, commits, pushes
+W3D  continuity-bearing designer/reviewer role: specifications, design review,
+     scopes, independent harness design
+W3C  memoryless coder - your role: implement one supplied bounded scope
+```
+
+All traffic between W3C and W3D passes through W3X; never assume W3D has seen a
+delivery or that W3C has seen a design discussion. Only W3X may claim that a
+build, test, benchmark, commit, or push occurred. You provide mechanically
+applicable code or patches and exact validation commands; W3X runs them and
+reports the real results.
+
+Apply charter I7: if you propose a change to criteria that will judge or accept
+your own work, identify W3C as proposer and a DIFFERENT independent verifier;
+do not silently absorb it. W3X retains normative adoption and release authority.
+
+Where a charter or design ambiguity affects correctness or scope, identify it
+and stop. Do not choose the most plausible interpretation.
+
+---
+
+# 2. Required reading order
+
+## Version currency and paired or grouped documents - verify before relying (STOP-class)
+
+Document version numbers are usually part of the filename, and the highest
+version number in the filename normally indicates the latest prevailing
+version, which should be used - EXCEPT that a document W3X provides directly in
+this session may be newer than anything yet committed, and takes precedence.
+Verify the actual latest versions with W3X before relying on a number baked
+into a file. If W3X indicates a newer ratified package exists, STOP and obtain
+it from W3X, since the latest document may not yet have been committed to the
+github project repository.
+
+Some documents declare a read-together version SET of two or more members. For
+such a set, use the LATEST filename version of EACH member and read the complete
+set together. If a member is missing or the set is internally inconsistent,
+STOP and report it to W3X; do not rely on a partial set. Read-together status
+does NOT equalise authority: each member retains its own declared controlling,
+binding, or informative status. Never mix generations against a header that
+ties members to specific versions. (Charter section 2.3a; all version numbers
+below are current only as of this file's writing and must be re-verified.)
+
+A later controlling-document change does not automatically invalidate an
+existing scope. Under charter 2.3b, W3D assesses materiality and recommends;
+W3X decides and records compatibility in Project Status. If materiality is
+uncertain, disputed, or cannot be established by inspection, STOP and reissue
+the scope.
+
+Read in this order. Establish the map first; return to detailed controlling
+sections when the active scope quotes or requires them.
+
+## 2.1 `Deblock4_Project_Status` - HIGHEST COMMITTED VERSION - INFORMATIVE
+
+Read for broader implementation/proof state. While T1 is active, the
+HIGHEST COMMITTED `Deblock4_T1_Resume_Brief`, section 0a, is the precise
+recovery/task-state handoff and prevails over stale immediate-next-work wording
+in Project Status until Project Status is refreshed. Classic 5C + M1/M2 are
+complete and Deblock4 still has no kernel.
+
+## 2.2 `Deblock4_Concise_Project_Summary` - HIGHEST COMMITTED - INFORMATIVE
+
+Read for the compact project shape, vocabulary, public surface, stage sequence,
+and the per-filter integer-exact / float-tolerance backend relationship.
+
+## 2.3 `AI_Charter_and_Invariants_Card` - HIGHEST COMMITTED - CONTROLLING
+
+This is the W3X-ratified RULEBOOK. It prevails over this introduction on roles,
+invariants, coding/interop/numeric/SIMD rules, version-set discipline, scope
+currency and delivery mechanics. Verify filename/internal version before acting
+and stop on a generation mismatch. In particular retain G5 guarded execution,
+G6 explicit emission/linkage/PE-export control, I7 independent verification of
+self-affecting criteria, and the prevailing C-DELIV rules.
+
+## 2.4 `README_Deblock4_Design_Spec` - HIGHEST COMMITTED - GENERAL DESIGN RECORD
+
+Read for project-wide design history, module architecture, validation and
+non-MPEG-2 general technical guidance. **Do not use its older MPEG-2 field-
+separated/union-grid passages as current authority.** For every MPEG-2-specific
+question, v1.05 of the MPEG-2 authority below prevails.
+
+## 2.4a `Deblock4_Verification_And_Tiering_Decisions` - HIGHEST COMMITTED - INFORMATIVE DURABLE RECORD
+
+Read the sections governing named tiers, strict float / FMA policy, the Stage
+1B.2/1B.3 boundary, backend tokens, and the two-filter sequence. It is the
+durable record of the verification/tiering/two-filter decisions and their
+reasoning. The charter and README prevail if any conflict is found.
+
+## 2.5 `Scopes/Deblock4_S1B1_Retention_Export_Research_Package_v1_0.md` - INFORMATIVE
+
+Read for the (now-completed) Stage 1B.1 retention/export decision. It records the
+research query, the external findings verbatim, and the designer assessment that
+led to charter G6. It explains WHY gated backend code is not PE-EXPORTED (though
+it IS declared export fn) and how retention without PE-export works in COFF/PE
+(reference-graph anchoring; /INCLUDE-class directives; COFF safe-by-default
+exports). Stage 1B.1 is COMPLETE; read this as background for any change that
+touches the backend object structure, not as an open task.
+
+## 2.6 `Deblock4_Toolchain_Findings` - HIGHEST COMMITTED - INFORMATIVE
+
+Read for the empirical Zig/linker facts that determine how backend objects are
+built and retained (F1-F5): emission is decided per compilation unit; a
+cross-compilation reference does NOT force emission; object-mode `export fn`
+grants emission and linkage but does NOT create a PE export; and the proven
+idiom for multiple CPU-feature levels in one binary (separate single-target
+units, self-emitting via export, referenced across the linker seam by @extern,
+with dispatch populating function pointers after CPU detection). This explains
+why the Stage 1B.1 structure is what it is, and it is the pattern the
+filter-creation dispatch wiring follows when consuming the proven EFFECTIVE
+record. Later findings extend this record: F6 (earlier addendum), and F9/F10
+(v1_4) - F9: Zig 0.16.0 ships with LLVM loop autovectorization DISABLED
+(zsmooth #23), which Deblock4 is immune to by design (explicit @Vector, one-DLL
+dispatch) and which makes the 2C scalar oracle genuinely scalar; F10: f16
+arithmetic is pathological (zig #19550) so f16 is STORAGE-never-COMPUTE at the
+future float step. Read v1_4 before any toolchain-bump or float work.
+
+## 2.6a `333_W3X_Coder_Communication_Convention` - HIGHEST COMMITTED - STANDING PROCESS INSTRUCTION
+
+How you communicate with W3X, in W3X's own words: plain English, every
+abbreviation expanded on first use, decision items self-contained with your
+recommendation, all questions in one DECISIONS/QUESTIONS FOR W3X section near
+the top, IDs only on trailing refs lines. Binding on every message and
+document you produce. Its companion (v1_1) binds the designer identically.
+
+> **HISTORICAL 1C ITEMS FOLLOW AFTER 2.7.** The Stage-1C scope/addendum/
+> briefing set is retained only as the record of accepted creation work. It is
+> not the active Deblock4 algorithm authority. Item 2.7, by contrast, is NOW
+> REQUIRED because Deblock4 MPEG-2 work is active.
+
+## 2.7 `Deblock4_MPEG2_Deblocking_Investigation_and_Decided_Architecture_v1_05.md` - PINNED DELIBERATELY - PREVAILING MPEG-2 AUTHORITY
+
+Read section 0 first, then the sections named by the active T1 review task or any later bounded Q14/design scope.
+This W3X-ratified document is the single source of truth for MPEG-2 block
+geometry, target measurements, B2/D architecture, rejected A/C designs,
+whole-frame mathematics, analyser discipline, Q14, proper-chroma status, SIMD
+consequences and the current D4 issue/decision registers. It supersedes
+`Deblock4_MPEG2_Grid_Field_DCT_Knowledge_v1_2.md`; do not use that older file to
+restore field-separated or midpoint machinery.
+
+## 2.7a `Deblock4_Standing_Task_Register_T_Series` - HIGHEST COMMITTED - LIVE WORK QUEUE
+
+Read after the MPEG-2 authority. The authority says WHAT is true and decided;
+the T-series register says WHAT WORK remains and in what dependency order.
+Current order is T1 first; T8 closes provenance gaps exposed by T1; then T5
+detector mathematics; then T6/Q14 planning as a separately ratified step. If
+Project Status carries an older condensed T-series summary, the latest ratified
+task register is the work-queue record; neither can override the MPEG-2
+authority on architecture.
+
+## 2.8 `Scopes/Deblock4_Scope_Stage_1C_Filter_Creation_v1_5.md` - CONTROLLING DESIGN AUTHORITY
+## 2.8a `Scopes/Deblock4_Stage_1C_Delivery_Plan_Addendum_v1_1.md` - BINDING DELIVERY ORDER
+## 2.8b `Deblock4_Stage_1C_Phase_3a_Designer_Briefing_v1_2.md` - INFORMATIVE REVIEW GUIDANCE
+## 2.8c `Deblock4_Scope_Header_CDELIV09_Reminder_Block_v1_1.md` - INFORMATIVE STANDING TEMPLATE
+
+Read 2.8, 2.8a and 2.8b last, together. They form the Phase 3a REVIEW SET
+(charter 2.3a version group; use the LATEST filename version of EACH), but they
+are MIXED AUTHORITY. The scope is the Stage 1C design authority (module map,
+dispatch architecture, proof matrix, gap resolutions C1-C9/P1-P5); the
+addendum governs phase delivery order and boundaries; the briefing consolidates
+informative Phase 3a review clarifications. Read-together status does not turn
+the briefing into a scope or equalise their authority.
+
+The briefing's load-bearing checks include: exact translated VSPublicFunction
+C-ABI creation signatures; immediate validated rebinding to idiomatic locals;
+preservation of the accepted parsing/validation/tier-selection/allocation/
+ownership/filter-construction logic while permitting the required lifecycle
+trace calls; no restructuring of the permanent activation-reason switch; a
+complete one-line lifecycle trace; and the settled C5 order.
+
+Item 2.8c is not a fourth Phase 3a review-set authority. It is the current
+standing reminder template required by the charter (C-DELIV-09/25/26) in scopes and delivery-
+plan addenda issued henceforth. Scope v1_5 and addendum v1_1 are expressly
+grandfathered unchanged until their next issuance under section 2.3b; do not
+STOP on their historical pins. Verify the latest reminder-block version per
+section 2.3a and do not silently rewrite a released scope.
+
+The starting point is the prevailing branch-main source (no commit id;
+upload-if-unsure). Do not write production code from this introduction alone.
+Stage 1C is historical and COMPLETE; its Phase 3a/3b review-set documents remain
+useful only when a bounded task touches that accepted creation infrastructure.
+They are not current implementation state and they do not authorise D4 work.
+
+---
+
+# 3. Where the project is
+
+**Classic is complete for the ratified integer tier set; Deblock4 is now active.**
+
+Accepted shared/Classic baseline:
+
+```text
+Stage 1 / 1C      shared foundation, API4 creation/frame plumbing, guarded tier
+                  selection and diagnostics: COMPLETE
+Stage 2C          Classic ReleaseSafe scalar oracle: COMPLETE
+Stage 3C          collapsed; deferred Classic quality question only
+Stage 4C          Classic x86-64-v2/SSE4.1 vector backend: COMPLETE
+Stage 5C          Classic x86-64-v3/AVX2 vector backend: COMPLETE
+Post-5C M1        v2/v3 maintainer-commentary reconciliation: COMPLETE
+Post-5C M2        identifier + historical-batch retirement hygiene: COMPLETE
+Identity          0.1.0-dev+5C
+```
+
+The Classic scalar/v2/v3 integer paths are accepted byte-identical under their
+proof chain. The old 4C/5C vector source may provide engineering experience,
+but by ratified D4-D08 **nothing in Classic is a design or acceptance basis for
+deblock4.Deblock4**.
+
+deblock4.Deblock4 currently validates/records creation state and returns
+writable-copy/pass-through frames; no D4 filtering mathematics exists. The
+current algorithm candidate is B2, with D as mandatory detector-free comparator,
+gated by the D4-Q14 ground-truth experiment in MPEG-2 authority v1.05.
+
+Environmental note: the portable VapourSynth runtime is R79; the in-tree API4
+compile-header contract remains the accepted one unless a later status/source
+package says otherwise.
+
+# 4. Tacit knowledge and closed dead ends
+
+Repository-sensitive items below are historical reports. Verify current source.
+
+## 4.1 Last reported environment
+
+```text
+repository:
+    E:\SOFTWARE-Win11\MULTIMEDIA\vapoursynth-Deblock4\github\vapoursynth-Deblock4
+branch:
+    main
+Zig:
+    C:\SOFTWARE\zig\zig.exe
+ZLS:
+    C:\SOFTWARE\zig\zls.exe
+headers:
+    third_party\vapoursynth\include\
+```
+
+Reported `build.zig.zon` fingerprint:
+
+```text
+0x7f9af282a5ce8d76
+```
+
+Do not copy a fingerprint from a disposable `zig init` project; it belongs to
+that package, not Deblock4.
+
+## 4.2 `VSHelper4.h` bridge decision
+
+The attempted all-header translation gave:
+
+```text
+Debug       passed
+ReleaseFast passed
+ReleaseSafe failed
+```
+
+ReleaseSafe failed in generated Zig after Windows CRT declarations were reached
+through `VSHelper4.h`, including secure wide-string declarations associated
+with `wcscat_s` and `wcscpy_s`. Macro workarounds were not satisfactory.
+
+Settled architecture:
+
+```text
+VapourSynth4.h + VSConstants4.h
+    translated into Zig
+
+VSHelper4.h
+    compiled as C through the Zig build graph
+    exposed through narrow project-authored C-ABI wrappers
+```
+
+This final arrangement was reported passing ReleaseSafe. Do not casually
+reopen all-header translation.
+
+Direct wrappers preserve the external name after `zig_`:
+
+```text
+vsh_areValidDimensions -> zig_vsh_areValidDimensions
+```
+
+Deblock4 policy/composition/test functions use `deblock4_` instead.
+
+## 4.3 Existing scaffold proof
+
+Reported proof already includes:
+
+```text
+Windows x64 DLL built
+expected export present
+separate smoke-test executable linked or loaded it
+C-ABI probe called
+expected identity marker returned
+```
+
+Stage 1B.1 extended this proof (COMPLETE); Stage 1B.2 inspected those objects'
+generated assembly and must not replace the structure with an unrelated
+experiment.
+
+Reported historical files included:
+
+```text
+build.zig
+build.zig.zon
+src/build_probe.zig
+src/dll_probe.zig
+src/dll_smoke_test.zig
+src/vapoursynth_api4.h
+src/vapoursynth_helper_bridge.c
+src/vapoursynth_header_probe.zig
+```
+
+Inspect the repository; this is not an authoritative current inventory.
+
+## 4.4 External helper review
+
+`zsmooth` string, copy, math, and vector helpers were reviewed. No reviewed
+function is approved merely because it is reusable or already Zig code. Apply
+the charter's function-specific safety, codegen, and provenance rules.
+
+Closed shortcuts:
+
+```text
+translate VSHelper4.h with the core headers
+copy a zig init fingerprint
+import an external common module wholesale
+treat @Vector or load/store/gather naming as SIMD proof
+```
+
+Reopen one only through a bounded scope justified by new evidence or a concrete
+need.
+
+---
+
+# 5. What will bite you
+
+```text
+T1-SPECIFIC, WHILE THE SWEEP IS RUNNING:
+
+IF THE DOCUMENTATION CORPUS OR THE SOURCE TREE IS NOT IN FRONT OF YOU, STOP
+AND ASK. Do not review a ledger from the ledger alone. A ledger shows what the
+designer DID log; it cannot show what the designer did NOT log, and omission
+is one of the five things you are asked to find. W3C itself identified this as
+a blocking defect in an earlier version of the review scope - do not let it
+quietly return.
+
+THERE ARE FIVE DISPOSITION VALUES AND ONLY FIVE. If a ledger entry uses a
+sixth, that is a method finding, not a wording quibble - it lets an entry
+assume its own conclusion. This has already happened once.
+
+SILENCE BETWEEN TRANCHES IS NOT AGREEMENT. W3X collects responses and
+adjudicates them together at closure. If you raised something and it recurs,
+RAISE IT AGAIN.
+
+IF THE PROBLEM IS THE METHOD RATHER THAN AN ENTRY, put it at the TOP of your
+response, stated as a method problem. A wrong entry costs one entry; a wrong
+method is repeated across every remaining tranche before anyone notices.
+```
+
+```text
+If you are about to add pixel arithmetic, algorithmic plane construction, or
+real deblocking in Stage 1C, do not - that is per-algorithm 2C/2D work. The
+narrow exception already authorised in 1C is the standard API4 copyFrame
+writable pass-through used so properties can be attached; its plane data must
+remain untouched. Do not replace it with a custom copy/filter algorithm.
+(General rule, from Stage 2C/2D onward: pixel/backend code is validated against
+the filter's ReleaseSafe scalar oracle once it exists; the FIRST Stage 2C/2D
+scope that CONSTRUCTS that oracle is the sole exception - it is accepted
+against independent scalar obligations plus a sanity gate. See decisions
+section 20.)
+
+If you are about to CALL a real v2 (SSE4.1) or v3 (AVX2) algorithm backend in
+Stage 1C, do not: every 1C tier branch still targets the shared inert
+pass-through placeholder. In later backend scopes, target-specific calls are
+permitted only through dispatch selected from the proven EFFECTIVE record.
+G5 permits compile/link/presence proof but forbids execution before a proven
+in-process capability guard confirms the complete feature contract. There is
+no command-line, environment-variable, build-flag, manual, or 'known capable
+machine' bypass. Static initialisers, registration paths, import thunks, and
+test calls all count as execution.
+
+If you are about to PE-EXPORT a gated (v2/SSE4.1 or v3/AVX2) function - i.e. make
+it appear in the DLL's export table - do not. Charter G6 bans PE-EXPORT of gated
+code, NOT the `export` keyword. The proven Stage 1B.1 mechanism is the opposite
+of "never use export": gated backend code IS declared `export fn` in its own
+single-target object (that is what forces emission and gives it a linker-visible
+name), and object-mode `export fn` does NOT by itself create a PE export. The
+gated modules stay OUTSIDE the DLL root graph; the root reaches their exact
+symbols by `@extern` (address-taken, called only through dispatch selected
+from the proven EFFECTIVE capability record);
+their absence from the export table is enforced by the standing loud-failing
+dumpbin /EXPORTS gate, not inferred from implicit toolchain behaviour or a
+one-time look. Do NOT "correct" this back into a
+non-export form - that was empirically FALSIFIED (see Deblock4_Toolchain_Findings
+F1/F4). A PE-exported gated symbol would be a call path bypassing the dispatch
+guard; that is the thing forbidden, not the keyword.
+
+If you are about to compile generic or dispatch code under AVX2, do not.
+Dispatch must run on machines lacking the feature it detects.
+
+If you are about to freeze vector widths, lane layouts, load/store forms,
+gather strategy, or assumptions about emitted instructions from intuition, do
+not. Those require compile-and-assembly evidence (the within-level assembly
+confirmation done in Stage 1B.2). The named v1/v2/v3 feature contracts
+themselves are already settled.
+
+If you are about to use a VapourSynth stride as a typed-sample offset, stop.
+VapourSynth strides are byte counts.
+
+> **NOTE.** The specific Phase 3a/3b framing in this section is 1C-historical
+> (that work is committed). The PRINCIPLES below stand for all stages: respect
+> output-defining schedule/dependency rules, stay inside the bounded scope, do
+> not pull unrelated cleanup into a delivery, and never claim PASS without W3X's
+> actual output.
+
+If you are about to batch adjacent luma edges or merge vertical and horizontal
+passes, stop. Schedule and dependency rules are output-defining.
+
+If you are about to perform broad cleanup or import utilities OUTSIDE the
+bounded scope you were given, do not. The Stage-1C scaffolding sweep is
+historical evidence of why cleanup must be explicitly scoped; it is COMPLETE,
+not pending work. Current MPEG-2 documentation consolidation is governed by the
+T-series register and W3X sequencing, not by old Phase-3a/3b boundaries.
+
+If you are about to claim PASS without W3X's actual output, do not.
+
+If a patch does not match its stated base and anchors, do not hand-edit it into
+place. Issue a corrected delivery.
+```
+
+---
+
+# 6. What may not be fully written down
+
+Verify rather than assume:
+
+```text
+1. That you hold the PREVAILING branch-main source; ask W3X to upload it if
+   unsure. Do not invent or require a commit SHA.
+2. That you hold the HIGHEST COMMITTED charter and that any supplied
+   read-together set is generation-consistent.
+3. That, while T1 is running, you hold the HIGHEST COMMITTED T1 Resume Brief
+   and have read section 0a FIRST; it is the precise recovery/task-state handoff.
+   Project Status remains the broader implementation/proof-state record.
+4. That MPEG-2 authority v1.05 is W3X-ratified. Its historical draft header may
+   still describe the pre-ratification state; W3X's ratification decision is the
+   status fact until the document next naturally reissues.
+5. That NO D4 kernel scope exists unless W3X explicitly supplies one after Q14.
+6. The downstream T8 -> T5 -> T6/Q14 obligations are not current coding
+   scopes. T8 must close the provenance gaps named by T1; T5 later defines
+   detector/feature mathematics; T6/Q14 later defines the experiment-plan and
+   ground-truth extraction method. `mediainfo --Details=1` is picture-level
+   regime triage, not per-MB dct_type truth. Do not let held-out results define
+   the detector after the fact.
+7. The target LG measurement means adaptive-capable operation is normal in
+   XP/SP/LP/EP; do not upgrade that measurement into proof that every picture
+   actually mixes FRAME and FIELD macroblocks.
+8. B2/D viability criteria must be predeclared and evaluated on held-out data;
+   if both are inadequate the architecture reopens.
+9. Existing `mpeg2_field_separated`, midpoint, scalar-step and related audit
+   properties are legacy Stage-1C plumbing awaiting later bounded reconciliation.
+10. The named v1/v2/v3 psABI tier contracts, G5 guard and G6 object/export
+    mechanism remain settled infrastructure and are not reopened by D4 work.
+11. VapourSynth strides are bytes; footprint, row-pitch and bounds semantics are
+    explicit in the MPEG-2 authority and future D4 scope.
+12. Any fact not supported by the current applicable authority/source is a
+    question, not a gap to fill from memory, T1 process material, or ignored
+    GAIS investigation material.
+```
+
+These are verification items, not invitations to redesign settled material.
+
+# 7. Working with W3X and delivering code
+
+Use this style:
+
+```text
+one bounded objective
+exact changed-file set
+minimal unrelated change
+clear comments at invariant-enforcement points
+ASCII-only artifacts
+mechanical delivery under C-DELIV
+exact commands and expected results
+actual W3X outputs before PASS
+```
+
+Do not compress safety-critical comments about ownership, lifetime, alignment,
+target features, numeric range, or schedule dependencies.
+
+Delivery form is selected per file:
+
+```text
+new file
+    -> complete whole file
+existing file, small localised change
+    -> anchor-verifiable unified diff patch
+existing file, roughly more than 30 percent changed or several regions
+    -> complete replacement file
+```
+
+One scope may mix forms. Every delivery identifies its exact base, application
+order, validation, expected results, and deliberate SKIPs. W3X applies, runs,
+and reports. After W3X reports PASS, provide a commit message unless asked not
+to.
+
+The following is the current standing C-DELIV-09 reminder. Every scope and
+delivery-plan addendum issued henceforth carries the latest
+Deblock4_Scope_Header_CDELIV09_Reminder_Block verbatim; the charter governs on
+any difference. Existing scope v1_5 and addendum v1_1 are grandfathered under
+section 2.3b until their next issuance.
+
+**Incremental emission (charter C-DELIV-09) - standing reminder:** When this
+scope/phase is large enough that withholding all output creates a material
+interruption or review-continuity risk - normally multiple modules or more
+than a few files - W3C EMITS complete modules or small coherent groups as they
+are finished, each marked "increment N of ~M: <what>" (~M is an estimate and
+may be revised). Each increment is a complete, self-identifying recovery and
+review artifact against the stated base; it need not be independently
+applyable. ONLY EMITTED ARTIFACTS SURVIVE an interruption: the recoverable
+state is the last complete emitted increment(s); the current incomplete
+increment AND any later un-emitted integration, reconciliation, validation, or
+revision work may be lost, and earlier increments may be superseded by later
+integration. W3C does not claim to preserve or resume un-emitted internal
+work. The increments do NOT replace the final deliverable: at scope/phase end
+W3C rebuilds and re-packages the complete integrated work against the
+authoritative base as one deliverable of record meeting C-DELIV-01..08 in
+full, validated as a whole - merely concatenating increments is not proof of
+integration. W3X ordinarily applies only the final package, unless W3X
+explicitly directs otherwise.
+
+---
+
+# 8. First response expected from the successor
+
+Before proposing implementation, give W3X a compact orientation check:
+
+```text
+1. Exact current filenames/internal versions received and their authority.
+2. Confirmation that, while T1 is active, you read the HIGHEST COMMITTED
+   T1 Resume Brief section 0a FIRST; Project Status is the broader
+   implementation/proof-state record; MPEG-2 authority v1.05 remains the
+   W3X-ratified source of truth and is still v1.05 deliberately because no
+   T1 remedy has been applied to it.
+3. Current milestone: Classic 2C/4C/5C + M1/M2 COMPLETE; identity +5C unless
+   W3X supplies a later base; deblock4.Deblock4 has NO filtering kernel.
+4. Immediate action: T1 DOCUMENT REVIEW, NOT CODE. a5 ledger v1.7 is
+   delivered (42 entries) and the next W3C action is a DELTA REVIEW of
+   v1.6 -> v1.7 against W3C's own section-18 agenda, plus verification of
+   Review Scope v1.12 as a consolidation. The a5 Tier C sample is COMPLETE -
+   do not select another. Do not restart the settled search/classification
+   round without a concrete new defect.
+5. T1 populations: frozen historical T1S00 survey 47; current adjudication 41;
+   current a5 search 46. T1/ and GAIS_investigations/ are excluded from the
+   current T1 search population; GAIS_investigations/ is ignored for T1
+   adjudication as well.
+6. Downstream sequence: T1 -> T8 -> T5 -> separately-ratified T6/Q14.
+7. Architecture: B2 primary candidate, D mandatory comparator/fallback, A/C
+   rejected; no-forced-fallback rule if both B2 and D are inadequate.
+8. Target-material significance: LG XP/SP/LP/EP are measured adaptive-capable
+   (`frame_pred_frame_dct=0`); actual per-MB mixture remains Q14 ground truth.
+9. Confirm the standing G5/G6 guarded-dispatch/export discipline, no git
+   staging, W3X execution ownership, and bounded-scope/no-scope-bleed rules.
+10. Confirm prevailing branch-main source or ask W3X to supply it.
+11. Report any mismatch, stale pointer, missing input or ambiguity before
+    change.
+```
+
+```
+
+Do not re-summarise every historical document. Demonstrate that you know where
+the project is, what governs MPEG-2 work, and what the next evidence must decide.
+
+# 9. Required handover package
+
+Supply this introduction together with the highest current versions of:
+
+```text
+Deblock4_Project_Status   (highest committed)
+Deblock4_MPEG2_Deblocking_Investigation_and_Decided_Architecture_v1_05.md
+    (or later; PREVAILING MPEG-2 authority)
+AI_Charter_and_Invariants_Card   (highest committed)
+README_Deblock4_Design_Spec   (highest committed; general design/history)
+Deblock4_Verification_And_Tiering_Decisions   (highest committed)
+Deblock4_Toolchain_Findings   (highest committed)
+Deblock4_Concise_Project_Summary   (highest committed)
+Deblock4_Forward_Roadmap   (highest committed; it carries a staleness banner,
+    which is NOT an adjudication and NOT permission to skip it during T1)
+Deblock4_Standing_Task_Register_T_Series   (highest committed; DECISION LOG)
+Deblock4_T1_Resume_Brief   (highest committed, while T1 runs; section 0a)
+Deblock4_T1_W3C_Review_Scope   (highest committed; binds W3C during T1)
+T1S01a5_B_Recovery_Closure_Response_v1_0.md  W3C's own review of ledger v1.6.
+                                          ITS SECTION 18 IS THIS ROUND'S
+                                          AGENDA. Read it before the ledger.
+T1S01a5_A_Classification_Repair_v1_1.md   (while a5 rewrite/review is active;
+    current recoverable correction basis)
+333_W3X_Coder_Communication_Convention   (highest committed)
+Deblock4_Session_Bootstrap_Header   (latest, when W3X supplies an active scope)
+```
+
+Do **not** include `Deblock4_MPEG2_Grid_Field_DCT_Knowledge` as a current
+algorithm authority; v1.05 supersedes it. Historical Classic/Stage-1C proof
+packages are supplied only when a bounded task genuinely needs their evidence.
+The active stage-specific authority set and scope arrive from W3X.
+
+If only this introduction is present, implementation must not begin.
+
+# 10. Revision note
+
+```text
+v1.32 (2026-08-18) Clerical correction found by W3C during successor
+orientation: v1.31 updated the title line and the revision history but left
+the internal metadata block reading Version 1.30 / 2026-08-16, producing
+exactly the filename-versus-internal mismatch the currency rules require a
+reader to expose rather than silently resolve. W3C exposed it correctly. No
+content change.
+
+v1.31 (2026-08-18) Reoriented for T1, the documentation consolidation sweep,
+which is the ACTIVE work and comes BEFORE T5 - v1.30 told a successor the
+opposite. Added a recovery entry point for a coder chat replaced mid-sweep,
+since the 2026-08-18 coder chat hit its length limit immediately after posting
+verdicts on the first ledger. Stated plainly that W3C's T1 role is document
+review authorising no source change, while read-only source inspection is
+permitted and expected for specification classification. Added four
+T1-specific hazards: stop if the corpus or source is missing, five disposition
+values only, silence between tranches is not agreement, and method problems go
+at the TOP of a response. Advanced the Project Status and task register
+pointers. No technical or ratified content is changed here.
+
+v1.30 (2026-08-16) Loss/currency audit after v1.29. Removed the two surviving
+      stale Stage-1C Phase-3a/3b "awaiting/not released" statements; added the
+      live T-series register to the reading order; reconciled immediate work to
+      T5 detector mathematics -> T6 Q14 plan (or one coordinated package with
+      T5 frozen first); and advanced the MPEG-2 pointer to ratification-recording
+      v1.05. No project design change.
+v1.29 (2026-08-16) Current-state/MPEG-2 authority reconciliation after W3X
+      ratified MPEG-2 architecture authority v1.05 and Project Status v1.28.
+      Fixed the filename/internal-version mismatch; replaced stale Stage-5C-next
+      and field-separated/midpoint-required guidance; made the resume path
+      Status v1.28 section 0 -> MPEG-2 v1.05 section 0 -> Q14/active scope;
+      updated reading order, current project state, verification list, first
+      response and handover package. Records LG adaptive-capable target-device
+      significance without overstating it as observed per-MB mixture. No
+      algorithm/invariant change; this intro follows the ratified authorities.
+v1.19 Full coder-orientation reconciliation after production of the Phase 3a
+      delivery candidate and ratification of charter v1.26. Advanced Project
+      Status v1_15 -> v1_16 and charter v1_22 -> v1_26; corrected the Phase 3a
+      briefing to root-level v1_2; classified the Phase 3a review set as mixed
+      authority; replaced the over-broad "creation body unchanged" shorthand
+      with the settled ABI-rebinding/preserved-logic/lifecycle-trace rule.
+      Status now says Phase 3a delivery v1_0 awaits W3D review, W3X validation
+      and W3X acceptance, with Phase 3b unreleased. Absorbed the valid intent of
+      Deblock4_HELD_PROPOSED_Coder_Intro_CDELIV09_Delta_v1_0 using the ratified
+      risk-based reminder block: honest loss boundary, possible supersession,
+      whole-integration proof, and final-package authority. Adopted charter
+      2.3b and the W3X grandfathering decision: scope v1_5 and addendum v1_1
+      remain unchanged until their next issuance; the reminder-block requirement
+      applies prospectively. Corrected two further stale hazards: Stage 1C
+      permits only the standard copyFrame writable pass-through (not a ban on
+      all frame construction), and no real v2/v3 algorithm backend executes in
+      1C. Updated G10 to include the Phase 3a lifecycle option, removed the old
+      claim that PE-export absence is structural, and updated roles/I7, first-
+      response and handover sections. No design or invariant change.
+v1.18 Added the Phase 3a Designer Briefing (2.8b) to the reading list as
+      INFORMATIVE project context, framed for the coder as W3D's review mirror
+      (what W3D will check) rather than a separate build requirement; noted
+      that 2.8/2.8a/2.8b form the charter-2.3a Phase 3a review set with the
+      latest of each prevailing. Bumped the charter pin v1_21 -> v1_22.
+v1.17 Added the standalone STOP-class subsection "Version currency and paired
+      documents" at the top of section 2, and a first-response gate item 2a
+      (confirm with W3X that no newer package supersedes and no paired versions
+      mismatch). Bumped the charter pin v1_20 -> v1_21 (governing section
+      2.3a). No rule change beyond adopting the charter clause.
+v1.16 Status advanced to the frozen handoff point: Phases 1 and 2 accepted and
+      committed; Phase 3a (frame path + real plugin registration) is the current
+      bounded work, with the 3a/3b split and the two 3a pins (VSPublicFunction
+      creation-callback signature; unrestructured permanent switch). Bumped
+      reading-list refs to Project Status v1_15, Forward Roadmap v1_13, and
+      delivery addendum v1_1. No rule change; status currency.
+v1.15 Added the charter C-DELIV-09 incremental-emission rule (emit completed
+      modules with an "increment N of ~M" marker for interrupt-safety and
+      review continuity; only delivered artifacts survive; the final packaged
+      deliverable is unchanged and re-packaged at scope end). Bumped the
+      controlling charter pin v1_19 -> v1_20.
+v1.14 Stage 1C position advance + prevailing-source correction. Immediate
+      action retargeted from "filter-creation stage is next / obtain scope +
+      committed base" to "Stage 1C ACTIVE, Phase 1 accepted, deliver Phase 2";
+      added the phase-status block and the W3X-releases-phases note. Replaced
+      all HEAD-SHA / starting-commit / "verify exact HEAD" language with the
+      prevailing-branch-main-source discipline (upload-if-unsure; no commit id
+      tracked) per W3X's standing preference, in the immediate-action block,
+      the pre-code checklist, section 2.8, the verify-list, and first-response
+      item 7. Added the Stage 1C scope v1_5 and delivery addendum v1_0 to the
+      reading list (2.8/2.8a, both CONTROLLING) and the handover package.
+      Section 3 and first-response milestone advanced to Stage 1C. No rule or
+      architecture change.
+v1.13 Coder-review corrections: fixed two multi-line stale phrases that
+      single-line replacement missed ("For Stage 1B.2, focus first on" ->
+      filter-creation stage; the broken "Stage 1B.3 dispatch consumes" splice
+      -> "the pattern the filter-creation dispatch wiring follows when
+      consuming the proven EFFECTIVE record"); handover-package scope line ->
+      the formal filter-creation scope; roadmap pin -> v1_12 and status pin ->
+      v1_14 (new-generation cascade); completed-stage tense corrections
+      (inspects/confirms -> inspected/confirmed). Version bumped per immutable-
+      version discipline (v1.12 was already exchanged).
+v1.12 Full reconciliation: the v1.11 pass retargeted the opening and section 3
+      but left later sections on the old 1B.2 briefing. This pass fixed the
+      package/reading-list pins (status v1_10 -> v1_13, decisions v1_9 -> v1_10,
+      summary v1.1 -> v1.2, roadmap v1_8 -> v1_10, charter -> v1_19), rewrote
+      the "1B.3 will follow / until the guard exists" phrasings (the guard now
+      exists), reconciled the broad-cleanup warning with the authorised
+      scaffolding sweep, and updated the verification checklist and the first-
+      response block for the filter-creation scope.
+v1.11 Refresh after Stage 1B.3 COMPLETE and committed; retargeted from 1B.3 to
+      the filter-creation stage. Charter pin v1.17 -> v1.19 (v1.18 recorded the
+      1B.3 ratifications; v1.19 the CRLF rule). Added the settled-detection-
+      contract do-not-re-derive note. Section 3 and 2.1/2.3 advanced.
+v1.10 Refresh after Stage 1B.2 completion; retargeted from 1B.2 to Stage 1B.3.
+      Charter v1.16 -> v1.17 (adds G10, the debug-only three-layer inclusion
+      pattern; both debug options Debug-only; force-down is force-DOWN-only).
+      IMMEDIATE NEXT ACTION rewritten for the 1B.3 capability guard, the shared
+      config/print module skeleton, the first-class self-test exe, and the
+      note that a first 1B.3 delivery exists and is under review (the prior
+      coder chat died after producing it). Section 3 advanced accordingly.
+v1.9  Cross-reference sync after the companion-pin cascade: charter v1.15 ->
+      v1.16 (exact verification pin and reading-list/handover entries), decisions
+      v1.8 -> v1.9, roadmap v1.7 -> v1.8. No body change beyond these pins.
+v1.8  Mechanical review corrections: exact-version discipline made consistent
+      (M1) - the "prevails over the number"/"or newer"/"or latest" instructions
+      replaced by a stop-and-obtain-the-reconciled-package rule; handover list
+      uses exact versions (status v1.9, README v1.9). Stage 1B.2 no longer
+      described as an isolation/linkage proof (M2; that was 1B.1) - it is a
+      within-level code-generation and assembly-inspection proof. Removed the
+      duplicated Toolchain Findings entry from the 2.5 heading (P1; it has its
+      own 2.6). Corrected this document's own v1.7 revision note to name
+      decisions v1.8, not v1.7 (P2).
+v1.7  Mechanical review corrections: README reading focus and the cleanup
+      warning retargeted from Stage 1B.1 to 1B.2; "final feature closures" ->
+      within-level confirmation / recorded whole-level requirements; the
+      "freeze feature contracts" warning reworded so the named v1/v2/v3
+      contracts read as already settled (1B.2 gathers vector/codegen evidence,
+      not the contracts); exact charter pin v1.15 (no "or newer"); handover
+      decisions ref v1.5 -> v1.8; added a required-reading entry (2.4a) for the
+      decisions record.
+v1.6  Regenerated the STALE BODY the coder flagged (both the first re-audit and
+      the final package review): the falsified G6 "never use export keyword"
+      block replaced with the proven mechanism (gated code IS export fn, not
+      PE-exported); handover checks 9/11/12 updated (tiers are named levels, not
+      open closures; 1B.1 retention settled); the no-pixel rule notes the Stage
+      2C/2D oracle-construction exception; first-response G6 consequence
+      corrected; later sections no longer frame Stage 1B.1 as active; later sections no longer
+      frame Stage 1B.1 as the active/immediate scope (they name Stage 1B.2 and
+      treat 1B.1 as complete); the "first response" milestone reports 1B.2 as
+      the immediate scope; the "export fn forbidden" reading removed (gated code
+      IS export fn, not PE-exported); retention/closure described as settled, not
+      open. Version references advanced to charter v1.15 / README v1.8 /
+      decisions v1.7.
+v1.5  Aligned to the reconciled package: charter v1.10 -> v1.14, README
+      v1.2 -> v1.7, concise summary v1.0 -> v1.1, roadmap -> v1.6, plus the
+      decisions record v1.5. Stage 1B.2 reframed from "feature-closure spikes"
+      to within-level confirmation that PRODUCES requirements for 1B.3 (which
+      implements the guard). Added the two-filter/Classic-first architecture and
+      the per-filter integer-exact/float-tolerance backend relationship (not
+      universal float bit-identity). G6 phrasing corrected in the reading list
+      (ban is on PE-export, not the export keyword). Named psABI tiers; FMA part
+      of v3, not excluded.
+v1.4  Stage 1B.1 complete; retargeted to Stage 1B.2. Charter v1.9 -> v1.10
+      (G6 corollary corrected: the ban is on PE-EXPORT, not the export
+      keyword; gated backend code IS export fn). README v1.1 -> v1.2. Added
+      Deblock4_Toolchain_Findings to the reading order and handover package,
+      and recorded what 1B.1 established.
+v1.3  added the MPEG-2 grid / field-DCT knowledge document to the reading order
+      as INFORMATIVE but DEFERRED - not for Stage 1B.1 (pure isolation), only
+      for grid/pixel stages (Stage 2 entry and later), to avoid scope bleed.
+      Renumbered the formal-scope reading entry to 2.7.
+v1.2  re-aligned to ratified charter v1.10 (adds G6: explicit/structural
+      mechanisms over implicit toolchain behaviour; gated code never exported).
+      Updated milestone to 1A.1-complete, added the retention/export research
+      package to the reading order, flagged the superseded export-based 1B.1
+      delivery, and added the retention-without-export empirical crux. The
+      active 1B.1 scope now requires research-package assessment before coding.
+v1.1  aligned the handover to W3X-ratified charter v1.8 and carried the
+      complete G5 no-bypass, unguarded-execution, and SKIP consequences.
+
+---
+
+*This file preserves coder-session orientation and tacit history. It is not an
+algorithm specification, invariant source, coding scope, or proof that the
+current repository still matches the last reported scaffold.*
+
+# Revision history
+
+v1.29 (2026-08-16) Reconciled successor orientation to Project Status v1.28
+and W3X-ratified MPEG-2 authority v1.05; see section 10 for the detailed note.
+
+v1.27 (2026-08-14) Second currency pass (W3C second orientation review Q2 +
+W3D review): header alignment line advanced to charter v1.29 / README
+v1.12; section 9 handover pins advanced (charter v1_29, README v1_12,
+MPEG-2 knowledge v1_2, bootstrap v1_1), the missing roadmap added (v1_19)
+and the duplicate Toolchain Findings line removed; the orphaned Stage
+1C-era handover tail (roadmap v1_13, 1C scope/addendum/briefs, Phase 3a
+delivery zip) excised - it contradicted the note directly above it; the
+incidental "required by charter v1.26" attribution de-versioned. No
+current-state content changed.
+v1.26 (2026-08-14) Residual-staleness pass (W3C orientation Q3 + W3D
+review): the leftover Stage 1C Phase 3a/3b narrative (including an orphaned
+sentence fragment and the "immediate work is the G6 correction" instruction)
+replaced with a clearly-marked historical note; the Phase 3a pins paragraph
+retitled historical; first-response item 8 no longer asks for Phase 3a
+delivery artifacts. No current-state content changed.
+v1.25 (2026-08-13) Currency + communication update after Stage 4C
+acceptance, BASED ON v1.21 IN FULL (the v1.22-v1.24 plain-English rewrite
+line is WITHDRAWN: it lost the tacit-knowledge, what-will-bite-you, and
+critical counter-intuitive content that a memoryless coder cannot
+rediscover - W3X catch). Changes over v1.21: IMMEDIATE NEXT ACTION and
+section 3 advanced to the post-4C state (2C oracle + 4C vector backend
+accepted; 3C collapsed; 5C next with the AVX2 hazard flagged); the
+communication ruling now binds via the new coder communication convention
+(new reading item 2.6a); reading-list and handover pointers advanced
+(Status v1_26, charter v1_27 with the rulebook framing, README v1_11,
+Concise Summary v1.3, MPEG-2 knowledge v1_1, plus the coder convention and
+the stage-agnostic Session Bootstrap Header v1_0); section 8
+first-response items updated. ALL v1.21 content retained.
+v1.21 (2026-08-12) End-of-phase refresh after Stage 2C acceptance (see body).
+
+---
+
+# Revision note
+
+v1.36 (2026-08-21) a5 CLOSURE refresh. Current position replaced: a5 CLOSED
+      (DEC-85/88), final ledger v1.10 (44 entries, all Tier C,
+      W3C-reproduced), residue R1-R8 routed at register 0c, no further a5
+      rounds permitted; binding scope advanced to RATIFIED v1.15; next W3C
+      work is a5b review. The v1.35 delta-review agenda is history - that
+      review and three more happened.
+v1.35 (2026-08-19) CURRENT-STATE CORRECTION ONLY. No reading order, discipline
+      rule, charter obligation or technical position changed.
+      v1.34's bootstrap said "THE NEXT DESIGNER ACT IS THE T1S01a5 LEDGER
+      REWRITE" and told W3C to review that rewrite when supplied. FOUR LEDGER
+      GENERATIONS HAVE PASSED: the rewrite was delivered, reviewed, corrected
+      and re-delivered. a5 is at ledger v1.7, 42 entries, awaiting a DELTA
+      review.
+      WHY NOW RATHER THAN AFTER a5 CLOSES: W3C recommended deferring the
+      orientation refresh to one pass at closure, and that advice assumed the
+      SAME W3C session would continue. It became effectively unavailable, so
+      the document that re-orients a fresh session moved onto the critical
+      path.
+      RECORDS: the delta-review agenda from W3C's own recovery-closure
+      response section 18; that the binding scope is now Review Scope v1.12
+      rather than v1.11, and that the fragmentation it fixes caused a real
+      error; that the a5 Tier C sample is COMPLETE - eleven selected, eleven
+      reviewed, 3 AGREE / 8 DISAGREE - and must not be reopened; and a short
+      factual account of the recovery so a successor does not re-derive it.
+      ALSO REPAIRED: an ORPHAN CLOSING CODE FENCE in the revision history,
+      inherited from v1.34 or earlier, which left the document's fences
+      unbalanced. Attributed accurately - it is not new at v1.35.
+      CREDIT RECORDED, because a successor should know the process worked: the
+      W3C session that produced recovery ledger v1.4 REPORTED ITS OWN
+      RECONSTRUCTION AS LOSSY and recommended rebuilding from delivered v1.3.
+      That self-report is why the rebuilt ledger is clean.
+v1.344 (2026-08-19) DESIGNER-SESSION RECOVERY / a5 STATE ADVANCE.
+     Corrects the internal metadata to Version 1.34 and advances the live T1
+     state past Classification Repair v1.1: the next designer act is the
+     T1S01a5 ledger rewrite and the next W3C act is review of that rewrite.
+     Separates the frozen historical T1S00 survey count (47) from the current
+     adjudication population (41) and current a5 search population (46);
+     records T1/ and GAIS_investigations/ exclusions and that GAIS material is
+     ignored for T1 adjudication; updates the dependency order to
+     T1 -> T8 -> T5 -> separately-ratified T6/Q14; and records the three a5
+     sweep rules plus the "opening a hit is not the same as reading it" failure
+     mode. Project Status is retained as broader implementation/proof state,
+     while Resume Brief section 0a is made the precise active-T1 recovery/task
+     handoff. Adds Classification Repair v1.1 to the active a5 handover set.
+     Whole-file stale-state sweep performed after editing. No technical rule,
+     architecture decision, acceptance criterion or coding scope changed.
+
+v1.33 (2026-08-18) CURRENCY AND ROUTING PASS.
+     DE-PINNED every project-document version in the bootstrap block, the
+     resume sequence and the reading list at sections 2.1 to 2.7a. Several
+     were two or three generations stale, and this document is read BEFORE a
+     coder knows anything, which is the most expensive place for a wrong
+     pointer. ONE PIN KEPT DELIBERATELY: the MPEG-2 authority at v1.05,
+     with the reason stated inline - nothing has been applied to it, every
+     ledger entry is a proposal, and a higher generation means stop and ask.
+     ROUTING: the T1 resume brief's section 0a is now named explicitly and
+     stated to PREVAIL over this document's current-state summary, because
+     the brief is bumped as the sweep advances and this document is not.
+     The bootstrap block's stale account of a coder chat dying after the
+     first ledger is replaced by the standing guarantee that matters more: no
+     delivered W3C review is ever lost, because every verdict is in the
+     register's decision log with its reason.
+     Also adds the T1 review scope to the read-first list, since it is what
+     binds W3C during the sweep and was reachable only further down.
+     A SECOND AND THIRD PASS WERE NEEDED WITHIN THIS SAME REVISION, which is
+     recorded because it is the project's most-repeated lesson: after fixing
+     the bootstrap block and reading list, a search of the whole file found
+     more live pins in the first-response checklist and the handover pin
+     block, plus a STALE INSTRUCTION telling a fresh coder its immediate
+     action was the Q14 experiment. It is the T1 sweep. The defect is rarely
+     alone, and finding one is a reason to sweep the file rather than to
+     close the item.
+     No rule, tier, acceptance criterion or design statement changed.
