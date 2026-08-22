@@ -1,11 +1,12 @@
-# Deblock4 - New Chat Introduction for Designer (v1.30)
+# Deblock4 - New Chat Introduction for Designer (v1.34)
 
 **Version:** 1.33
 **Date:** 2026-08-21
 **Status:** Informative successor orientation; not controlling. Current-state
 orientation aligned to the HIGHEST COMMITTED VERSION of the T1 Resume Brief,
 Project Status, the Standing Task Register, the scope manifest, the charter and
-the README. While T1 is active, Resume Brief section 0a is the live task-state
+the README. While T1 is active, Resume Brief section 0-CURRENT is the live
+task-state
 handoff and prevails over any stale state summary in this introduction.
 ONE DELIBERATE PIN: the W3X-ratified MPEG-2 authority is still v1.05 and that
 is correct - it has not moved and no adjudication has been applied to it. If
@@ -124,7 +125,8 @@ DESIGNER ROLE NOW:
    record remains 47 documents under its historical 90-term frame. The CURRENT
    T1 ADJUDICATION population is 41 documents after GAIS_investigations/ was
    removed from adjudication. The settled a5 SEARCH population was 46 files
-   under DEC-60/63/66. The DECLARED a5b population is 40 files (map section
+   under DEC-60/63/66. The DECLARED a5b population is 38 files (Population
+   Delta v1.1, superseding map section
    A.3; the six retired continuity generations account for the entire delta
    from 46). Resume Brief section 0b carries the exact distinction.
  - When T1 completes, T8 closes provenance gaps surfaced by T1. T8 runs BEFORE
@@ -154,6 +156,16 @@ project knowledge.
 
 # Revision note
 
+v1.34 (2026-08-22) BATCH-1 CLOSURE refresh; also clears the two deferred
+     defects W3X approved holding until batch 1 closed. The TITLE LINE said
+     "(v1.30)" while the document was v1.33 - corrected, and it now reads
+     v1.34. The checklist's "read the highest delivered generation (v1.7)"
+     was three generations stale - it now names a5's FINAL v1.10 and a5b
+     batch 1's closed Part2 v1.5. The declared a5b population moves from 40
+     to Population Delta v1.1's 38. The live-state pointer moves from Resume
+     Brief section 0a to section 0-CURRENT at the prevail statement; later
+     "section 0a" mentions are deliberately left, because 0a still names the
+     a5-closure record and the brief's own header states the precedence.
 v1.33 (2026-08-21) Deep-staleness sweep after a W3X-requested fitness check.
       v1.32 fixed the top next-work block and LEFT FOUR DEEPER SITES
       CONTRADICTING IT - the checklist endpoint still said ledger v1.7
@@ -334,7 +346,9 @@ For the present Deblock4 design phase, read in this order:
     delivered ledger v1.3 remains the TEXTUAL BASIS of every later generation
     under DEC-70, and v1.4 is RULED OUT as a source - it is a W3C recovery
     reconstruction, not a gap in the sequence. Read the highest delivered
-    generation (v1.7) for current state. Do not invent an undelivered working
+    generation - a5's FINAL ledger is v1.10 (44 entries, all Tier C, CLOSED
+    at DEC-85/88); a5b batch 1's is Part2 v1.5 (29 entries, CLOSED
+    2026-08-22) - for current state. Do not invent an undelivered working
     ledger generation from old status prose: DEC-60, DEC-63 and W3D's own final
     chat post all refer to "39" entries in generations that were never
     delivered.
@@ -754,7 +768,7 @@ source of truth. Current compact classification:
   remain proposals awaiting T3.
   KEEP POPULATIONS DISTINCT: frozen T1S00 historical survey = 47 documents /
   90 terms; current adjudication population = 41; settled a5 search
-  population = 46 files; declared a5b population = 40 files. T1/ and
+  population = 46 files; declared a5b population = 38 files. T1/ and
   GAIS_investigations/ are excluded from current T1 search;
   GAIS_investigations/ is also excluded from adjudication.
   DO NOT TRUST A SUB-TRANCHE COUNT FROM ANY DOCUMENT BUT THE RESUME BRIEF.

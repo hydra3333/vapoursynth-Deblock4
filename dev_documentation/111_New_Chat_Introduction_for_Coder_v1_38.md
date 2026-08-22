@@ -1,9 +1,19 @@
-# Deblock4 - New Chat Introduction for Coder (v1.35)
+# Deblock4 - New Chat Introduction for Coder (v1.38)
 
 ```text
-CURRENT SUCCESSOR BOOTSTRAP - 2026-08-19 (v1.35) - READ THIS FIRST
+CURRENT SUCCESSOR BOOTSTRAP - 2026-08-22 (v1.38) - READ THIS FIRST
 
 IF T1 IS STILL RUNNING, START HERE BEFORE USING ANY STATE SUMMARY BELOW:
+    NOTE, v1.38: the Resume Brief's LIVE-STATE section is now 0-CURRENT
+    (it was 0a until brief v1.17). Section 0a remains beneath it as the
+    a5-CLOSURE record. Where this document says "section 0a", read
+    0-CURRENT for LIVE STATE and 0a for a5 closure.
+    a5b BATCH 1 (sections 9-10, LED-064..081) IS CLOSED at ledger Part2
+    v1.5 - 29 entries, all AGREE over four review rounds. Next W3C work is
+    BATCH 2 (sections 11-13, LED-082..097) under
+    T1S01a5b_A_Batch2_Delivery_Protocol_v1_0: checkpoint before each
+    section, deliver per-section verdicts as each completes, and at the
+    first stream error checkpoint and STOP rather than retrying.
     Deblock4_T1_Resume_Brief, HIGHEST COMMITTED VERSION, SECTION 0a FIRST.
     It is the maintained recovery/task-state handoff. It records which
     sub-tranches are closed, which is live, what was physically delivered,
@@ -112,8 +122,9 @@ CURRENT STATE:
    Tier C, reproduced by W3C's final verification. Residue R1-R8 is routed at
    register 0c; no further a5 rounds exist.
  - THE ACTIVE SUB-TRANCHE IS T1S01a5b, authority sections 9-13. Its
-   population (40 files) and source-coverage map are delivered at
-   T1/T1S01a5b_A_Population_and_Coverage_Map_v1_0.md and travel with the
+   population of record (38 files, T1/T1S01a5b_A_Population_Delta v1.1 or
+   later, superseding the map's A.3 40-file list) and source-coverage map
+   (T1/T1S01a5b_A_Population_and_Coverage_Map v1.1 or later) travel with the
    first adjudication batch for your independent attack. a6/a7 remain later
    authority work; a6 owes the section-24 R8 filename correction recorded at
    LED-063's CITED-OUTSIDE-RANGE block.
@@ -132,7 +143,7 @@ DO NOT CONFUSE THE T1 POPULATIONS - THERE ARE NOW FOUR:
    time the frame was frozen;
  - current T1 adjudication population: 41 documents;
  - settled a5 search population: 46 files (history);
- - DECLARED a5b population: 40 files (map section A.3; six retired
+ - DECLARED a5b population: 38 files (Population Delta v1.1; six retired
    continuity generations are the entire delta from 46).
 
 CURRENT MECHANICAL SEARCH EXCLUSIONS:
@@ -1109,6 +1120,16 @@ v1.21 (2026-08-12) End-of-phase refresh after Stage 2C acceptance (see body).
 
 # Revision note
 
+v1.38 (2026-08-22) BATCH-1 CLOSURE refresh; also clears the deferred title
+     defect W3X approved holding until batch 1 closed. The TITLE and
+     BOOTSTRAP lines said "(v1.35)" while the document was v1.37 -
+     corrected, and both now read v1.38 with the current date. Adds the
+     batch-1 closure, the batch-2 next-work pointer and its delivery
+     protocol to the bootstrap block. The declared a5b population moves
+     from the map's 40 to Population Delta v1.1's 38 files. The live-state
+     pointer moves from Resume Brief section 0a to 0-CURRENT, stated once
+     in the bootstrap rather than rewritten at every later mention -
+     deliberate, since 0a still names the a5-closure record below.
 v1.37 (2026-08-21) Deep-staleness sweep from the W3X-requested fitness check
       that caught the designer instruments. v1.36 fixed the top current-
       position block and LEFT THREE DEEPER SITES CONTRADICTING IT: the state

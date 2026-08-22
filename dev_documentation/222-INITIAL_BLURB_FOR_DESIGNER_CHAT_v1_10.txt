@@ -25,36 +25,47 @@ recommended rebuilding from delivered v1.3; W3X ruled v1.4 out as a source
 T1S01a5 IS CLOSED - 2026-08-21, DEC-85 (cap-and-carry) and DEC-88. Final
 ledger v1.10: 44 entries, ALL Tier C, W3C-reproduced. Residue R1-R8 is routed
 at Standing Task Register v1.36 section 0c; NO a5 CORRECTION GENERATION MAY BE
-OPENED - no v1.11, ever. Resume Brief section 0a is the maintained live state
-and carries the closure, the residue routing and the a5b expectations.
+OPENED - no v1.11, ever. Resume Brief SECTION 0-CURRENT is the maintained
+live state (it was 0a until Resume Brief v1.17; 0a remains beneath it as the
+a5-CLOSURE record, and carries the residue routing). Where this blurb says
+"section 0a" below, read 0-CURRENT for LIVE STATE and 0a for a5 closure.
 
 YOUR WORK IS T1S01a5b ADJUDICATION: authority sections 9-13, lines 716-1098,
 under the RATIFIED `Deblock4_T1_W3C_Review_Scope_v1_15.md`.
 
 THE PRE-ADJUDICATION OBLIGATIONS ARE ALREADY DISCHARGED - DO NOT REDO THEM.
-The population derivation AND the source-coverage map exist as
-`T1/T1S01a5b_A_Population_and_Coverage_Map_v1_0.md`: 40 declared files
-(NOT a5's 46 - the delta is accounted in its A.4), the full walk of lines
-716-1098, 34 reserved entries LED-064..LED-097, seven pre-flagged
-split-candidates, two pre-identified CITED-OUTSIDE-RANGE obligations
-(LED-067 -> Appendix C, LED-081 -> section 15, both a6's), and four recorded
-no-proposition segments. Re-deriving or re-mapping would duplicate settled
-work and risk a CONFLICTING map - the exact defect class DEC-77 exists to
-prevent.
+The source-coverage map is `T1/T1S01a5b_A_Population_and_Coverage_Map`
+(v1.1 or later): the full walk of lines 716-1098, reserved entries
+LED-064..LED-097, split-candidate flags, the CITED-OUTSIDE-RANGE
+obligations pre-identified for LED-067 (-> Appendix C) and LED-081
+(-> SECTION 16, corrected from "section 15" under DEC-84 propagation), and
+recorded no-proposition segments. THE POPULATION OF RECORD IS
+`T1/T1S01a5b_A_Population_Delta` (v1.1 or later): 38 FILES. The map's A.3
+40-file list is historical derivation only. Re-deriving or re-mapping would
+duplicate settled work and risk a CONFLICTING map - the exact defect class
+DEC-77 exists to prevent.
 
-YOUR FIRST ACT, before any entry: VERIFY the committed tree matches the
-map's section A.3 population, because the map was derived conditional on
-W3X's 2026-08-21 continuity-refresh commit (its section 0 states the
-condition). Tree matches -> adjudicate. Tree differs -> re-derive the
-POPULATION ONLY, per the map's own declared rules, and record the delta;
-the coverage walk of the source range is unaffected by tree state.
+BATCH 1 (sections 9-10, LED-064..081) IS CLOSED - 2026-08-22, ledger Part2
+v1.5, 29 entries, ALL AGREE across four W3C rounds (13/11, 11/5, 4/2, 2/0).
+Do NOT reopen it, re-derive its population, or re-adjudicate its entries.
 
-THEN ADJUDICATE IN MAP ORDER, LED-064 onward, in BOUNDED BATCHES rather than
-all 34 at once - W3D's standing recommendation, ratified or amended by W3X
-at batch time: first batch sections 9-10 (LED-064..081). Read Resume Brief
-0a and 0f first - a5b is the harder, architecture-heavy half, and the five
-recurring a5 failures with countermeasures are listed there so you do not
-repeat them.
+YOUR WORK IS BATCH 2: authority sections 11-13, lines 877-1098, reserved
+entries LED-082..097, in map order. Read Resume Brief 0-CURRENT and 0f
+first. Batch 2 MUST reconcile the in-range cross-notes batch 1 left owing -
+LED-082 (from LED-073 and LED-073a), LED-086..091, LED-087, LED-091,
+LED-093, and LED-097, which still holds LED-070a's PROVISIONAL POINTER
+condition open across batches.
+
+BATCH 2 SHIPS UNDER `T1S01a5b_A_Batch2_Delivery_Protocol_v1_0` (W3X-ruled):
+whole and SLIM, authored in section order 11 -> 12 -> 13, with W3C required
+to checkpoint before each section and deliver per-section verdicts and
+findings as each completes.
+
+TREAT THE MAP'S RESERVED-ENTRY COUNTS AS PLANNING FIGURES, NOT TARGETS:
+batch 1 reserved 18 entries and produced 29, because review found uncovered
+propositions (a section heading asserting B2's PRIMARY CANDIDATE status was
+missed entirely) and non-atomic claims. Sixteen are reserved for 11-13; the
+real number will be higher.
 
 Do not restart the completed a5 search/classification round merely because a
 session died, and DO NOT SELECT ANOTHER a5 TIER C SAMPLE - a5's is COMPLETE at
@@ -181,8 +192,8 @@ The current project position you should expect those documents to establish is:
   W3X ratifies the corresponding authority changes.
 - KEEP THE POPULATION NUMBERS DISTINCT - there are now FOUR: the a5 SEARCH
   population was 46 files (settled history); the a5b DECLARED population is
-  40 files (map section A.3 - six retired continuity generations account for
-  the whole delta); the CURRENT T1 ADJUDICATION population is 41 documents;
+  38 files (Population Delta v1.1, which SUPERSEDES the map's A.3 40-file
+  list); the CURRENT T1 ADJUDICATION population is 41 documents;
   and the frozen T1S00 survey record is 47. The old frozen
   T1S00 survey record still describes the historical frame it actually ran;
   do not rewrite history merely to make the numbers match.
@@ -342,6 +353,21 @@ v1.4 and earlier: see repository history.
 ---
 BLURB REVISION NOTE
 
+v1.10 (2026-08-22) BATCH-1 CLOSURE refresh and DEC-84 propagation fix. The
+     pre-identified out-of-range obligation for LED-081 is corrected from
+     "section 15" to SECTION 16 - the authority's line 873 named the wrong
+     section, section 16 imposes the revisit requirement, and this blurb was
+     one of four dependencies the mandatory propagation found. The
+     designer's task advances from "first batch sections 9-10" to BATCH 2
+     (sections 11-13) with batch 1 recorded closed at ledger v1.5, the owed
+     cross-notes enumerated, and the batch-2 delivery protocol named. The
+     tree-verification first act is retired: it was discharged, and its
+     result is Population Delta v1.1's 38 files, now stated as the
+     population of record in place of the map's 40. A planning-figures
+     caution is added because batch 1's 18 reserved entries became 29. The
+     live-state pointer moves from section 0a to 0-CURRENT, with precedence
+     stated once rather than rewritten at every later mention - deliberate,
+     since 0a still legitimately names the a5-closure record below.
 v1.9 (2026-08-21) Post-map currentisation, same day: the a5b population
      derivation and source-coverage map are DELIVERED
      (T1/T1S01a5b_A_Population_and_Coverage_Map_v1_0.md), so the successor's

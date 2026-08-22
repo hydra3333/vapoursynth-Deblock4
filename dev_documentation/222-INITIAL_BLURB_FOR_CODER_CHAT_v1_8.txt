@@ -6,10 +6,13 @@ document is a scheduled defect.
 
 IF THE T1 CONSOLIDATION SWEEP IS STILL RUNNING, read
 `Deblock4_T1_Resume_Brief` (HIGHEST COMMITTED VERSION) BEFORE ANYTHING ELSE,
-AND READ ITS SECTION 0a FIRST.
+AND READ ITS SECTION 0-CURRENT FIRST.
 
-SECTION 0a IS YOUR LIVE TASK-STATE HANDOFF AND IT PREVAILS OVER THE STATE
-SUMMARY LATER IN THIS BLURB. If the two disagree, THE RESUME BRIEF IS RIGHT
+SECTION 0-CURRENT IS YOUR LIVE TASK-STATE HANDOFF AND IT PREVAILS OVER THE
+STATE SUMMARY LATER IN THIS BLURB. (It was section 0a until Resume Brief
+v1.17; 0a still exists beneath it and remains the a5-CLOSURE record. Where
+this blurb says "section 0a" below, read 0-CURRENT for LIVE STATE and 0a for
+a5 closure - the brief's own header states the same precedence.) If the two disagree, THE RESUME BRIEF IS RIGHT
 and you should tell me the blurb has staled.
 
 The prior coder chat reached its conversation/context limit and is being
@@ -31,23 +34,41 @@ STOP and query W3X.
 ruled out at DEC-70; the rebuild on delivered v1.3 took seven W3C review
 rounds; NOT ONE MPEG-2 conclusion was overturned in any of them.)
 
-YOUR NEXT WORK IS T1S01a5b REVIEW, when a designer package arrives: authority
-sections 9-13, lines 716-1098, under the RATIFIED consolidated method at
-`Deblock4_T1_W3C_Review_Scope_v1_15.md`.
+YOUR NEXT WORK IS T1S01a5b BATCH 2 REVIEW, when a designer package arrives:
+authority sections 11-13, lines 877-1098, entries LED-082..097, under the
+RATIFIED consolidated method at `Deblock4_T1_W3C_Review_Scope_v1_15.md`.
 
-THE a5b PRE-ADJUDICATION ARTIFACTS ALREADY EXIST AND TRAVEL WITH THE FIRST
-BATCH: `T1/T1S01a5b_A_Population_and_Coverage_Map_v1_0.md` carries the
-DECLARED 40-FILE POPULATION (its A.4 accounts the delta from a5's 46) and
-the full source-coverage walk of lines 716-1098 reserving LED-064..LED-097.
+BATCH 1 (sections 9-10, LED-064..081) IS CLOSED - 2026-08-22, ledger Part2
+v1.5, 29 entries, ALL AGREE across four review rounds (13/11, 11/5, 4/2,
+2/0). Do not reopen it. Batch 2 MUST, however, reconcile the in-range
+cross-notes batch 1 left owing, including LED-070a's PROVISIONAL POINTER,
+still open on LED-097.
+
+BATCH 2 HAS A DELIVERY PROTOCOL - `T1S01a5b_A_Batch2_Delivery_Protocol_v1_0`,
+W3X-ruled, travelling with the batch: checkpoint BEFORE each section, deliver
+that section's verdicts and findings AS IT COMPLETES rather than holding them
+to the end, and at the first message-stream error CHECKPOINT AND STOP rather
+than retrying. Two coder sessions died on 2026-08-22 having delivered
+nothing; that is the failure this removes.
+
+THE a5b PRE-ADJUDICATION ARTIFACTS TRAVEL WITH EVERY BATCH:
+`T1/T1S01a5b_A_Population_and_Coverage_Map` (v1.1 or later) carries the
+source-coverage walk of lines 716-1098 reserving LED-064..LED-097, and
+`T1/T1S01a5b_A_Population_Delta` (v1.1 or later) is the POPULATION OF
+RECORD at 38 FILES. The map's own A.3 40-file list is HISTORICAL DERIVATION
+only - the delta supersedes it and accounts every difference.
 YOUR JOB IS TO ATTACK THAT MAP AS A CLAIM, NOT TO DEMAND ITS PRODUCTION:
 independently re-derive the population under its declared rules, verify the
 coverage tiling is gap-free and overlap-free against the source, and test
-whether its seven SPLIT-CANDIDATE flags and four no-proposition rationales
-are the right calls. Then hold the adjudication itself to: semantic (not
+whether its remaining SPLIT-CANDIDATE flags and no-proposition rationales
+are the right calls. TREAT ITS RESERVED-ENTRY COUNTS AS PLANNING FIGURES:
+batch 1 reserved 18 entries for sections 9-10 and adjudication produced 29,
+because review found uncovered propositions and non-atomic claims. Expect
+the same in 11-13. Then hold the adjudication itself to: semantic (not
 lexical) probe families under DEC-67 Rule 3, atomic claims,
 occurrence-level evidence (scope 0.5) and CITED-OUTSIDE-RANGE records
-(scope 0.6) - two of which the map pre-identifies (Appendix C, section 15,
-both a6's). Expect harder, architecture-heavy material, in bounded batches.
+(scope 0.6) - two of which the map pre-identifies (Appendix C and
+section 16, both a6's). Expect harder, architecture-heavy material, in bounded batches.
 
 DO NOT restart the completed a5 search/classification round merely because a
 session died. THE a5 TIER C SAMPLE IS ALSO COMPLETE - eleven entries selected
@@ -169,8 +190,9 @@ The current project position you should expect those documents to establish is:
       time that frame was frozen;
     * current T1 adjudication population: 41 documents;
     * settled a5 search population: 46 files (history);
-    * DECLARED a5b population: 40 files (map section A.3; the six retired
-      continuity generations are the entire delta from 46).
+    * DECLARED a5b population: 38 files (Population Delta v1.1, which
+      SUPERSEDES the map's A.3 40-file list; the delta accounts every
+      difference - four generation substitutions, two retirements).
   Current mechanical search exclusions are:
     * any folder whose name begins `superseded` or `scheduled_for_deletion`;
     * everything under `T1/`;
@@ -320,6 +342,20 @@ v1.2 and earlier: see repository history.
 ---
 BLURB REVISION NOTE
 
+v1.8 (2026-08-22) BATCH-1 CLOSURE refresh and DEC-84 propagation fix. The
+     pre-identified out-of-range obligation for LED-081 is corrected from
+     "section 15" to SECTION 16: the authority's line 873 named the wrong
+     section, section 16 ("UNKNOWN POLICY REVISIT") imposes the requirement,
+     and this blurb was one of four dependencies the mandatory DEC-84
+     propagation found. Next W3C work advances from "a5b review" to BATCH 2
+     (sections 11-13), with batch 1 recorded closed at ledger v1.5 and its
+     owed cross-notes named, and the batch-2 delivery protocol stated. The
+     declared a5b population moves from the map's 40 to Population Delta
+     v1.1's 38 files. The live-state pointer moves from Resume Brief section
+     0a to section 0-CURRENT, with the precedence stated once rather than
+     rewritten at every later mention - a deliberate choice: 0a still
+     legitimately names the a5-closure record in several places below, and
+     blanket-replacing it would have introduced errors.
 v1.7 (2026-08-21) Post-map currentisation, same day, from the same W3X
      fitness check that caught the designer instruments: the a5b review task
      changes from hold-designer-to-producing-the-map to ATTACK-THE-DELIVERED-
